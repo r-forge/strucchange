@@ -4,13 +4,13 @@ mefp.formula <-
     function(formula, type = c("OLS-CUSUM", "OLS-MOSUM", "ME", "fluctuation"),
              data=list(), h=1, alpha=0.05, functional = c("max", "range"),
              period=10, tolerance=.Machine$double.eps^0.5,
-             MECritvalTable=monitorMECritvalTable, rescale=FALSE, ...)
+             CritvalTable=NULL, rescale=FALSE, ...)
 {
     type <- match.arg(type)
     functional <- match.arg(functional)
     val <- efp(formula, type=type, h=h, data=data, rescale=rescale)
     val <- mefp(val, alpha=alpha, functional=functional, period=period,
-                tolerance=tolerance, MECritvalTable=MECritvalTable,
+                tolerance=tolerance, CritvalTable=CritvalTable,
                 rescale=rescale)
     if(length(data) == 0)
         val$data <- NULL
@@ -23,7 +23,7 @@ mefp.formula <-
 mefp.efp <-
     function(obj, alpha=0.05, functional = c("max", "range"),
              period=10, tolerance=.Machine$double.eps^0.5,
-             MECritvalTable=monitorMECritvalTable, rescale=NULL, ...)
+             CritvalTable=NULL, rescale=NULL, ...)
 {
     functional <- match.arg(functional)
     if(! (obj$type %in% c("OLS-CUSUM", "OLS-MOSUM", "ME", "fluctuation")))
@@ -86,7 +86,9 @@ mefp.efp <-
     },
 
     "OLS-MOSUM" = {
-        dntab <- dimnames(MECritvalTable)
+        if(is.null(CritvalTable))
+            CritvalTable <- get("monitorMECritvalTable")
+        dntab <- dimnames(CritvalTable)
         if(!(winsize %in% dntab[[1]]))
             stop(paste("winsize h =",winsize,"not available, we have:",
                        paste(dntab[[1]], collapse=", ")))
@@ -94,7 +96,7 @@ mefp.efp <-
             stop(paste("period",period,"not available, we have:",
                        paste(dntab[[2]], collapse=", ")))
         critval <- approx(x=as.numeric(dntab[[3]]),
-                          y=MECritvalTable[as.character(winsize),
+                          y=CritvalTable[as.character(winsize),
                           as.character(period),,functional],
                           xout=1-alpha)$y
         if(is.na(critval))
@@ -122,7 +124,9 @@ mefp.efp <-
     },
 
     "ME" = {
-        dntab <- dimnames(MECritvalTable)
+        if(is.null(CritvalTable))
+            CritvalTable <- get("monitorMECritvalTable")
+        dntab <- dimnames(CritvalTable)
         if(!(winsize %in% dntab[[1]]))
             stop(paste("winsize h =",winsize,"not available, we have:",
                        paste(dntab[[1]], collapse=", ")))
@@ -130,7 +134,7 @@ mefp.efp <-
             stop(paste("period",period,"not available, we have:",
                        paste(dntab[[2]], collapse=", ")))
         critval <- approx(x=as.numeric(dntab[[3]]),
-                          y=MECritvalTable[as.character(winsize),
+                          y=CritvalTable[as.character(winsize),
                           as.character(period),,functional],
                           xout=1-elemsiglevel)$y
         if(is.na(critval))
@@ -155,15 +159,32 @@ mefp.efp <-
 
     "fluctuation" = {
 
-        mreSize <- function(a){
-            -2*(pnorm(a)-a*dnorm(a))
+        if(is.null(CritvalTable)){
+            mreSize <- function(a){
+                -2*(pnorm(a)-a*dnorm(a))
+            }
+            mreCritval <- function(a){
+                abs(2*(pnorm(a)-a*dnorm(a))+elemsiglevel-2)
+            }
+            critval <- optim(5, mreCritval)$par
+            if((mreSize(critval)-elemsiglevel) > tolerance)
+                stop("Could not find critical within tolerance")
         }
-        mreCritval <- function(a){
-            abs(2*(pnorm(a)-a*dnorm(a))+elemsiglevel-2)
+        else{
+            dntab <- dimnames(CritvalTable)
+            if(!(period %in% dntab[[1]]))
+                stop(paste("period",period,"not available, we have:",
+                           paste(dntab[[1]], collapse=", ")))
+            critval <- approx(x=as.numeric(dntab[[2]]),
+                              y=CritvalTable[as.character(period),],
+                              xout=1-elemsiglevel)$y
+            if(is.na(critval))
+                stop(paste("Necessary significance level per parameter of",
+                           elemsiglevel,
+                           "\n\toutside of available range",
+                           paste(range(1-as.numeric(dntab[[3]])),
+                                 collapse="-")))
         }
-        critval <- optim(5, mreCritval)$par
-        if((mreSize(critval)-elemsiglevel) > tolerance)
-            stop("Could not find critical within tolerance")
 
 
         computeEstims <- function(x, y, k){
