@@ -5,8 +5,9 @@
 \description{Plotting method for objects of class \code{"efp"}}
 \usage{
 \method{plot}{efp}(x, alpha = 0.05, alt.boundary = FALSE, boundary = TRUE,
-  functional = "max", main = NULL,  ylim = NULL,
-  ylab = "empirical fluctuation process", ...)}
+    functional = "max", main = NULL,  ylim = NULL,
+    ylab = "empirical fluctuation process", ...)
+}
 
 \arguments{
   \item{x}{an object of class \code{"efp"}.}

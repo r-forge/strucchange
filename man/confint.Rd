@@ -9,9 +9,9 @@
 }
 \usage{
 \method{confint}{breakpointsfull}(object, level = 0.95, breaks = NULL,
-  het.reg = TRUE, het.err = TRUE, ...)
+    het.reg = TRUE, het.err = TRUE, ...)
 \method{lines}{confint.breakpoints}(x, col = 2, angle = 90, length = 0.05,
-  code = 3, at = NULL, breakpoints = TRUE, ...)
+    code = 3, at = NULL, breakpoints = TRUE, ...)
 }
 \arguments{
   \item{object}{an object of class \code{"breakpointsfull"} as computed by

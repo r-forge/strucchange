@@ -1,7 +1,4 @@
-require(tcltk)
-require(strucchange)
-require(ts)
-
+if(require(tcltk) & require(ts))
 {
     data(UKDriverDeaths)
     seatbelt <- log10(UKDriverDeaths)

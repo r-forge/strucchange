@@ -5,7 +5,8 @@
 \description{Plotting method for objects of class \code{"Fstats"}}
 \usage{
 \method{plot}{Fstats}(x, pval = FALSE, asymptotic = FALSE, alpha = 0.05, boundary = TRUE,
-  aveF = FALSE, xlab = "Time", ylab = NULL, ylim = NULL, ...)}
+    aveF = FALSE, xlab = "Time", ylab = NULL, ylim = NULL, ...)
+}
 
 \arguments{
  \item{x}{an object of class \code{"Fstats"}.}

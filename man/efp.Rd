@@ -7,7 +7,7 @@ to a specified method from the generalized fluctuation test
 framework, which includes CUSUM, MOSUM and estimates-based tests.}
 \usage{
 efp(formula, data, type = <<see below>>, h = 0.15, dynamic = FALSE,
-  rescale = TRUE, tol = 1e-7)}
+    rescale = TRUE, tol = 1e-7)}
 \arguments{
   \item{formula}{a symbolic description for the model to be tested.}
   \item{data}{an optional data frame containing the variables in the model. By

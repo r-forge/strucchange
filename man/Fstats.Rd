@@ -5,7 +5,7 @@
 \description{Computes a series of F statistics for a specified data window.}
 \usage{
 Fstats(formula, from = 0.15, to = NULL, data,
-       cov.type = c("const", "HC", "HC1"), tol=1e-7)}
+    cov.type = c("const", "HC", "HC1"), tol=1e-7)}
 \arguments{
  \item{formula}{a symbolic description for the model to be tested}
  \item{from, to}{numeric. If \code{from} is smaller than 1 they are

@@ -4,7 +4,7 @@
 \description{Performs a generalized fluctuation test.}
 \usage{
 \method{sctest}{efp}(x, alt.boundary = FALSE, functional = c("max", "range"),
- ...)
+   ...)
 }
 
 \arguments{

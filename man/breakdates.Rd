@@ -11,7 +11,7 @@
 breakdates(obj, format.times = FALSE, ...)
 }
 \arguments{
-  \item{obj}{An object of class \code{"breakpoints"} or their
+  \item{obj}{An object of class \code{"breakpoints"}, \code{"breakpointsfull"} or their
              confidence intervals as returned by \code{\link{confint}}.}
   \item{format.times}{logical. If set to \code{TRUE} a vector of
     strings with the formatted breakdates. See details for more

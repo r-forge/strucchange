@@ -19,10 +19,11 @@
 
 \usage{
 \method{breakpoints}{formula}(formula, h = 0.15, breaks = NULL, tol = 1e-15,
-                              data = list(), ...)
+    data = list(), ...)
 \method{breakpoints}{breakpointsfull}(obj, breaks = NULL, ...)
 \method{summary}{breakpointsfull}(object, breaks = NULL, sort = TRUE,
-                                  format.times = NULL, ...)
+    format.times = NULL, ...)
+\method{lines}{breakpoints}(x, breaks = NULL, lty = 2, ...)
 }
 
 \arguments{
@@ -44,6 +45,8 @@
   \item{format.times}{logical. If set to \code{TRUE} a vector of
     strings with the formatted breakdates. See \code{\link{breakdates}}
     for more information.}
+  \item{x}{an object of class \code{"breakpoints"}.}
+  \item{lty}{line type.}
 }
 
 \details{
@@ -68,12 +71,12 @@
   of the equation above.
 
   The foundation for estimating breaks in time series regression models
-  was given by Bai (1994) and was extended to multiple break by Bai (1997ab)
+  was given by Bai (1994) and was extended to multiple breaks by Bai (1997ab)
   and Bai & Perron (1998). \code{breakpoints} implements the algorithm
   described in Bai & Perron (2002) for simultanous estimation of
   multiple breakpoints. The distribution function used for the confidence
   intervals for the breakpoints is given in Bai (1997b). The ideas behind
-  this implementation is described in Zeileis et al. (2002).
+  this implementation are described in Zeileis et al. (2002).
 
   The algorithm for computing the optimal breakpoints given the number
   of breaks is based on a dynamic programming approach. The underlying
@@ -109,8 +112,8 @@
   Confidence intervals for the breakpoints can be computed from a
   \code{"breakpointsfull"} object using the method of \code{\link{confint}}.
   The breakdates corresponding to the breakpoints can again be computed
-  by \code{\link{breakdates}} and the confidence intervals can be visualized
-  by \code{lines}.
+  by \code{\link{breakdates}}. The breakpoints and their confidence
+  intervals can be visualized by \code{lines}.
 
   The log likelihood as well as some information criteria can be computed
   using the methods for the \code{\link{logLik}} and \code{\link{AIC}}. As
@@ -170,8 +173,10 @@ Bai J., Perron P. (1998), Estimating and Testing Linear Models With Multiple Str
 Bai J., Perron P. (2002), Computation and Analysis of Multiple Structural Change
   Models, \emph{Journal of Applied Econometrics}, forthcoming.
 
-Zeileis A., Kleiber C., Kramer W., Hornik K. (2002), Testind and Dating of
-  Structural Changes in Practice, forthcoming.
+Zeileis A., Kleiber C., Krämer W., Hornik K. (2002), Testind and Dating of
+  Structural Changes in Practice, Technical Report 39/02,
+  SFB "Reduction of Complexity for Multivariate Data Structures",
+  Universität Dortmund, \url{http://www.statistik.uni-dortmund.de/sfb475/berichte/tr39-02.ps}.
 }
 
 \examples{

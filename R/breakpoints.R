@@ -170,8 +170,11 @@ breakdates <- function(obj, format.times = FALSE, ...)
   UseMethod("breakdates")
 }
 
-breakdates.breakpoints <- function(obj, format.times = FALSE, ...)
+breakdates.breakpoints <- function(obj, breaks = NULL, format.times = FALSE, ...)
 {
+  if("breakpointsfull" %in% class(obj)) obj <- breakpoints(obj, breaks = breaks)
+  if(is.null(format.times)) format.times <- ((obj$datatsp[3] > 1) & (obj$datatsp[3] < obj$nobs))
+
   format.time <- function(timevec, freq)
   {
     first <- floor(timevec)
@@ -185,7 +188,7 @@ breakdates.breakpoints <- function(obj, format.times = FALSE, ...)
   if(is.na(obj$breakpoints))
     breakdates <- NA
   else {
-    breakdates <- seq(to = obj$datatsp[2], by = 1/obj$datatsp[3], length = obj$nobs)[obj$breakpoints]
+    breakdates <- (obj$breakpoints - 1)/obj$datatsp[3] + obj$datatsp[1]
     if(format.times) breakdates <- format.time(breakdates, obj$datatsp[3])
   }
 
@@ -240,7 +243,7 @@ summary.breakpointsfull <- function(object, breaks = NULL,
       pos <- apply(outer(bpm$breakpoints, bp[nrow(bp),],
                    FUN = function(x,y) abs(x - y)), 1, which.min)
       if(length(pos) > unique(length(pos))) {
-        warning("sorting not possible")
+        warning("sorting not possible", call. = FALSE)
 	sort <- FALSE
       }
     }
@@ -439,8 +442,6 @@ confint.breakpointsfull <- function(object, level = 0.95, breaks = NULL,
 
 breakdates.confint.breakpoints <- function(obj, format.times = FALSE, ...)
 {
-  if(any(obj$confint < 1) | any(obj$confint > obj$nobs))
-    stop("Cannot compute breakdates: breakpoints outside data time interval")
   bp <- list(breakpoints = NA, nobs = obj$nobs, datatsp = obj$datatsp)
   class(bp) <- "breakpoints"
   RVAL <- obj$confint
@@ -448,37 +449,44 @@ breakdates.confint.breakpoints <- function(obj, format.times = FALSE, ...)
     bp$breakpoints <- obj$confint[,i]
     RVAL[,i] <- breakdates(bp, format.times = format.times, ...)
   }
+
+  bp$breakpoints <- c(1, obj$nobs)
+  startend <- breakdates(bp, format.times = NULL, ...)
+  nbp <- nrow(obj$confint)
+  if(any(obj$confint < 1) | any(obj$confint > obj$nobs))
+    warning(paste("Confidence intervals outside data time interval\n\t from ",
+            startend[1], " to ", startend[2], " (", obj$nobs, " observations)", sep = ""), call. = FALSE)
+  if(any(obj$confint[-1,1] < obj$confint[-nbp,3]))
+    warning("Overlapping confidence intervals", call. = FALSE)
+
   return(RVAL)
 }
 
 print.confint.breakpoints <- function(x, format.times = NULL, ...)
 {
   if(is.null(format.times)) format.times <- ((x$datatsp[3] > 1) & (x$datatsp[3] < x$nobs))
+  nbp <- nrow(x$confint)
   cat("\n\t Confidence intervals for breakpoints")
-  cat(paste("\n\t of optimal ", nrow(x$confint) + 1, "-segment partition: \n\n", sep = ""))
+  cat(paste("\n\t of optimal ", nbp + 1, "-segment partition: \n\n", sep = ""))
   cat("Call:\n")
   print(x$call)
   cat("\nBreakpoints at obervation number:\n")
   print(x$confint, quote = FALSE)
-  if(any(x$confint < 1) | any(x$confint > x$nobs)) {
-    warning("Cannot compute breakdates: breakpoints outside data time interval")
-  } else {
-    cat("\nCorresponding to breakdates:\n")
-    print(breakdates(x, format.times = format.times, ...), quote = FALSE)
-  }
-  if(any(c(diff(x$confint[,1]), diff(x$confint[,3])) < 0))
-    warning("Overlapping confidence intervals")
+  cat("\nCorresponding to breakdates:\n")
+  print(breakdates(x, format.times = format.times, ...), quote = FALSE)
 }
 
 lines.confint.breakpoints <- function(x, col = 2, angle = 90, length = 0.05,
   code = 3, at = NULL, breakpoints = TRUE, ...)
 {
+  nbp <- nrow(x$confint)
   x <- breakdates(x)
   if(breakpoints) abline(v = x[,2], lty = 2)
   if(is.null(at)) {
     at <- par("usr")[3:4]
     at <- diff(at)/1.08 * 0.02 + at[1]
   }
+  if(length(at) < nbp) at <- rep(at, length.out = nbp)
   arrows(x[,1], at, x[,3], at, col = col, angle = angle, length = length, code = code, ...)
 }
 
