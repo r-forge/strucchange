@@ -83,84 +83,6 @@ boundary.gefp <- function(x, ...)
   quasits(as.vector(boundary.efp(x, ...)), time(x))
 }
 
-plot.gefp <- function(x, alpha = 0.05, parm = NULL,
-                     boundary = TRUE, functional = "max", 
-		     main = NULL,  ylim = NULL, xlab = "Time", ylab = NULL,
-		     ...)
-{
-    if(is.null(functional)) fun <- "max"
-      else fun <- match.arg(functional, c("max", "range", "maxL2", "meanL2"))
-    bound <- boundary(x, alpha = alpha, functional = fun)
-    pos <- FALSE
-    ave <- FALSE
-
-    if(is.null(main)){
-            if(fun == "meanL2")
-              main <- paste(x$type.name, "with mean L2 norm")
-	    else if(fun == "maxL2")
-	      main <- paste(x$type.name, "with max L2 norm")
-	    else
-	      main <- x$type.name
-    }
-    
-    z <- x$process
-    if(!is.null(parm)) z <- z[, parm]
-
-    if(!is.null(functional)) {
-      k <- NCOL(z)
-
-      switch(functional,
-        "max" = {
-          if(k > 1) {
-            z <- apply(abs(z), 1, max)
-            pos <- TRUE
-          }
-        },
-        "range" = { stop("no plot available for range functional") },
-        "maxL2" = {
-	  if(x$lim.process == "Brownian bridge") {
-            z <- rowSums(z^2)
-	    pos <- TRUE
-	  } else {
-	    stop("no test/plot available for mean L2 functional")
-	  }
-        },
-
-        "meanL2" = {
-	  if(x$lim.process == "Brownian bridge") {
-            z <- rowSums(z^2)
-	    ave <- TRUE
-	    pos <- TRUE
-	  } else {
-	    stop("no test/plot available for mean L2 functional")
-	  }
-        })
-    }
-    
-    if(is.null(ylim)) {
-      ymax <- max(c(z, bound))
-      if(pos) ymin <- 0
-      else ymin <- min(c(z, -bound))
-      ylim <- c(ymin, ymax)
-    }
-
-    if(boundary)
-        mpanel <- function(y, ...) {
-            lines(y, ...)
-            lines(bound, col=2)
-            lines(-bound, col=2)
-            abline(0,0)
-        }
-    else
-        mpanel <- function(y, ...) {
-            lines(y, ...)
-            abline(0,0)
-        }
-     if(!is.quasits(z)) z <- quasits(z, time(x))
-     if(is.null(ylab) & NCOL(z) < 2) ylab <- "empirical fluctuation process"
-     plot(z, main = main, xlab = xlab, ylab = ylab, ylim = ylim, panel = mpanel, ...)
-}
-
 efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time = max),
 		     boundary = function(x) rep(1, length(x)),
 		     computePval = NULL,
@@ -200,7 +122,16 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
     if(is.null(nproc)) {
       z <- simulateDist(nobs = nobs, nrep = nrep, nproc = 1,
              h = h, lim.process = lim.process, functional = myfun)
-      computePval <- function(x, nproc = 1) 1 - (sum(z <= x)/nrep)^nproc
+      computePval2 <- function(x, nproc = 1) 1 - (sum(z <= x)/nrep)^nproc
+      
+      zrange <- range(c(0, z))
+      zstat <- seq(zrange[1], zrange[2], length = 100)
+      zval <- sapply(zstat, computePval2)
+      pfun <- approxfun(zstat, zval)
+      computePval <- function(x, nproc = 1) {
+        1 - (1 - ifelse(x > zrange[2], 0, pfun(x)))^nproc
+      }
+      
       if(is.null(computeCritval))
         computeCritval <- function(alpha, nproc = 1) quantile(z, (1-alpha)^(1/nproc))
     } else {
@@ -209,6 +140,9 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
       for(i in nproc)
         z[, as.character(i)] <- simulateDist(nobs = nobs, nrep = nrep, nproc = i,
                h = h, lim.process = lim.process, functional = myfun)
+
+      ## FIXME
+
       computePval <- function(x, nproc = 1) {
         if(as.character(nproc) %in% colnames(z))
           sum(z[, as.character(nproc)] > x)/nrep
@@ -309,17 +243,44 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
       }
     }
     
-    else if(identical(names(functional), c("time", "comp")))
+    else if(identical(names(functional), c("time", "comp"))) {
 
     ## lambda = lambda_comp(lambda_time(x))
 
-      myfun <- function(x) functional[[2]](apply(as.matrix(x), 2, functional[[1]]))
+      plotProcess <- function(x, alpha = 0.05, aggregate = TRUE,
+	  xlab = "Component", ylab = "Statistic", main = x$type.name, ylim = NULL, ...)
+      {
+        k <- NCOL(x$process)
+        bound <- computeCritval(alpha = alpha, nproc = NCOL(x$process)) * boundary(1:k/k)
+        stat <- rep(computeStatistic(x$process), k)
 
-    else  
+        if(aggregate) {
+	  proc <- apply(as.matrix(x$process), 2, functional[[1]])
+	  
+	  xlabels <- colnames(x$process)
+	  if(is.null(xlabels)) xlabels <- paste("Series", 1:k)
+          if(is.null(ylim)) ylim <- range(c(range(proc), range(bound), range(stat), 0))
+	    
+	  plot(1:k, proc, xlab = xlab, ylab = ylab, main = main, ylim = ylim, axes = FALSE, type = "h", ...)
+	  points(1:k, proc)
+	  box()
+	  axis(2)
+	  axis(1, at = 1:k, labels = xlabels)
+	  abline(0, 0)
+	  lines(bound, col = 2)
+	  if(!identical(functional[[2]], max)) lines(stat, lty = 2)	    
+	} else {
+	  panel <- function(x, ...)
+	  {
+            lines(x, ...)
+            abline(0, 0)
+	  }
+          plot(x$process, xlab = xlab, ylab = ylab, main = main, panel = panel, ...)
+	}      
+      }
+
+    }
     
-    ## functional is no useful list
-    
-      stop("`functional' should be a list with elements `comp' and `time'")
   } else {
 
     ## lambda = lambda(x)
@@ -341,6 +302,7 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
   rval <- list(plotProcess = plotProcess,
                computeStatistic = computeStatistic,
 	       computePval = computePval,
+	       computePval2 = computePval2,
 	       computeCritval = computeCritval)
   class(rval) <- "efpFunctional"
   return(rval)
@@ -543,3 +505,118 @@ print.quasits <- function(x, ...)
 is.quasits <- function(object)
   inherits(object, "quasits")
   
+
+
+
+plot.gefp <- function(x, alpha = 0.05, functional = efpMax, ...)
+{
+  ## if(is.character(functional)) {
+  ##   functional <- match.arg(functional, c("max", "range", "maxL2", "meanL2"))
+  ##   functional <- switch(functional,
+  ##     "max" = efpMax,
+  ##     "range" = efpRange,
+  ##     "maxL2" = efpMaxL2,
+  ##     "meanL2" = efpMeanL2)
+  ## }
+  functional$plotProcess(x, alpha = alpha, ...)
+}
+
+sctest.gefp <- function(x, functional = efpMax)
+{
+  stat <- functional$computeStatistic(x$process)
+  names(stat) <- "f(efp)"
+  rval <- list(statistic = stat,
+               p.value = functional$computePval(stat, NCOL(x$process)),
+	       method = x$type.name,
+	       data.name = deparse(substitute(x)))
+  class(rval) <- "htest"
+  return(rval)
+}
+
+
+## deprecated
+
+boundary.gefp <- function(x, ...)
+{
+  quasits(as.vector(boundary.efp(x, ...)), time(x))
+}
+
+##plot.gefp <- function(x, alpha = 0.05, parm = NULL,
+plotGEFP <- function(x, alpha = 0.05, parm = NULL,
+                     boundary = TRUE, functional = "max", 
+		     main = NULL,  ylim = NULL, xlab = "Time", ylab = NULL,
+		     ...)
+{
+    if(is.null(functional)) fun <- "max"
+      else fun <- match.arg(functional, c("max", "range", "maxL2", "meanL2"))
+    bound <- boundary(x, alpha = alpha, functional = fun)
+    pos <- FALSE
+    ave <- FALSE
+
+    if(is.null(main)){
+            if(fun == "meanL2")
+              main <- paste(x$type.name, "with mean L2 norm")
+	    else if(fun == "maxL2")
+	      main <- paste(x$type.name, "with max L2 norm")
+	    else
+	      main <- x$type.name
+    }
+    
+    z <- x$process
+    if(!is.null(parm)) z <- z[, parm]
+
+    if(!is.null(functional)) {
+      k <- NCOL(z)
+
+      switch(functional,
+        "max" = {
+          if(k > 1) {
+            z <- apply(abs(z), 1, max)
+            pos <- TRUE
+          }
+        },
+        "range" = { stop("no plot available for range functional") },
+        "maxL2" = {
+	  if(x$lim.process == "Brownian bridge") {
+            z <- rowSums(z^2)
+	    pos <- TRUE
+	  } else {
+	    stop("no test/plot available for mean L2 functional")
+	  }
+        },
+
+        "meanL2" = {
+	  if(x$lim.process == "Brownian bridge") {
+            z <- rowSums(z^2)
+	    ave <- TRUE
+	    pos <- TRUE
+	  } else {
+	    stop("no test/plot available for mean L2 functional")
+	  }
+        })
+    }
+    
+    if(is.null(ylim)) {
+      ymax <- max(c(z, bound))
+      if(pos) ymin <- 0
+      else ymin <- min(c(z, -bound))
+      ylim <- c(ymin, ymax)
+    }
+
+    if(boundary)
+        mpanel <- function(y, ...) {
+            lines(y, ...)
+            lines(bound, col=2)
+            lines(-bound, col=2)
+            abline(0,0)
+        }
+    else
+        mpanel <- function(y, ...) {
+            lines(y, ...)
+            abline(0,0)
+        }
+     if(!is.quasits(z)) z <- quasits(z, time(x))
+     if(is.null(ylab) & NCOL(z) < 2) ylab <- "empirical fluctuation process"
+     plot(z, main = main, xlab = xlab, ylab = ylab, ylim = ylim, panel = mpanel, ...)
+}
+
