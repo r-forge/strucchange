@@ -73,7 +73,7 @@ monitorRECritvalData <- function(n, end=10, frequency=1000,
         
         for(ee in 1:length(end)){
             index <- 1:((end[ee]-1)*frequency)
-            z[k,ee] <- max(b[index])
+            z[k,ee] <- max(abs(b[index]))
         }
     }
     cat("                               \r")
