@@ -14,7 +14,7 @@ confint                 Confidence Intervals for Breakpoints
 covHC                   Heteroskedasticity-Consistent Covariance Matrix
                         Estimation
 durab                   US Labor Productivity
-efp                     Empirical Fluctuation Process
+efp                     Empirical Fluctuation Processes
 logLik.breakpoints      Log Likelihood and Information Criteria for
                         Breakpoints
 mefp                    Monitoring of Empirical Fluctuation Processes

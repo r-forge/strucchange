@@ -16,5 +16,4 @@
 \description{
   These are not to be called by the user.
 }
-\author{Achim Zeileis, Friedrich Leisch}
 \keyword{internal}

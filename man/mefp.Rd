@@ -88,7 +88,6 @@ monitor(obj, data=NULL, verbose=TRUE)
   to \code{"fluctuation"} was used to specify it in earlier versions of
   strucchange. It still can be used now, but will be forced to \code{"RE"}
 }
-\author{Friedrich Leisch}
 \seealso{\code{\link{plot.mefp}}, \code{\link{boundary.mefp}}}
 \references{
   Friedrich Leisch, Kurt Hornik, and Chung-Ming Kuan. Monitoring

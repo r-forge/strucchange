@@ -35,8 +35,6 @@ processes, \emph{Journal of Business & Economic Statistics}, \bold{10}, 321-335.
 Hansen B. (1997), Approximate asymptotic p values for structural-change
 tests, \emph{Journal of Business & Economic Statistics}, \bold{15}, 60-67. }
 
-\author{Achim Zeileis \email{zeileis@ci.tuwien.ac.at}}
-
 \seealso{\code{\link{Fstats}}, \code{\link{boundary.Fstats}},
 \code{\link{sctest.Fstats}}}
 

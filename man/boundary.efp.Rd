@@ -18,8 +18,6 @@
 \value{an object of class \code{"ts"} with the same time properties as
 the time series in \code{x}}
 
-\author{Achim Zeileis \email{zeileis@ci.tuwien.ac.at}}
-
 \seealso{\code{\link{efp}}, \code{\link{plot.efp}}}
 
 \examples{

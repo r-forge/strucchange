@@ -57,8 +57,6 @@ and Management Science", Vienna University of Economics,
 \url{http://www.wu-wien.ac.at/am/wp00.htm#78}.
 }
 
-\author{Achim Zeileis \email{zeileis@ci.tuwien.ac.at}}
-
 \seealso{\code{\link{efp}}, \code{\link{plot.efp}}}
 
 \examples{
