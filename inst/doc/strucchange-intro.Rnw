@@ -6,7 +6,10 @@
 \begin{document}
 
 \SweaveOpts{engine=R,eps=FALSE}
-%% \VignetteIndexEntry{strucchange: An R Package for Testing for Structural Change in Linear Regression Models}
+%\VignetteIndexEntry{strucchange: An R Package for Testing for Structural Change in Linear Regression Models}
+%\VignetteDepends{strucchange}
+%\VignetteKeywords{structural change, CUSUM, MOSUM, recursive estimates, moving estimates, monitoring, R, S}
+%\VignettePackage{strucchange}
 
 \title{\texttt{strucchange}: An \textsf{R}  Package for Testing for Structural
 Change in Linear Regression Models}
