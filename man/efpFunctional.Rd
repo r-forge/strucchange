@@ -83,11 +83,14 @@ and Management Science", Vienna University of Economics,
 \seealso{\code{\link{efp}}, \code{\link{efpFunctional}}}
 
 \examples{
-data(BostonHomicide)
-gcus <- gefp(homicides ~ 1, family = poisson, vcov = kernHAC,
-             data = BostonHomicide)
-plot(gcus, functional = meanL2BB)	   
-gcus
-sctest(gcus, functional = meanL2BB)
+
+if("package:sandwich" \%in\% search() || require(sandwich)) {
+  data(BostonHomicide)
+  gcus <- gefp(homicides ~ 1, family = poisson, vcov = kernHAC,
+               data = BostonHomicide)
+  plot(gcus, functional = meanL2BB)	   
+  gcus
+  sctest(gcus, functional = meanL2BB)
+}
 }
 \keyword{regression}

@@ -1,11 +1,10 @@
+if(!("package:zoo" %in% search() || require(zoo))) warning("Could not load package zoo")
+
 .First.lib <- function(lib, pkg) {
   if(as.numeric(R.Version()$minor) < 7) {
     autoload("confint", "MASS")
   }
 }
-
-if(!("package:zoo" %in% search() || require(zoo))) warning("Could not load package zoo")
-
 
 maxBB <- efpFunctional(lim.process = "Brownian bridge",
   functional = list(comp = function(x) max(abs(x)), time = max),

@@ -45,7 +45,7 @@ gefp(\dots, fit = glm, scores = estfun, vcov = NULL,
   \code{gefp} returns a list of class \code{"gefp"} with components inlcuding
   \itemize
   \item{process}{the fitted empirical fluctuation process of class
-    \code{"zio"},}
+    \code{"zoo"},}
   \item{nreg}{the number of regressors,}
   \item{nobs}{the number of observations,}
   \item{fit}{the fit function used,}
@@ -63,11 +63,15 @@ and Management Science", Vienna University of Economics,
 \seealso{\code{\link{efp}}, \code{\link{efpFunctional}}}
 
 \examples{
-data(BostonHomicide)
-gcus <- gefp(homicides ~ 1, family = poisson, vcov = kernHAC,
-             data = BostonHomicide)
-plot(gcus, aggregate = FALSE)	   
-gcus
-sctest(gcus)
+
+if("package:sandwich" \%in\% search() || require(sandwich)) {
+  data(BostonHomicide)
+  gcus <- gefp(homicides ~ 1, family = poisson, vcov = kernHAC,
+               data = BostonHomicide)
+  plot(gcus, aggregate = FALSE)	   
+  gcus
+  sctest(gcus)
+}
+
 }
 \keyword{regression}
