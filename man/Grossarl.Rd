@@ -42,12 +42,13 @@ closer information see Veichtlbauer et al. (2002).}
 \references{
 Veichtlbauer O., Hanser E., Zeileis A., Leisch F. (2002),
 The Impact Of Policy Interventions on a Pre-Industrial
-Population System in the Austrian Alps, submitted.
+Population System in the Austrian Alps, forthcoming.
 
 Zeileis A., Veichtlbauer O. (2002), Policy Interventions
 Affecting Illegitimacy in Preindustrial Austria:
-A Structural Change Analysis, Austrian Journal of Statistics,
-forthcoming.
+A Structural Change Analysis, \emph{Austrian Journal of Statistics},
+"Festschrift 50 Jahre Österreichische Statistische Gesellschaft",
+\url{http://www.statistik.tuwien.ac.at/oezstat/}, 133-146.
 }
 
 \examples{

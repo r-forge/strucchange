@@ -1,7 +1,7 @@
 \name{efp}
 \alias{efp}
 \alias{print.efp}
-\title{Empirical Fluctuation Process}
+\title{Empirical Fluctuation Processes}
 \description{Computes an empirical fluctuation process according
 to a specified method from the generalized fluctuation test
 framework, which includes CUSUM, MOSUM and estimates-based tests.}
@@ -99,33 +99,38 @@ An R Package for Testing for Structural Change in Linear Regression Models,
 \code{\link{sctest.efp}}, \code{\link{boundary.efp}}}
 
 \examples{
-## Load dataset "nhtemp" with average yearly temperatures in New Haven
-data(nhtemp)
-## plot the data
-plot(nhtemp)
+require(ts)
 
-## test the model null hypothesis that the average temperature remains constant
-## over the years
-## compute OLS-CUSUM fluctuation process
-temp.cus <- efp(nhtemp ~ 1, type = "OLS-CUSUM")
-## plot the process with alternative boundaries
-plot(temp.cus, alpha = 0.01, alt.boundary = TRUE)
-## and calculate the test statistic
-sctest(temp.cus)
+## Nile data with one breakpoint: the annual flows drop in 1898
+## because the first Ashwan dam was built
+data(Nile)
+plot(Nile)
 
+## test the null hypothesis that the annual flow remains constant over the years
+## comput OLS-based CUSUM process and plot
+## with standard and alternative boundaries
+ocus.nile <- efp(Nile ~ 1, type = "OLS-CUSUM")
+plot(ocus.nile)
+plot(ocus.nile, alpha = 0.01, alt.boundary = TRUE)
+## calculate corresponding test statistic
+sctest(ocus.nile)
 
-## Load dataset "USIncExp" with income and expenditure in the US
-## and choose a suitable subset
-data(USIncExp)
-USIncExp2 <- window(USIncExp, start=c(1970,1), end=c(1989,12))
+## UK Seatbelt data: a SARIMA(1,0,0)(1,0,0)_12 model
+## (fitted by OLS) is used and reveals (at least) two
+## breakpoints - one in 1973 associated with the oil crisis and
+## one in 1983 due to the introduction of compulsory
+## wearing of seatbelts in the UK.
+data(UKDriverDeaths)
+seatbelt <- log10(UKDriverDeaths)
+seatbelt <- cbind(seatbelt, lag(seatbelt, k = -1), lag(seatbelt, k = -12))
+colnames(seatbelt) <- c("y", "ylag1", "ylag12")
+seatbelt <- window(seatbelt, start = c(1970, 1), end = c(1984,12))
+plot(seatbelt[,"y"], ylab = expression(log[10](casualties)))
 
-## test the null hypothesis that the way the income is spent in expenditure
-## does not change over time
-## compute moving estimates fluctuation process
-me <- efp(expenditure~income, type="ME", data=USIncExp2, h=0.2)
-## plot the two dimensional fluctuation process with boundaries
-plot(me, functional=NULL)
-## and perform the corresponding test
-sctest(me)
+## use RE process
+re.seat <- efp(y ~ ylag1 + ylag12, data = seatbelt, type = "RE")
+plot(re.seat)
+plot(re.seat, functional = NULL)
+sctest(re.seat)
 }
 \keyword{regression}

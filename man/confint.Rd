@@ -46,7 +46,7 @@
 
   The breakpoints should be computed from a formula with \code{breakpoints},
   then the confidence intervals for the breakpoints can be derived by
-  \code{confint} and these can be visualize by \code{lines}. For an
+  \code{confint} and these can be visualized by \code{lines}. For an
   example see below.
 }
 

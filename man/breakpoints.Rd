@@ -14,7 +14,7 @@
 
 \description{
   Computation of breakpoints in regression relationships. Given a number
-  of breaks \code{breakpoints} computes the optimal breakpoints.
+  of breaks the function computes the optimal breakpoints.
 }
 
 \usage{
@@ -27,8 +27,9 @@
 }
 
 \arguments{
-  \item{formula}{a symbolic description for the model to be tested.}
-  \item{h}{minimal segment size either given as percentage relative to the
+  \item{formula}{a symbolic description for the model in which breakpoints
+    will be estimated.}
+  \item{h}{minimal segment size either given as fraction relative to the
     sample size or as an integer giving the minimal number of observations
     in each segment.}
   \item{breaks}{integer specifying the maximal number of breaks to be calculated.
@@ -80,11 +81,14 @@
 
   The algorithm for computing the optimal breakpoints given the number
   of breaks is based on a dynamic programming approach. The underlying
-  idea is that of the Bellman principle.
+  idea is that of the Bellman principle. The main computational effort
+  is to compute a triangular RSS matrix, which gives the residual
+  sum of squares for a segment starting at observation \eqn{i} and
+  ending at \eqn{i'} with \eqn{i} < \eqn{i'}.
 
-  \code{breakpoints} computes an object of class \code{"breakpointsfull"}
-  which inherits from \code{"breakpoints"}
-  from a \code{formula}. This contains in particular the triangular RSS
+  Given a \code{formula} \code{breakpoints} computes an object of class
+  \code{"breakpointsfull"} which inherits from \code{"breakpoints"}.
+  This contains in particular the triangular RSS
   matrix and functions to extract an optimal segmentation. A \code{summary}
   of this object will give the breakpoints (and associated) breakdates
   for all segmentations up to the maximal number of breaks together
@@ -132,9 +136,9 @@
   For illustration see the commented examples below and Zeileis et al. (2002).
 }
 \value{
-  An object of class \code{"breakpointsfull"} is a list with the following
+  An object of class \code{"breakpoints"} is a list with the following
   elements:
-  \itemize
+  \describe{
    \item{breakpoints}{the breakpoints of the optimal partition with the
      number of breaks specified,}
    \item{RSS}{the associated RSS,}
@@ -142,18 +146,18 @@
    \item{nreg}{the number of regressors,}
    \item{call}{the function call,}
    \item{datatsp}{the time series properties \code{tsp} of the data,
-     if any, \code{c(0, 1, , nobs)} otherwise.}
+     if any, \code{c(0, 1, , nobs)} otherwise.}}
 
   If applied to a \code{formula} \code{breakpoints} returns an object of class
   \code{"breakpointsfull"} (which inherits from \code{"breakpoints"}), that
   contains some additional (or slightly different) elements such as:
-  \itemize
+  \describe{
    \item{breakpoints}{the breakpoints of the minimum BIC partition,}
    \item{RSS}{a function which takes two arguments \code{i,j} and computes
      the residual sum of squares for a segment starting at observation \code{i} and
      ending at \code{j} by looking up the corresponding element in the triangular
      RSS matrix \code{RSS.triang},}
-   \item{RSS.triang}{a list coding the triangular RSS matrix.}
+   \item{RSS.triang}{a list encoding the triangular RSS matrix.}}
 
 }
 

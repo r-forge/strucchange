@@ -37,10 +37,15 @@ data(durab)
 durab.model <- y ~ lag
 
 ## historical tests
+## OLS-based CUSUM process
 ols <- efp(durab.model, data = durab, type = "OLS-CUSUM")
 plot(ols)
+## F statistics
 fs <- Fstats(durab.model, data = durab, from = 0.1)
 plot(fs)
+## F statistics computed with heteroskadisticy-consisten covariance matrix
+fsHC <- Fstats(durab.model, data = durab, from = 0.1, cov.type = "HC")
+plot(fsHC)
 
 ## monitoring
 Durab <- window(durab, start=1964, end = c(1979, 12))

@@ -2,7 +2,7 @@
 \alias{breakfactor}
 \title{Factor Coding of Segmentations}
 \description{
- Generates a factor coding the segmentation given by
+ Generates a factor encoding the segmentation given by
  a set of breakpoints.
 }
 \usage{
@@ -21,7 +21,7 @@ breakfactor(obj, breaks = NULL, labels = NULL, ...)
 }
 
 \value{
-  A factor coding the segmentation.
+  A factor encoding the segmentation.
 }
 
 \seealso{\code{\link{breakpoints}}}

@@ -31,7 +31,7 @@ the unification. All three data frames contain the variables
     \item{R1}{time series. Lag 1 of \code{R},}
     \item{season}{factor coding the seasonality,}
     \item{ecm.res}{vector containing the OLS residuals of
-                   the Lütkepohl et al. (1999) model in the history
+                   the Lütkepohl et al. (1999) model fitted in the history
 		   period.}
 }
 }
