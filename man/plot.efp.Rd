@@ -1,7 +1,7 @@
 \name{plot.efp}
 \alias{plot.efp}
 \title{plot empirical fluctuation process}
-\description{plotting method for objects of class \code{efp}}
+\description{Plotting method for objects of class \code{efp}}
 \usage{
 plot(x, alpha = 0.05, alt = FALSE, boundary = TRUE,
   functional = "max", main = NULL,  ylim = NULL,

@@ -16,7 +16,8 @@ boundary(x, alpha = 0.05, pval = FALSE, asymptotic = FALSE)}
      the p values (only if \code{pval} is \code{TRUE}).}
 }
 
-\value{an object of class "\code{ts}" with the same time properties as \code{x}}
+\value{an object of class "\code{ts}" with the same time properties as
+the time series in \code{x}}
 
 \author{Achim Zeileis \email{zeileis@ci.tuwien.ac.at}}
 

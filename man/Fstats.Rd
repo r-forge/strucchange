@@ -1,13 +1,13 @@
 \name{Fstats}
 \alias{Fstats}
+\alias{print.Fstats}
 \title{F statistics}
-\description{Computes a series of F statistics for a single structural change
-for a specified data window.}
+\description{Computes a series of F statistics for a specified data window.}
 \usage{
-Fstats(formula, from = 0.15, to = NULL, data=list())}
+Fstats(formula, from = 0.15, to = NULL, data)}
 \arguments{
  \item{formula}{a symbolic describtion for the model to be tested}
- \item{from, to}{numerics. If \code{from} is smaller than 1 they are
+ \item{from, to}{numeric. If \code{from} is smaller than 1 they are
      interpreted as percentages of data and by default \code{to} is taken to be
      the 1 - \code{from}. F statistics will be calculated for the observations
      \code{(n*from):(n*to)}, when \code{n} is the number of observations in the
@@ -18,17 +18,19 @@ Fstats(formula, from = 0.15, to = NULL, data=list())}
      called from} }
 \details{For every potential change point in \code{from:to} a F statistic (Chow
 test statistic) is computed. For this an OLS model is fitted for the
-observations before and after the potential change point and the error sum of
-squares is computed (ESS). And an OLS model for all obervations with a
-restricted sum of squares (RSS) is computed. If \code{n} is the number of
-observations and \code{k} the number of regressors in the model, the formula is:
+observations before and after the potential change point, i.e. \code{2k}
+parameters have to be estimated, and the error sum of squares is computed (ESS).
+Another OLS model for all obervations with a restricted sum of squares (RSS) is
+computed, hence \code{k} parameters have to be estimated here. If \code{n} is 
+the number of observations and \code{k} the number of regressors in the model,
+the formula is:
 
 \deqn{F = \frac{(RSS - ESS)/k}{ESS/(n - 2 k)}}{F = (RSS-ESS)/ESS * (n-2*k)/k}
 }
 
-\value{\code{Fstats} returns an object of class "\code{Fstats}" which inherits
-from the class "\code{ts}". The function \code{\link{plot}} has a method
-to plot the F statistics or the
+\value{\code{Fstats} returns an object of class "\code{Fstats}", which contains
+mainly a time series of F statistics. The function \code{\link{plot}} has a
+method to plot the F statistics or the
 corresponding p values; with \code{sctest} a
 supF-, aveF- or expF-test on structural change can be performed.}
 

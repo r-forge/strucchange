@@ -9,7 +9,7 @@ sctest(x, type = c("Rec-CUSUM", "OLS-CUSUM", "Rec-MOSUM", "OLS-MOSUM",
   "fluctuation", "ME", "Chow", "supF", "aveF", "expF"), h = 0.15,
   dynamic = FALSE, tol = 1e-7, alt = FALSE, functional = c("max", "range"),
   from = 0.15, to = NULL, point = floor(0.5*nrow(model.frame(x))),
-  asymptotic = FALSE, data = list())
+  asymptotic = FALSE, data)
 }
 
 \arguments{

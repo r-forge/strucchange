@@ -1,7 +1,7 @@
 \name{plot.Fstats}
 \alias{plot.Fstats}
 \title{plot F statistics}
-\description{plotting method for an object of class \code{Fstats}}
+\description{Plotting method for objects of class \code{Fstats}}
 \usage{
 plot(x, pval = FALSE, asymptotic = FALSE, alpha = 0.05, boundary = TRUE,
   xlab = "Time", ylab = NULL, ylim = NULL, ...)}

@@ -1,5 +1,6 @@
 \name{efp}
 \alias{efp}
+\alias{print.efp}
 \title{empirical fluctuation process}
 \description{Computes an empirical fluctuation process according
 to a specified method from the generalized fluctuation test
@@ -7,7 +8,7 @@ framework}
 \usage{
 efp(formula, type = c("Rec-CUSUM", "OLS-CUSUM",
   "Rec-MOSUM", "OLS-MOSUM", "fluctuation", "ME"), h = 0.15,
-  dynamic = FALSE, rescale = TRUE, tol = 1e-7, data = list())}
+  dynamic = FALSE, rescale = TRUE, tol = 1e-7, data)}
 \arguments{
   \item{formula}{a symbolic describtion for the model to be tested.}
   \item{type}{specifies which type of fluctuation process will be
@@ -20,7 +21,7 @@ efp(formula, type = c("Rec-CUSUM", "OLS-CUSUM",
   \item{rescale}{logical. If \code{TRUE} the estimates will be standardized by
     the regressor matrix of the corresponding subsample according to Kuan & Chen
     (1994); if \code{FALSE} the whole regressor matrix will be used.
-    (only if \code{type} is either \code{"fluctuation"} or \code{"ME"})
+    (only if \code{type} is either \code{"fluctuation"} or \code{"ME"})}
   \item{tol}{tolerance when \code{solve} is used}
   \item{data}{an optional data frame containing the variables in the model. By
      default the variables are taken from the environment which \code{efp} is
@@ -31,19 +32,21 @@ efp(formula, type = c("Rec-CUSUM", "OLS-CUSUM",
 \code{"Rec-MOSUM"} or \code{"OLS-MOSUM"} the function \code{efp} will return a
 one-dimensional empricial process of sums of residuals. Either it will be based
 on recursive residuals or on OLS residuals and the process will contain
-CUmulative SUMs or MOving SUMs of residuals in a certain data window. The size
-of this data window is determined by \code{h}.
+CUmulative SUMs or MOving SUMs of residuals in a certain data window.
+For the MOSUM and ME processes all estimations are done for the
+observations in a moving data window, whose size is determined by \code{h} and
+which is shifted over the whole sample.
 
-If there is a single structural change point \eqn{t*}, the standard CUSUM path starts
-to depart from its mean 0 at \eqn{t*}. The OLS-based CUSUM path will have its peak
-around \eqn{t*}. The MOSUM path should have a strong change at \eqn{t*}.
+If there is a single structural change point \eqn{t^*}, the standard CUSUM path starts
+to depart from its mean 0 at \eqn{t^*}. The OLS-based CUSUM path will have its peak
+around \eqn{t^*}. The MOSUM path should have a strong change at \eqn{t^*}.
 
 If \code{type} is either \code{"fluctuation"} or \code{"ME"} a k-dimensional
 process will be returned, if k is the number of regressors in the model, as it
 is based on recursive OLS estimates of the regression coefficients or moving
 OLS estimates respectively.
 
-Both paths should have a peak around \eqn{t*} if there is a single structural shift.
+Both paths should have a peak around \eqn{t^*} if there is a single structural shift.
 }
 
 \value{\code{efp} returns an object of class "\code{efp}" which inherits
