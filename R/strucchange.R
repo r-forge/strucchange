@@ -8,7 +8,14 @@ efp <- function(formula, data=list(),
     modelterms <- terms(formula, data = data)
     X <- model.matrix(modelterms, data = data)
     n <- nrow(X)
-    if(dynamic) X <- cbind(c(0,y[1:(n-1)]),X)
+    if(dynamic)
+    {
+      Xnames <- colnames(X)
+      X <- cbind(y[1:(n-1)],X[2:n,])
+      colnames(X) <- c("lag", Xnames)
+      y <- y[-1]
+      n <- n-1
+    }
     k <- ncol(X)
     type <- match.arg(type)
 
@@ -42,7 +49,8 @@ efp <- function(formula, data=list(),
                    type.name = NULL,
                    coef = NULL,
                    Q12 = NULL,
-                   datatsp = NULL)
+                   datatsp = NULL,
+		   rescale = rescale)
 
     switch(type,
 
@@ -209,8 +217,8 @@ efp <- function(formula, data=list(),
                {
                    for(i in 0:(n-nh))
                    {
-                       process[, i+1] <- Q12 %*% (lm.fit(
-                                                        as.matrix(X[(i+1):(i+nh),]), y[(i+1):(i+nh)])$coefficients - beta.hat)
+                       process[, i+1] <- Q12 %*% (lm.fit(as.matrix(X[(i+1):(i+nh),]),
+		         y[(i+1):(i+nh)])$coefficients - beta.hat)
                    }
                }
                process <- nh*t(process)/(sqrt(n)*sigma)
@@ -343,7 +351,8 @@ pvalue.efp <- function(x, type, alt.boundary, functional = "max", h = NULL, k = 
     else
     {
       p <- ifelse(x < 0.3, 1 - 0.1465*x,
-       2*(1-pnorm(3*x) + exp(-4*(x^2))*(pnorm(x)+pnorm(5*x)-1)-exp(-16*(x^2))*(1-pnorm(x))))
+       2*(1-pnorm(3*x) +
+ exp(-4*(x^2))*(pnorm(x)+pnorm(5*x)-1)-exp(-16*(x^2))*(1-pnorm(x))))
     }
   },
 
@@ -439,9 +448,10 @@ pvalue.efp <- function(x, type, alt.boundary, functional = "max", h = NULL, k = 
 }
 
 
-sctest.efp <- function(x, alt.boundary = FALSE, functional = c("max", "range"), ...)
+sctest.efp <- function(x, alt.boundary = FALSE, functional = c("max", "range"),
+ ...)
 {
-    
+
     k <- x$nreg
     h <- x$par
     type <- x$type
@@ -449,7 +459,7 @@ sctest.efp <- function(x, alt.boundary = FALSE, functional = c("max", "range"), 
     dname <- paste(deparse(substitute(x)))
     METHOD <- x$type.name
     x <- x$process
-    
+
     switch(type,
 
            "Rec-CUSUM" = {
@@ -557,9 +567,9 @@ Fstats <- function(formula, from = 0.15, to = NULL, data=list())
   if(from < 1)
   {
     from <- floor(from*n)
-    to <- floor(to*n)
+    if(!is.null(to)) to <- floor(to*n)
   }
-  if(is.null(to) || is.na(to)) to <- n - from
+  if(is.null(to)) to <- n - from
   if(from < (k+1))
   {
     from <- k+1
@@ -604,7 +614,7 @@ Fstats <- function(formula, from = 0.15, to = NULL, data=list())
                  call = match.call(),
                  formula = formula,
                  datatsp = datatsp)
-  
+
   class(retval) <- "Fstats"
   return(retval)
 }
@@ -699,10 +709,8 @@ sctest <- function(x, ...)
 
 sctest.formula <- function(formula, type = c("Rec-CUSUM", "OLS-CUSUM",
   "Rec-MOSUM", "OLS-MOSUM", "fluctuation", "ME", "Chow", "supF", "aveF",
-  "expF"), h = 0.15, dynamic = FALSE, tol = 1e-7, alt.boundary = FALSE,
-  functional = c("max", "range"), from = 0.15, to = NULL,
-  point = floor(0.5*nrow(model.frame(formula))), asymptotic = FALSE,
-  data = list(), ...)
+  "expF"), h = 0.15, alt.boundary = FALSE, functional = c("max", "range"),
+  from = 0.15, to = NULL, point = 0.5, asymptotic = FALSE, data = list(), ...)
 {
   type <- match.arg(type)
   dname <- paste(deparse(substitute(formula)))
@@ -715,6 +723,28 @@ sctest.formula <- function(formula, type = c("Rec-CUSUM", "OLS-CUSUM",
     METHOD <- "Chow test"
     k <- ncol(X)
     n <- length(y)
+
+    if(is.ts(data)){
+        ytime <- time(data)
+        yfreq <- frequency(data)
+    }
+    else if(is.ts(y)){
+        ytime <- time(y)
+        yfreq <- frequency(y)
+    }
+
+    ts.eps <- getOption("ts.eps")
+
+    if(length(point)==2) {
+      point <- which(abs(ytime-(point[1]+(point[2]-1)/yfreq)) < ts.eps)
+    }
+    else {
+      if(point < 1)
+      {
+        point <- floor(point*n)
+      }
+    }
+
     if(!((point>k) & (point<(n-k)))) stop("inadmissable change point")
     e <- lm.fit(X,y)$residuals
     u <- c(lm.fit(as.matrix(X[(1:point),]),y[1:point])$residuals,
@@ -731,13 +761,12 @@ sctest.formula <- function(formula, type = c("Rec-CUSUM", "OLS-CUSUM",
   else if(any(type == c("Rec-CUSUM", "OLS-CUSUM",
   "Rec-MOSUM", "OLS-MOSUM", "fluctuation", "ME")))
   {
-    process <- efp(formula, type = type, h = h, dynamic = dynamic, tol = tol,
-    data = data)
+    process <- efp(formula, type = type, h = h, data = data, ...)
     RVAL <- sctest(process, alt.boundary = alt.boundary, functional = functional)
   }
   else if(any(type == c("supF", "aveF", "expF")))
   {
-    fs <- Fstats(formula, from = from, to = to, data=data)
+    fs <- Fstats(formula, from = from, to = to, data=data, ...)
     RVAL <- sctest(fs, type = type)
   }
   RVAL$data.name <- dname
@@ -754,8 +783,9 @@ boundary.efp <- function(x, alpha = 0.05, alt.boundary = FALSE, ...)
     pos <- FALSE
     k <- x$nreg
     h <- x$par
-    
-    bound <- uniroot(function(y) {pvalue.efp(y, type=x$type, alt.boundary=alt.boundary, h=h, k=k) - alpha}, c(0,20))$root
+
+    bound <- uniroot(function(y) {pvalue.efp(y, type=x$type,
+        alt.boundary=alt.boundary, h=h, k=k) - alpha}, c(0,20))$root
     switch(x$type,
            "Rec-CUSUM" = {
                if(alt.boundary)
@@ -776,7 +806,7 @@ boundary.efp <- function(x, alpha = 0.05, alt.boundary = FALSE, ...)
            "OLS-MOSUM" = { bound <- rep(bound, length(x$process))},
            "fluctuation" = { bound <- rep(bound, length(x$process))},
            "ME" = { bound <- rep(bound, length(x$process))})
-    
+
     bound <- ts(bound, end = end(x$process), frequency = frequency(x$process))
     return(bound)
 }

@@ -4,11 +4,25 @@ mefp.formula <-
     function(formula, type = c("OLS-CUSUM", "OLS-MOSUM", "ME", "fluctuation"),
              data=list(), h=1, alpha=0.05, functional = c("max", "range"),
              period=10, tolerance=.Machine$double.eps^0.5,
-             CritvalTable=NULL, rescale=FALSE, border=NULL, ...)
+             CritvalTable=NULL, rescale=NULL, border=NULL, ...)
 {
     type <- match.arg(type)
     functional <- match.arg(functional)
-    val <- efp(formula, type=type, h=h, data=data, rescale=rescale)
+
+    histrescale <- rescale
+    if(type=="fluctuation") histrescale <- TRUE
+    if(is.null(rescale)) {
+      if(type=="fluctuation") {
+        rescale <- FALSE
+	histrescale <- TRUE
+      }
+      else {
+        rescale <- TRUE
+	histrescale <- TRUE
+      }
+    }
+
+    val <- efp(formula, type=type, h=h, data=data, rescale=histrescale)
     val <- mefp(val, alpha=alpha, functional=functional, period=period,
                 tolerance=tolerance, CritvalTable=CritvalTable,
                 rescale=rescale, border=border, ...)
@@ -36,7 +50,8 @@ mefp.efp <-
        data <- as.character(as.list(obj$call)$data)
     }
 
-    if(is.null(rescale)) rescale <- as.list(obj$call)$rescale
+    if(is.null(rescale) & (obj$type == "fluctuation")) rescale <- FALSE
+    if(is.null(rescale)) rescale <- obj$rescale
     if(is.null(rescale)) rescale <- TRUE
 
     ## Bonferroni correction

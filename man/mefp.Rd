@@ -17,7 +17,7 @@ mefp(obj, ...)
 \method{mefp}{formula}(formula, type = c("OLS-CUSUM", "OLS-MOSUM", "ME",
      "fluctuation"), data, h=1, alpha=0.05, functional = c("max", "range"),
     period=10, tolerance=.Machine$double.eps^0.5,
-    CritvalTable=NULL, rescale=FALSE, border=NULL, ...)
+    CritvalTable=NULL, rescale=NULL, border=NULL, ...)
 
 \method{mefp}{efp}(obj, alpha=0.05, functional = c("max", "range"),
     period=10, tolerance=.Machine$double.eps^0.5,
@@ -46,17 +46,17 @@ monitor(obj, data=NULL, verbose=TRUE)
     the history period.}
   \item{tolerance}{Tolerance for numeric \code{==} comparisons.}
   \item{CritvalTable}{Table of critical values, this table is
-    interpolated to get critical values 
+    interpolated to get critical values
     for arbitrary \code{alpha}s. The default depends on the \code{type}
     of fluctuation process (pre-computed tables are available for all
-    types).}
+    types). \emph{This argument is under development.}}
   \item{rescale}{If \code{TRUE} the estimates will be standardized by
     the regressor matrix of the corresponding subsample similar to
     Kuan & Chen (1994); if \code{FALSE} the historic regressor matrix will
-    be used. In \code{mefp.efp} the default is to take the same value as in
-    the original call of \code{efp}.}
+    be used. The default is to rescale the monitoring processes of type
+    \code{"ME"} but not of \code{"fluctuation"}.}
   \item{border}{An optional user-specified border function for the
-    empirical process.} 
+      empirical process. \emph{This argument is under development.}}
   \item{verbose}{If \code{TRUE}, signal breaks by text output.}
   \item{...}{Currently not used.}
 }

@@ -4,10 +4,9 @@
 \title{Structural Change Tests}
 \description{Performs tests for structural change.}
 \usage{
-\method{sctest}{formula}(formula, type = <<see below>>, h = 0.15, dynamic = FALSE,
-    tol = 1e-7, alt.boundary = FALSE, functional = c("max", "range"),
-    from = 0.15, to = NULL, point = floor(0.5*nrow(model.frame(x))),
-    asymptotic = FALSE, data, ...)
+\method{sctest}{formula}(formula, type = <<see below>>, h = 0.15,
+    alt.boundary = FALSE, functional = c("max", "range"),
+    from = 0.15, to = NULL, point = 0.5, asymptotic = FALSE, data, ...)
 }
 
 \arguments{
@@ -33,7 +32,8 @@
      \code{(n*from):(n*to)}, when \code{n} is the number of observations in the
      model. If \code{from} is greater than 1 it is interpreted to be the index
      and \code{to} defaults to \code{n - from}. (for F tests only)}
-  \item{point}{parameter of the Chow test for the potential change point. By
+  \item{point}{parameter of the Chow test for the potential change point.
+    Interpreted analogous to the \code{from} parameter. By
      default taken to be \code{floor(n*0.5)} if \code{n} is the  number of
      observations in the model.}
   \item{asymptotic}{logical. If \code{TRUE} the asymptotic (chi-square)
@@ -42,8 +42,8 @@
   \item{data}{an optional data frame containing the variables in the model. By
      default the variables are taken from the environment which
      \code{sctest} is called from.}
-  \item{...}{currently not used.}
-}
+  \item{...}{further arguments passed to \code{\link{efp}} or
+     \code{\link{Fstats}}.} }
 
 \details{\code{sctest.formula} is mainly a wrapper for \code{\link{sctest.efp}}
 and \code{\link{sctest.Fstats}} as it fits an empirical fluctuation process
