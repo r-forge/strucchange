@@ -40,7 +40,8 @@ efp <- function(formula, data=list(),
                    par = NULL,
                    type.name = NULL,
                    coef = NULL,
-                   Q12 = NULL)
+                   Q12 = NULL,
+                   datatsp = NULL)
 
     switch(type,
 
@@ -231,6 +232,14 @@ efp <- function(formula, data=list(),
         process <- ts(process, start = 0, frequency = (length(process)-1))
 
     retval$process <- process
+
+    if(is.ts(data))
+        retval$datatsp <- tsp(data)
+    else if(is.ts(y))
+        retval$datatsp <- tsp(y)
+    else
+        retval$datatsp <- c(0, 1, n)
+
     m.fit <- lm.fit(X,y)
     retval$coefficients <- coefficients(m.fit)
     retval$sigma <-  sqrt(sum(m.fit$residual^2)/m.fit$df.residual)
@@ -554,14 +563,17 @@ Fstats <- function(formula, from = 0.15, to = NULL, data=list())
       lm.fit(as.matrix(X[((point[i]+1):n),]),y[((point[i]+1):n)])$residuals)
     stats[i] <- ((sum(e^2)-sum(u^2))/k)/((sum(u^2))/(n-2*k))
   }
-  if(is.ts(data))
+  if(is.ts(data)){
       stats <- ts(stats, start = time(data)[from], frequency = frequency(data))
-  else
-  {
-      if(is.ts(y))
-          stats <- ts(stats, start = time(y)[from], frequency = frequency(y))
-      else
-          stats <- ts(stats, start = from/n, frequency = n)
+      datatsp <- tsp(data)
+  }
+  else if(is.ts(y)){
+      stats <- ts(stats, start = time(y)[from], frequency = frequency(y))
+      datatsp <- tsp(y)
+  }
+  else{
+      stats <- ts(stats, start = from/n, frequency = n)
+      datatsp <- c(0, 1, n)
   }
 
   retval <- list(Fstats = stats,
@@ -569,7 +581,9 @@ Fstats <- function(formula, from = 0.15, to = NULL, data=list())
                  nobs = n,
                  par = lambda,
                  call = match.call(),
-                 formula = formula)
+                 formula = formula,
+                 datatsp = datatsp)
+  
   class(retval) <- "Fstats"
   return(retval)
 }

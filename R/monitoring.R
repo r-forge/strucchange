@@ -1,7 +1,7 @@
 mefp <- function(obj, ...) UseMethod("mefp")
 
 mefp.formula <-
-    function(obj, type = c("ME", "fluctuation"), h=0.25, data=list(),
+    function(obj, data=list(), type = c("ME", "fluctuation"), h=1,
              alpha=0.05, functional = c("max", "range"),
              period=10, tolerance=.Machine$double.eps^0.5,
              MECritvalTable=monitorMECritvalTable, rescale=FALSE)
@@ -138,7 +138,7 @@ mefp.efp <-
                 functional=functional, alpha=alpha, critval=critval,
                 histcoef=histcoef, formula=obj$formula,
                 type.name=paste("Monitoring with", obj$type.name),
-                data=data)
+                data=data, histtsp=obj$datatsp)
 
     class(obj) <- "mefp"
     obj
@@ -209,8 +209,9 @@ plot.mefp <- function(x, boundary=TRUE, functional="max", main=NULL,
     if(x$last>x$histsize){
         proc <- rbind(as.matrix(x$efpprocess),
                     as.matrix(x$process))
-        proc <- ts(proc, start=start(x$efpprocess),
-                 frequency=frequency(x$efpprocess))
+        proc <- ts(proc,
+                   end=x$histtsp[2]+(x$last-x$histsize)/x$histtsp[3],
+                   frequency=frequency(x$efpprocess))
         bound <- ts(x$border((x$histsize+1):x$last),
                  end = end(proc), frequency=frequency(proc))
         pos <- FALSE
@@ -254,7 +255,7 @@ plot.mefp <- function(x, boundary=TRUE, functional="max", main=NULL,
             }
             abline(0,0)
         }
-        abline(v=max(time(x$efpprocess)), lty=2)
+        abline(v=x$histtsp[2], lty=2)
     }
     else{
         cat("Nothing monitored yet!\n")
@@ -263,9 +264,9 @@ plot.mefp <- function(x, boundary=TRUE, functional="max", main=NULL,
 
 boundary.mefp <- function(x)
 {
-        ts(x$border((x$histsize+1):x$last),
-           start = max(time(x$efpprocess))+deltat(x$efpprocess),
-           frequency=frequency(x$efpprocess))
+    ts(x$border((x$histsize+1):x$last),
+       start = x$histtsp[2]+1/x$histtsp[3],
+       frequency=x$histtsp[3])
 }
 
 
