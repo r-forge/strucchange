@@ -11,20 +11,27 @@ root.matrix <- function(X)
     }
 }
 
-solveCrossprod <- function(X, method = c("qr", "chol")) {
-  if(match.arg(method) == "qr") chol2inv(qr.R(qr(X)))
-  else chol2inv(chol(crossprod(X)))
+solveCrossprod <- function(X, method = c("qr", "chol", "solve")) {
+  switch(match.arg(method),
+    "qr" = chol2inv(qr.R(qr(X))),
+    "chol" = chol2inv(chol(crossprod(X))),
+    "solve" = solve(crossprod(X)))
 }
 
-covHC <- function(formula, type = c("HC2", "const", "HC", "HC1", "HC3"), data = list())
+
+covHC <- function(x, type = c("HC2", "const", "HC", "HC1", "HC3"))
 {
-  mf <- model.frame(formula, data = data)
-  y <- model.response(mf)
-  X <- model.matrix(formula, data = data)
+  if(is.matrix(x$x))
+    X <- x$x
+  else {
+    mf <- model.frame(x)
+    X <- model.matrix(terms(x), mf)    
+  }
+  res <- residuals(x)
+
   n <- nrow(X)
   k <- ncol(X)
-  Q1 <- solveCrossprod(X)
-  res <- lm.fit(X,y)$residuals
+  Q1 <- summary(x)$cov.unscaled
   sigma2 <- var(res)*(n-1)/(n-k)
   type <- match.arg(type)
 
@@ -49,3 +56,4 @@ covHC <- function(formula, type = c("HC2", "const", "HC", "HC1", "HC3"), data = 
   }
   return(V)
 }
+
