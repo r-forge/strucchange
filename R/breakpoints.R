@@ -152,7 +152,7 @@ print.breakpoints <- function(x, format.times = FALSE, ...)
 
 breakdates <- function(obj, format.times = FALSE)
 {
-  breakdates <- seq(from = obj$datatsp[1], by = 1/obj$datatsp[3], length = obj$nobs)[obj$breakpoints]
+  breakdates <- seq(to = obj$datatsp[2], by = 1/obj$datatsp[3], length = obj$nobs)[obj$breakpoints]
 
   format.time <- function(timevec, freq)
   {
@@ -241,7 +241,7 @@ print.summary.breakpointsfull <- function(x, ...)
   bd[is.na(bd)] <- ""
   rownames(bp) <- paste("m = ", rownames(bp), "  ", sep = "")
   rownames(bd) <- paste("m = ", rownames(bd), "  ", sep = "")
-  SSR <- rbind(names(SSR), round(SSR))
+  SSR <- rbind(names(SSR), round(SSR, digits = 2))
   rownames(SSR) <- c("m","SSR")
   colnames(SSR) <- rep("", breaks + 1)
 
