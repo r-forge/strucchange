@@ -222,7 +222,8 @@ plot.efp <- function(x, alpha = 0.05, alt = FALSE, boundary = TRUE,
             main <- x$type.name
         }
     }
-    
+
+    z <- x$process
     switch(x$type,
            "fluctuation" = {
                if(!is.null(functional) && (functional == "max"))
@@ -242,9 +243,7 @@ plot.efp <- function(x, alpha = 0.05, alt = FALSE, boundary = TRUE,
                            frequency = frequency(x$process))
                    pos <- TRUE
                }
-           },
-
-           { z <- x$process })
+           })
 
     ymax <- max(c(z, bound))
     if(pos)
