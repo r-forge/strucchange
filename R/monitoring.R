@@ -1,13 +1,39 @@
-monitor <- function(obj, ...) UseMethod("monitor")
+mefp <- function(obj, ...) UseMethod("mefp")
 
-monitor.efp <-
+mefp.formula <-
+    function(obj, type = c("ME", "fluctuation"), h=0.25, data=list(),
+             alpha=0.05, functional = c("max", "range"),
+             period=10, tolerance=.Machine$double.eps^0.5,
+             MECritvalTable=monitorMECritvalTable, rescale=FALSE)
+{
+    type <- match.arg(type)
+    functional <- match.arg(functional)
+    val <- efp(obj, type=type, h=h, data=data, rescale=rescale)
+    val <- mefp(val, alpha=alpha, functional=functional, period=period,
+         tolerance=tolerance, MECritvalTable=MECritvalTable,
+         rescale=rescale)
+    if(length(data) == 0)
+        val$data <- NULL
+    else
+        val$data <- deparse(substitute(data))
+    return(val)
+}
+
+mefp.efp <-
     function(obj, alpha=0.05, functional = c("max", "range"),
              period=10, tolerance=.Machine$double.eps^0.5,
-             MECritvalTable=monitorMECritvalTable)
+             MECritvalTable=monitorMECritvalTable, rescale=FALSE)
 {
     functional <- match.arg(functional)
     if(! (obj$type %in% c("ME", "fluctuation")))
         stop("efp must be of type `fluctuation' or `ME'")
+
+    if(is.null(as.list(obj$efpcall)$data)){
+       data <- NULL
+    }
+    else{
+       data <- as.character(as.list(obj$efpcall)$data)
+    }
 
     ## Bonferroni correction
     elemsiglevel <- alpha / obj$nreg
@@ -17,12 +43,13 @@ monitor.efp <-
            "ME" = { winsize <- obj$par },
        { winsize <- 1 })
     K <- floor(winsize*obj$nobs)
-    Q12s <- obj$Q12 * K/(obj$sigma*sqrt(histsize))
+    sigmahat <- obj$sigma
+    Q12s <- obj$Q12 * K/(sigmahat*sqrt(histsize))
 
     computeEmpProc <- function(newcoef, Q){
         if(is.null(Q)) Q <- Q12s
-        else Q <- Q * K/(obj$sigma*sqrt(histsize))
-        t(Q12s %*%(newcoef-histcoef))
+        else Q <- Q * K/(sigmahat*sqrt(histsize))
+        t(Q %*%(newcoef-histcoef))
     }
 
     logPlus <- function(x) ifelse(x<=exp(1),1,log(x))
@@ -50,7 +77,8 @@ monitor.efp <-
             ok <- (k-K+1):k
             retval <- list(coef=NULL, Qr12=NULL)
             retval$coef <- coef(lm.fit(x[ok,,drop=FALSE], y[ok,,drop=FALSE]))
-            retval$Qr12 <- root.matrix(crossprod(x[ok,,drop=FALSE]))/sqrt(K)
+            if(rescale)
+                retval$Qr12 <- root.matrix(crossprod(x[ok,,drop=FALSE]))/sqrt(K)
             retval
         }
         border <- function(k){
@@ -73,7 +101,8 @@ monitor.efp <-
         computeEstims <- function(x, y, k){
             retval <- list(coef=NULL, Qr12=NULL)
             retval$coef <- coef(lm.fit(x[1:k,,drop=FALSE], y[1:k,,drop=FALSE]))
-            retval$Qr12 <- root.matrix(crossprod(x[1:k,,drop=FALSE]))/sqrt(k)
+            if(rescale)
+                retval$Qr12 <- root.matrix(crossprod(x[1:k,,drop=FALSE]))/sqrt(k)
             retval
         }
         border <- function(k){
@@ -108,21 +137,22 @@ monitor.efp <-
                 border=border, computeStat=computeStat,
                 functional=functional, alpha=alpha, critval=critval,
                 histcoef=histcoef, formula=obj$formula,
-                type.name=paste("Monitoring with", obj$type.name))
+                type.name=paste("Monitoring with", obj$type.name),
+                data=data)
 
     class(obj) <- "mefp"
     obj
 }
 
-monitor.mefp <- function(obj, data=NULL, verbose=TRUE, rescale=FALSE){
+monitor <- function(obj, data=NULL, verbose=TRUE){
 
     if(!is.na(obj$breakpoint)) return(TRUE)
     if(missing(data)){
-        if(is.null(as.list(obj$efpcall)$data)){
+        if(is.null(obj$data)){
             data <- list()
         }
         else{
-            data <- get(as.character(as.list(obj$efpcall)$data))
+            data <- get(obj$data)
         }
     }
 
@@ -138,7 +168,6 @@ monitor.mefp <- function(obj, data=NULL, verbose=TRUE, rescale=FALSE){
     foundBreak <- FALSE
     for(k in (obj$last+1):nrow(x)){
         newestims <- obj$computeEstims(x,y,k)
-        if(!rescale) newestims$Qr12 <- NULL
         obj$process <- rbind(obj$process,
                              obj$computeEmpProc(newestims$coef, newestims$Qr12))
         stat <- obj$computeStat(obj$process)
@@ -221,7 +250,7 @@ plot.mefp <- function(obj, boundary=TRUE, functional="max", main=NULL,
             if(boundary)
             {
                 lines(bound, col=2)
-                lines(-bound, col=2)
+                if(!pos) lines(-bound, col=2)
             }
             abline(0,0)
         }

@@ -305,7 +305,7 @@ plot.efp <- function(x, alpha = 0.05, alt = FALSE, boundary = TRUE,
         if(boundary)
         {
             lines(bound, col=2)
-            lines(-bound, col=2)
+            if(!pos) lines(-bound, col=2)
         }
         abline(0,0)
     }
