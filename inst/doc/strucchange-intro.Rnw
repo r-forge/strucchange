@@ -6,6 +6,7 @@
 \begin{document}
 
 \SweaveOpts{engine=R,eps=FALSE}
+%% \VignetteIndexEntry{strucchange: An R Package for Testing for Structural Change in Linear Regression Models}
 
 \title{\texttt{strucchange}: An \textsf{R}  Package for Testing for Structural
 Change in Linear Regression Models}
