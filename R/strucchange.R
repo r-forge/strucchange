@@ -1,283 +1,283 @@
-efp <- function(formula, type = c("Rec-CUSUM", "OLS-CUSUM",
-  "Rec-MOSUM", "OLS-MOSUM", "fluctuation", "ME"), h = 0.15,
-  dynamic = FALSE, rescale = TRUE, tol = 1e-7, data = list())
+efp <- function(formula, data = list(),
+                type = c("Rec-CUSUM", "OLS-CUSUM", "Rec-MOSUM",
+                "OLS-MOSUM", "fluctuation", "ME"), h = 0.15,
+                dynamic = FALSE, rescale = TRUE, tol = 1e-7)
 {
-  mf <- model.frame(formula, data = data)
-  y <- model.response(mf)
-  X <- model.matrix(formula, data = data)
-  n <- nrow(X)
-  if(dynamic) X <- cbind(c(0,y[1:(n-1)]),X)
-  k <- ncol(X)
-
-## recursive residuals
-
-  rec.res <- function(X, y, tol = 1e-7)
-  {
+    mf <- model.frame(formula, data = data)
+    y <- model.response(mf)
+    X <- model.matrix(formula, data = data)
     n <- nrow(X)
-    q <- ncol(X)
-    w <- rep(0,(n-q))
-    for(r in ((q+1):n))
+    if(dynamic) X <- cbind(c(0,y[1:(n-1)]),X)
+    k <- ncol(X)
+    type <- match.arg(type)
+    
+    ## recursive residuals
+    
+    rec.res <- function(X, y, tol = 1e-7)
     {
-      Xr1 <- X[1:(r-1),]
-      xr <- as.vector(X[r,])
-      X1 <- solve(t(Xr1)%*%Xr1, tol=tol)
-      fr <- sqrt(1 + (t(xr) %*% X1 %*% xr))
-      wr <- t(xr)%*% X1 %*%t(Xr1)%*% y[1:(r-1)]
-      w[r-q] <- (y[r] - wr)/fr
+        n <- nrow(X)
+        q <- ncol(X)
+        w <- rep(0,(n-q))
+        for(r in ((q+1):n))
+        {
+            Xr1 <- X[1:(r-1),]
+            xr <- as.vector(X[r,])
+            X1 <- solve(t(Xr1)%*%Xr1, tol=tol)
+            fr <- sqrt(1 + (t(xr) %*% X1 %*% xr))
+            wr <- t(xr)%*% X1 %*%t(Xr1)%*% y[1:(r-1)]
+            w[r-q] <- (y[r] - wr)/fr
+        }
+        return(w)
     }
-    return(w)
-  }
 
-## root of a symmetric matrix
-
-  root.matrix <- function(X)
-  {
-    if((ncol(X)==1)&&(nrow(X)==1)) return(sqrt(X))
-    else
+    ## root of a symmetric matrix
+    
+    root.matrix <- function(X)
     {
-     X.eigen <- eigen(X, symmetric=TRUE)
-     sqomega <- sqrt(diag(X.eigen$values))
-     V <- X.eigen$vectors
-     return(V%*%sqomega%*%t(V))
+        if((ncol(X)==1)&&(nrow(X)==1)) return(sqrt(X))
+        else
+        {
+            X.eigen <- eigen(X, symmetric=TRUE)
+            sqomega <- sqrt(diag(X.eigen$values))
+            V <- X.eigen$vectors
+            return(V%*%sqomega%*%t(V))
+        }
     }
-  }
 
-  switch(match.arg(type),
+    retval <- list(process = NULL,
+                   type = type,
+                   nreg = k,
+                   call = match.call(),
+                   formula = formula,
+                   par = NULL,
+                   type.name = NULL)
 
-## emprical process of Standard CUSUM model
+    switch(type,
 
-  "Rec-CUSUM" = {
-    w <- rec.res(X, y, tol = tol)
-    sigma <- sqrt(var(w))
-    process <- cumsum(c(0,w))/(sigma*sqrt(n-k))
-    if(is.ts(y))
-      process <- ts(process, end = end(y), frequency = frequency(y))
-  },
+           ## empirical process of Standard CUSUM model
 
-## empirical process of OLS-based CUSUM model
+           "Rec-CUSUM" = {
+               w <- rec.res(X, y, tol = tol)
+               sigma <- sqrt(var(w))
+               process <- cumsum(c(0,w))/(sigma*sqrt(n-k))
+               if(is.ts(y))
+                   process <- ts(process, end = end(y),
+                                 frequency = frequency(y))
+               retval$type.name <- "Standard CUSUM test"
+           },
 
-  "OLS-CUSUM" = {
-    e <- lm.fit(X,y)$residuals
-    sigma <- sqrt(var(e)*(n-1)/(n-k))
-    process <- cumsum(c(0,e))/(sigma*sqrt(n))
-    if(is.ts(y))
-      process <- ts(process, end = end(y), frequency = frequency(y))
-  },
+           ## empirical process of OLS-based CUSUM model
 
-## empirical process of Recursive MOSUM model
+           "OLS-CUSUM" = {
+               e <- lm.fit(X,y)$residuals
+               sigma <- sqrt(var(e)*(n-1)/(n-k))
+               process <- cumsum(c(0,e))/(sigma*sqrt(n))
+               if(is.ts(y))
+                   process <- ts(process, end = end(y),
+                                 frequency = frequency(y))
+               retval$type.name <- "OLS-based CUSUM test"
+           },
 
-  "Rec-MOSUM" = {
-    w <- rec.res(X, y, tol = tol)
-    nw <- n - k
-    nh <- floor(nw*h)
-    process <- rep(0, (nw-nh))
-    for(i in 0:(nw-nh))
-    {
-      process[i+1] <- sum(w[(i+1):(i+nh)])
-    }
-    sigma <- sqrt(var(w)*(nw-1)/(nw-k))
-    process <- process/(sigma*sqrt(nw))
-    if(is.ts(y))
-      process <- ts(process, end = time(y)[(n-floor(0.5 + nh/2))],
-                    frequency = frequency(y))
-    else
-      process <- ts(process, end = (n-floor(0.5 + nh/2))/n, frequency=n)
-    attr(process, "par") <- h
-  },
+           ## empirical process of Recursive MOSUM model
 
-## empirical process of OLS-based MOSUM model
+           "Rec-MOSUM" = {
+               w <- rec.res(X, y, tol = tol)
+               nw <- n - k
+               nh <- floor(nw*h)
+               process <- rep(0, (nw-nh))
+               for(i in 0:(nw-nh))
+               {
+                   process[i+1] <- sum(w[(i+1):(i+nh)])
+               }
+               sigma <- sqrt(var(w)*(nw-1)/(nw-k))
+               process <- process/(sigma*sqrt(nw))
+               if(is.ts(y))
+                   process <- ts(process,
+                                 end = time(y)[(n-floor(0.5 + nh/2))],
+                                 frequency = frequency(y))
+               else
+                   process <- ts(process,
+                                 end = (n-floor(0.5 + nh/2))/n,
+                                 frequency=n)
+               retval$par <- h
+               retval$type.name <- "Recursive MOSUM test"
+           },
 
-  "OLS-MOSUM" = {
-    e <- lm.fit(X,y)$residuals
-    nh <- floor(n*h)
-    process <- rep(0, n-nh+1)
-    for(i in 0:(n-nh))
-    {
-      process[i+1] <- sum(e[(i+1):(i+nh)])
-    }
-    sigma <- sqrt(var(e)*(n-1)/(n-k))
-    process <- process/(sigma*sqrt(n))
-    if(is.ts(y))
-      process <- ts(process, end = time(y)[(n-floor(0.5 + nh/2))],
-                    frequency = frequency(y))
-    else
-      process <- ts(process, end = (n-floor(0.5 + nh/2))/n, frequency=n)
-    attr(process, "par") <- h
-  },
+           ## empirical process of OLS-based MOSUM model
 
-## empirical process of recursive estimates fluctuation
+           "OLS-MOSUM" = {
+               e <- lm.fit(X,y)$residuals
+               nh <- floor(n*h)
+               process <- rep(0, n-nh+1)
+               for(i in 0:(n-nh))
+               {
+                   process[i+1] <- sum(e[(i+1):(i+nh)])
+               }
+               sigma <- sqrt(var(e)*(n-1)/(n-k))
+               process <- process/(sigma*sqrt(n))
+               if(is.ts(y))
+                   process <- ts(process,
+                                 end = time(y)[(n-floor(0.5 + nh/2))],
+                                 frequency = frequency(y))
+               else
+                   process <- ts(process,
+                                 end = (n-floor(0.5 + nh/2))/n,
+                                 frequency=n)
+               retval$par <- h
+               retval$type.name <- "OLS-based MOSUM test"
+           },
 
-  "fluctuation" = {
-    m.fit <- lm.fit(X,y)
-    beta.hat <- m.fit$coefficients
-    sigma <- sqrt(sum(m.fit$residual^2)/m.fit$df.residual)
-    process <- matrix(rep(0,k*(n-k+1)), nrow=k)
-    if(rescale)
-    {
-      for(i in k:(n-1))
-      {
-         process[,(i-k+1)] <- root.matrix(crossprod(X[1:i,])) %*% (
-          lm.fit(as.matrix(X[1:i,]), y[1:i])$coefficients - beta.hat)
-      }
-    }
-    else
-    {
-      Qn <- root.matrix(crossprod(X))
-      for(i in k:(n-1))
-      {
-         process[,(i-k+1)] <- Qn %*% (lm.fit(as.matrix(X[1:i,]),
-          y[1:i])$coefficients - beta.hat)
-      }
-    }
-    process <- t(cbind(0, process))*matrix(rep(sqrt((k-1):n),k),
-                 ncol=k)/(sigma*sqrt(n))
-    colnames(process) <- colnames(X)
-    if(is.ts(y))
-      process <- ts(process, end = end(y), frequency = frequency(y))
-    else
-      process <- ts(process, start = 0, frequency = nrow(process) - 1)
-  },
+           ## empirical process of recursive estimates fluctuation
 
-## empirical process of moving estimates fluctuation
+           "fluctuation" = {
+               m.fit <- lm.fit(X,y)
+               beta.hat <- m.fit$coefficients
+               sigma <- sqrt(sum(m.fit$residual^2)/m.fit$df.residual)
+               process <- matrix(rep(0,k*(n-k+1)), nrow=k)
+               if(rescale)
+               {
+                   for(i in k:(n-1))
+                   {
+                       process[,(i-k+1)] <-
+                           root.matrix(crossprod(X[1:i,])) %*%
+                               (lm.fit(as.matrix(X[1:i,]), y[1:i])$coefficients - beta.hat)
+                   }
+               }
+               else
+               {
+                   Qn <- root.matrix(crossprod(X))
+                   for(i in k:(n-1))
+                   {
+                       process[,(i-k+1)] <- Qn %*% (lm.fit(as.matrix(X[1:i,]),
+                                                           y[1:i])$coefficients - beta.hat)
+                   }
+               }
+               process <- t(cbind(0, process))*matrix(rep(sqrt((k-1):n),k),
+                                                      ncol=k)/(sigma*sqrt(n))
+               colnames(process) <- colnames(X)
+               if(is.ts(y))
+                   process <- ts(process, end = end(y), frequency = frequency(y))
+               else
+                   process <- ts(process, start = 0, frequency = nrow(process) - 1)
+               retval$type.name <- "Fluctuation test (recursive estimates test)"
+           },
 
-  "ME" = {
-    m.fit <- lm.fit(X,y)
-    beta.hat <- m.fit$coefficients
-    sigma <- sqrt(sum(m.fit$residual^2)/m.fit$df.residual)
-    nh <- floor(n*h)
-    process <- matrix(rep(0,k*(n-nh+1)), nrow=k)
-    if(rescale)
-    {
-      for(i in 0:(n-nh))
-      {
-        process[, i+1] <- root.matrix(crossprod(X[(i+1):(i+nh),])) %*% (lm.fit(
-         as.matrix(X[(i+1):(i+nh),]), y[(i+1):(i+nh)])$coefficients - beta.hat)
-      }
-    }
-    else
-    {
-      Qn <- root.matrix(crossprod(X))
-      for(i in 0:(n-nh))
-      {
-        process[, i+1] <- Qn %*% (lm.fit(
-         as.matrix(X[(i+1):(i+nh),]), y[(i+1):(i+nh)])$coefficients - beta.hat)
-      }
-    }
-    process <- sqrt(nh/n)*t(process)/sigma
-    colnames(process) <- colnames(X)
-    if(is.ts(y))
-      process <- ts(process, end = time(y)[(n-floor(0.5 + nh/2))],
-                    frequency = frequency(y))
-    else
-      process <- ts(process, end = (n-floor(0.5 + nh/2))/n, frequency = n)
-    attr(process, "par") <- h
-  })
+           ## empirical process of moving estimates fluctuation
 
-  if(!is.ts(process))
-    process <- ts(process, start = 0, frequency = (length(process)-1))
-  attr(process, "type") <- match.arg(type)
-  attr(process, "nreg") <- k
-  attr(process, "call") <- match.call()
-  class(process) <- c("efp", class(process))
-  return(process)
+           "ME" = {
+               m.fit <- lm.fit(X,y)
+               beta.hat <- m.fit$coefficients
+               sigma <- sqrt(sum(m.fit$residual^2)/m.fit$df.residual)
+               nh <- floor(n*h)
+               process <- matrix(rep(0,k*(n-nh+1)), nrow=k)
+               if(rescale)
+               {
+                   for(i in 0:(n-nh))
+                   {
+                       process[, i+1] <- root.matrix(crossprod(X[(i+1):(i+nh),])) %*% (lm.fit(
+                                                                                              as.matrix(X[(i+1):(i+nh),]), y[(i+1):(i+nh)])$coefficients - beta.hat)
+                   }
+               }
+               else
+               {
+                   Qn <- root.matrix(crossprod(X))
+                   for(i in 0:(n-nh))
+                   {
+                       process[, i+1] <- Qn %*% (lm.fit(
+                                                        as.matrix(X[(i+1):(i+nh),]), y[(i+1):(i+nh)])$coefficients - beta.hat)
+                   }
+               }
+               process <- sqrt(nh/n)*t(process)/sigma
+               colnames(process) <- colnames(X)
+               if(is.ts(y))
+                   process <- ts(process, end = time(y)[(n-floor(0.5 + nh/2))],
+                                 frequency = frequency(y))
+               else
+                   process <- ts(process, end = (n-floor(0.5 + nh/2))/n, frequency = n)
+               retval$par <- h
+               retval$type.name <- "ME test (moving estimates test)"
+           })
+
+    if(!is.ts(process))
+        process <- ts(process, start = 0, frequency = (length(process)-1))
+
+    retval$process <- process
+    class(retval) <- c("efp")
+    return(retval)
 }
 
 
 plot.efp <- function(x, alpha = 0.05, alt = FALSE, boundary = TRUE,
-  functional = "max", main = NULL,  ylim = NULL,
-  ylab = "empirical fluctuation process", ...)
+                     functional = "max", main = NULL,  ylim = NULL,
+                     ylab = "empirical fluctuation process", ...)
 {
-  bound <- boundary(x, alpha = alpha, alt = alt)
-  class(x) <- class(x)[-1]
-  pos <- FALSE
-  type <- match.arg(attr(x, "type"),
-    c("Rec-CUSUM", "OLS-CUSUM", "Rec-MOSUM", "OLS-MOSUM", "fluctuation", "ME"))
-  k <- attr(x, "nreg")
-  h <- attr(x, "par")
-  switch(type,
+    bound <- boundary(x, alpha = alpha, alt = alt)
+    pos <- FALSE
 
-  "Rec-CUSUM" = {
-    if(alt) {
-      if(is.null(main)) main <- "Standard CUSUM test with alternative boundaries"}
-    else {
-      if(is.null(main)) main <- "Standard CUSUM test"}
-  },
-
-  "OLS-CUSUM" = {
-    if(alt) {
-      if(is.null(main)) main <- "OLS-based CUSUM test with alternative boundaries"}
-    else {
-      if(is.null(main)) main <- "OLS-based CUSUM test"}
-  },
-
-  "Rec-MOSUM" = { if(is.null(main)) main <- "Recursive MOSUM test"},
-
-  "OLS-MOSUM" = {if(is.null(main)) main <- "OLS-based MOSUM test"},
-
-  "fluctuation" = {
-    if(is.null(main)) main <- "Fluctuation test (recursive estimates test)"
-    if(!is.null(functional) && (functional == "max"))
-    {
-      x <- ts(apply(abs(x), 1, 'max'),
-                      start = start(x), frequency = frequency(x))
-      pos <- TRUE
+    if(is.null(main)){
+        if(alt & (x$type %in% c("Rec-CUSUM", "OLS-CUSUM"))){
+            main <- paste(x$type.name, "with alternative boundaries")
+        }
+        else{
+            main <- x$type.name
+        }
     }
-  },
+    
+    switch(x$type,
+           "fluctuation" = {
+               if(!is.null(functional) && (functional == "max"))
+               {
+                   z <- ts(apply(abs(x$process), 1, 'max'),
+                           start = start(x$process),
+                           frequency = frequency(x$process))
+                   pos <- TRUE
+               }
+           },
 
-  "ME" = {
-    if(is.null(main)) main <- "ME test (moving estimates test)"
-    if(!is.null(functional) && (functional == "max"))
-    {
-      x <- ts(apply(abs(x), 1, 'max'),
-                      start = start(x), frequency = frequency(x))
-      pos <- TRUE
-    }
-  })
+           "ME" = {
+               if(!is.null(functional) && (functional == "max"))
+               {
+                   z <- ts(apply(abs(x$process), 1, 'max'),
+                           start = start(x$process),
+                           frequency = frequency(x$process))
+                   pos <- TRUE
+               }
+           },
 
-  ymax <- max(c(x, bound))
-  if(pos)
-    ymin <- 0
-  else
-    ymin <- min(c(x, -bound))
-  if(is.null(ylim)) ylim <- c(ymin, ymax)
-  if(boundary)
-    panel <- function(y, ...)
-    {
-      lines(y, ...)
-      lines(bound)
-      lines(-bound)
-      abline(0,0)
-    }
-  else
-    panel <- function(y, ...)
-    {
-      lines(y, ...)
-      abline(0,0)
-    }
-  if(any(attr(x, "class") == "mts"))
-    plot(x, main = main, panel = panel, ...)
-  else
-  {
-    plot(x, main = main, ylab = ylab, ylim = ylim, ...)
+           { z <- x$process })
+
+    ymax <- max(c(z, bound))
+    if(pos)
+        ymin <- 0
+    else
+        ymin <- min(c(z, -bound))
+    if(is.null(ylim)) ylim <- c(ymin, ymax)
     if(boundary)
+        panel <- function(y, ...)
+        {
+            lines(y, ...)
+            lines(bound)
+            lines(-bound)
+            abline(0,0)
+        }
+    else
+        panel <- function(y, ...)
+        {
+            lines(y, ...)
+            abline(0,0)
+        }
+    if(any(attr(z, "class") == "mts"))
+        plot(z, main = main, panel = panel, ...)
+    else
     {
-      lines(bound)
-      lines(-bound)
+        plot(z, main = main, ylab = ylab, ylim = ylim, ...)
+        if(boundary)
+        {
+            lines(bound)
+            lines(-bound)
+        }
+        abline(0,0)
     }
-    abline(0,0)
-  }
-}
-
-print.efp <- function(x, ...)
-{
-    x.orig <- x
-    cat("\nEmpirical fluctuation process of type", deparse(attr(x, "type")), "\n\n")
-    cat("Call: ", deparse(attr(x, "call")), "\n\n", sep = "")
-    attr(x, "type") <- attr(x, "call") <- NULL
-    class(x) <- class(x)[-1]
-    print(x, ...)
-    cat("\n")
-    invisible(x.orig)
 }
 
 pvalue.efp <- function(x, type, alt, functional = "max", h = NULL, k = NULL)
@@ -400,91 +400,90 @@ pvalue.efp <- function(x, type, alt, functional = "max", h = NULL, k = NULL)
 
 sctest.efp <- function(x, alt = FALSE, functional = c("max", "range"))
 {
-  k <- attr(x, "nreg")
-  h <- attr(x, "par")
-  type <- match.arg(attr(x, "type"),
-    c("Rec-CUSUM", "OLS-CUSUM", "Rec-MOSUM", "OLS-MOSUM", "fluctuation", "ME"))
-  functional <- match.arg(functional)
-  dname <- paste(deparse(substitute(x)))
-  switch(type,
+    
+    k <- x$nreg
+    h <- x$par
+    type <- x$type
+    functional <- match.arg(functional)
+    dname <- paste(deparse(substitute(x)))
+    METHOD <- x$type.name
+    x <- x$process
+    
+    switch(type,
 
-  "Rec-CUSUM" = {
-    j <- (1:(length(x)-1))/(length(x)-1)
-    x <- x[-1]
-    if(alt)
-    {
-      METHOD <- "Standard CUSUM test with alternative boundaries"
-      STAT <- max(abs(x/sqrt(j)))
-    }
-    else
-    {
-      METHOD <- "Standard CUSUM test"
-      STAT <- max(abs(x/(1 + 2*j)))
-    }
-    names(STAT) <- "S"
-  },
+           "Rec-CUSUM" = {
+               j <- (1:(length(x)-1))/(length(x)-1)
+               x <- x[-1]
+               if(alt)
+               {
+                   STAT <- max(abs(x/sqrt(j)))
+                   METHOD <- paste(METHOD, "with alternative boundaries")
+               }
+               else
+               {
+                   STAT <- max(abs(x/(1 + 2*j)))
+               }
+               names(STAT) <- "S"
+           },
 
-  "OLS-CUSUM" = {
-    if(alt)
-    {
-      METHOD <- "OLS-based CUSUM test with alternative boundaries"
-      j <- (1:(length(x)-2))/(length(x)-1)
-      x <- x[-1*c(1,length(x))]
-      STAT <- max(abs(x/sqrt(j*(1-j))))
-    }
-    else
-    {
-      METHOD <- "OLS-based CUSUM test with alternative boundaries"
-      STAT <- max(abs(x))
-    }
-    names(STAT) <- "S0"
-  },
+           "OLS-CUSUM" = {
+               if(alt)
+               {
+                   j <- (1:(length(x)-2))/(length(x)-1)
+                   x <- x[-1*c(1,length(x))]
+                   STAT <- max(abs(x/sqrt(j*(1-j))))
+                   METHOD <- paste(METHOD, "with alternative boundaries")
+               }
+               else
+               {
+                   STAT <- max(abs(x))
+               }
+               names(STAT) <- "S0"
+           },
 
-  "Rec-MOSUM" = {
-    METHOD <- "Recursive MOSUM test"
-    STAT <- max(abs(x))
-    names(STAT) <- "M"
-  },
+           "Rec-MOSUM" = {
+               STAT <- max(abs(x))
+               names(STAT) <- "M"
+           },
 
-  "OLS-MOSUM" = {
-    METHOD <- "OLS-based MOSUM test"
-    STAT <- max(abs(x))
-    names(STAT) <- "M0"
-  },
+           "OLS-MOSUM" = {
+               STAT <- max(abs(x))
+               names(STAT) <- "M0"
+           },
 
-  "fluctuation" = {
-    switch(functional,
-    "max" = {
-      STAT <- max(abs(x))
-      METHOD <- "Fluctuation test (recursive estimates test)"
-    },
-    "range" = {
-      myrange <- function(y) diff(range(y))
-      if(any(class(x)=="mts")) x <- x[-1,]
-      else x <- as.matrix(x[-1])
-      STAT <- max(apply(x,2,myrange))
-      METHOD <- "Fluctuation test (recursive estimates test) with range norm"
-    })
-    names(STAT) <- "FL"
-  },
+           "fluctuation" = {
+               switch(functional,
+                      "max" = {
+                          STAT <- max(abs(x))
+                      },
+                      "range" = {
+                          myrange <- function(y) diff(range(y))
+                          if(any(class(x)=="mts")) x <- x[-1,]
+                          else x <- as.matrix(x[-1])
+                          STAT <- max(apply(x,2,myrange))
+                          METHOD <- paste(METHOD, "with range norm")
+                      })
+               names(STAT) <- "FL"
+           },
 
-  "ME" = {
-    switch(functional,
-    "max" = {
-      STAT <- max(abs(x))
-      METHOD <- "Fluctuation test (moving estimates test)"
-    },
-    "range" = {
-      myrange <- function(y) diff(range(y))
-      STAT <- max(apply(x,2,myrange))
-      METHOD <- "Fluctuation test (moving estimates test) with range norm"
-    })
-    names(STAT) <- "ME"
-  })
-  PVAL <- pvalue.efp(STAT, type, alt, functional = functional, h = h, k = k)
-  RVAL <- list(statistic = STAT, p.value = PVAL, method = METHOD, data.name = dname)
-  class(RVAL) <- "htest"
-  return(RVAL)
+           "ME" = {
+               switch(functional,
+                      "max" = {
+                          STAT <- max(abs(x))
+                      },
+                      "range" = {
+                          myrange <- function(y) diff(range(y))
+                          STAT <- max(apply(x,2,myrange))
+                          METHOD <- paste(METHOD, "with range norm")
+                      })
+               names(STAT) <- "ME"
+           })
+    PVAL <- pvalue.efp(STAT, type, alt,
+                       functional = functional, h = h, k = k)
+    RVAL <- list(statistic = STAT, p.value = PVAL,
+                 method = METHOD, data.name = dname)
+    class(RVAL) <- "htest"
+    return(RVAL)
 }
 
 Fstats <- function(formula, from = 0.15, to = NULL, data=list())
@@ -530,85 +529,92 @@ Fstats <- function(formula, from = 0.15, to = NULL, data=list())
     stats <- ts(stats, start = time(y)[from], frequency = frequency(y))
   else
     stats <- ts(stats, start = from/n, frequency = n)
-  attr(stats, "nreg") <- k
-  attr(stats, "nobs") <- n
-  attr(stats, "par") <- lambda
-  attr(stats, "call") <- match.call()
-  attr(stats, "class") <- c("Fstats", class(stats))
-  return(stats)
+
+  retval <- list(Fstats = stats,
+                 nreg = k,
+                 nobs = n,
+                 par = lambda,
+                 call = match.call(),
+                 formula = formula)
+  class(retval) <- "Fstats"
+  return(retval)
+}
+
+print.efp <- function(x, ...)
+{
+    cat("\nEmpirical Fluctuation Process:", x$type.name, "\n\n")
+    cat("Call: ")
+    print(x$call)
+    cat("\n")
 }
 
 print.Fstats <- function(x, ...)
 {
-    x.orig <- x
     cat("\nF statistics \n\n")
-#    cat("number of regressors: ", deparse(attr(x, "nreg")), "\n")
-#    cat("number of observations: ", deparse(attr(x, "nobs")), "\n")
-#    cat("parameter: ", deparse(attr(x, "par")), "\n\n")
-    cat("Call: ", deparse(attr(x, "call")), "\n\n", sep = "")
-    attr(x, "call") <- NULL # attr(x, "nreg") <- attr(x, "nobs") <- attr(x, "par") <- NULL
-    class(x) <- class(x)[-1]
-    print(x, ...)
+    cat("Call: ")
+    print(x$call)
     cat("\n")
-    invisible(x)
 }
 
 plot.Fstats <- function(x, pval = FALSE, asymptotic = FALSE,
-  alpha = 0.05, boundary = TRUE, xlab = "Time", ylab = NULL,
-  ylim = NULL, ...)
+                        alpha = 0.05, boundary = TRUE,
+                        xlab = "Time", ylab = NULL,
+                        ylim = NULL, ...)
 {
-  k <- attr(x, "nreg")
-  n <- attr(x, "nobs")
-  bound <- boundary(x, alpha = alpha, pval = pval, asymptotic = asymptotic)
-  attr(x, "class") <- class(x)[-1]
-  if(pval)
-  {
-    if(asymptotic)
-      x <- 1 - pchisq(x, k)
+    k <- x$nreg
+    n <- x$nobs
+    bound <- boundary(x, alpha = alpha, pval = pval, asymptotic = asymptotic)
+    x <- x$Fstats
+    
+    if(pval)
+    {
+        if(asymptotic)
+            x <- 1 - pchisq(x, k)
+        else
+            x <- 1 - pf(x, k, (n-2*k))
+        if(is.null(ylab)) ylab <- "p values"
+    }
     else
-      x <- 1 - pf(x, k, (n-2*k))
-    if(is.null(ylab)) ylab <- "p values"
-  }
-  else
-    if(is.null(ylab)) ylab <- "F statistics"
-  if(is.null(ylim)) ylim <- c(0, max(c(x,bound)))
-  plot(x, xlab = xlab, ylab = ylab, ylim = ylim, ...)
-  abline(0,0)
-  if(boundary) lines(bound)
+        if(is.null(ylab)) ylab <- "F statistics"
+    if(is.null(ylim)) ylim <- c(0, max(c(x,bound)))
+    plot(x, xlab = xlab, ylab = ylab, ylim = ylim, ...)
+    abline(0,0)
+    if(boundary) lines(bound)
 }
 
 sctest.Fstats <- function(x, type = c("supF", "aveF", "expF"), asymptotic = FALSE)
 {
-  k <- attr(x, "nreg")
-  n <- attr(x, "nobs")
-  lambda <- attr(x, "par")
-  dname <- paste(deparse(substitute(x)))
-  switch(match.arg(type),
-  supF = {
-    STATISTIC <- max(x)
-    names(STATISTIC) <- "sup.F"
-    METHOD <- "supF test"
-  },
-  aveF = {
-    STATISTIC <- mean(x)
-    names(STATISTIC) <- "ave.F"
-    METHOD <- "aveF test"
-  },
-  expF = {
-    STATISTIC <- log(mean(exp(0.5*x)))
-    names(STATISTIC) <- "exp.F"
-    METHOD <- "expF test"
-  })
-  if((lambda == 1) & !(type == "expF") & !asymptotic)
-  {
-    METHOD <- "Chow test"
-    PVAL <- 1 - pf(STATISTIC, k, (n-2*k))
-  }
-  else
-      PVAL <- pvalue.Fstats(STATISTIC, type = type, k, lambda)
-  RVAL <- list(statistic = STATISTIC, p.value = PVAL, method = METHOD, data.name = dname)
-  class(RVAL) <- "htest"
-  return(RVAL)
+    dname <- paste(deparse(substitute(x)))
+    type <- match.arg(type)
+    switch(type,
+           supF = {
+               STATISTIC <- max(x$Fstats)
+               names(STATISTIC) <- "sup.F"
+               METHOD <- "supF test"
+           },
+           aveF = {
+               STATISTIC <- mean(x$Fstats)
+               names(STATISTIC) <- "ave.F"
+               METHOD <- "aveF test"
+           },
+           expF = {
+               STATISTIC <- log(mean(exp(0.5*x$Fstats)))
+               names(STATISTIC) <- "exp.F"
+               METHOD <- "expF test"
+           })
+    if((x$par == 1) & !(type == "expF") & !asymptotic)
+    {
+        METHOD <- "Chow test"
+        PVAL <- 1 - pf(STATISTIC, k, (n-2*k))
+    }
+    else
+        PVAL <- pvalue.Fstats(STATISTIC, type = type,
+                              k=x$nreg, lambda=x$par)
+    
+    RVAL <- list(statistic = STATISTIC, p.value = PVAL,
+                 method = METHOD, data.name = dname)
+    class(RVAL) <- "htest"
+    return(RVAL)
 }
 
 pvalue.Fstats <- function(x, type = c("supF", "aveF", "expF"), k, lambda)
@@ -650,7 +656,7 @@ pvalue.Fstats <- function(x, type = c("supF", "aveF", "expF"), k, lambda)
 
 sctest <- function(x, ...)
 {
-  UseMethod("sctest")
+    UseMethod("sctest")
 }
 
 sctest.formula <- function(x, type = c("Rec-CUSUM", "OLS-CUSUM",
@@ -698,60 +704,60 @@ sctest.formula <- function(x, type = c("Rec-CUSUM", "OLS-CUSUM",
   return(RVAL)
 }
 
-boundary.efp <- function(x, alpha = 0.05, alt = FALSE)
-{
-  class(x) <- class(x)[-1]
-  pos <- FALSE
-  type <- match.arg(attr(x, "type"),
-    c("Rec-CUSUM", "OLS-CUSUM", "Rec-MOSUM", "OLS-MOSUM", "fluctuation", "ME"))
-  k <- attr(x, "nreg")
-  h <- attr(x, "par")
-  bound <- uniroot(function(y) {pvalue.efp(y, type, alt, h=h, k=k) - alpha}, c(0,20))$root
-  switch(type,
-  "Rec-CUSUM" = {
-    if(alt)
-      bound <- sqrt((0:(length(x)-1))/(length(x)-1))*bound
-    else
-      bound <- bound + (2*bound*(0:(length(x)-1))/(length(x)-1))
-  },
-  "OLS-CUSUM" = {
-    if(alt)
-    {
-      j <- (0:(length(x)-1))/(length(x)-1)
-      bound <- sqrt(j*(1-j))*bound
-    }
-    else
-      bound <- rep(bound,length(x))
-  },
-  "Rec-MOSUM" = { bound <- rep(bound, length(x))},
-  "OLS-MOSUM" = { bound <- rep(bound, length(x))},
-  "fluctuation" = { bound <- rep(bound, length(x))},
-  "ME" = { bound <- rep(bound, length(x))})
-
-  bound <- ts(bound, end = end(x), frequency = frequency(x))
-  return(bound)
-}
-
 boundary <- function(x, ...)
 {
-  UseMethod("boundary")
+    UseMethod("boundary")
+}
+
+boundary.efp <- function(x, alpha = 0.05, alt = FALSE)
+{
+    pos <- FALSE
+    k <- x$nreg
+    h <- x$par
+    
+    bound <- uniroot(function(y) {pvalue.efp(y, type=x$type, alt=alt, h=h, k=k) - alpha}, c(0,20))$root
+    switch(x$type,
+           "Rec-CUSUM" = {
+               if(alt)
+                   bound <- sqrt((0:(length(x$process)-1))/(length(x$process)-1))*bound
+               else
+                   bound <- bound + (2*bound*(0:(length(x$process)-1))/(length(x$process)-1))
+           },
+           "OLS-CUSUM" = {
+               if(alt)
+               {
+                   j <- (0:(length(x$process)-1))/(length(x$process)-1)
+                   bound <- sqrt(j*(1-j))*bound
+               }
+               else
+                   bound <- rep(bound,length(x$process))
+           },
+           "Rec-MOSUM" = { bound <- rep(bound, length(x$process))},
+           "OLS-MOSUM" = { bound <- rep(bound, length(x$process))},
+           "fluctuation" = { bound <- rep(bound, length(x$process))},
+           "ME" = { bound <- rep(bound, length(x$process))})
+    
+    bound <- ts(bound, end = end(x$process), frequency = frequency(x$process))
+    return(bound)
 }
 
 boundary.Fstats <- function(x, alpha = 0.05, pval = FALSE, asymptotic = FALSE)
 {
-  k <- attr(x, "nreg")
-  n <- attr(x, "nobs")
-  lambda <- attr(x, "par")
-  bound <- uniroot(function(y) {pvalue.Fstats(y, type="sup", k, lambda) - alpha}, c(0,40))$root
-  if(pval)
-  {
-    if(asymptotic)
-      bound <- 1 - pchisq(bound, k)
-    else
-      bound <- 1 - pf(bound, k, (n-2*k))
-  }
-  bound <- ts(rep(bound, length(x)), end = end(x), frequency = frequency(x))
-  return(bound)
+    bound <- uniroot(function(y) {pvalue.Fstats(y, type="sup",
+                                                x$nreg, x$par) - alpha},
+                     c(0,40))$root
+    if(pval)
+    {
+        if(asymptotic)
+            bound <- 1 - pchisq(bound, x$nreg)
+        else
+            bound <- 1 - pf(bound, x$nreg, (x$nobs-2*x$nreg))
+    }
+    bound <- ts(bound,
+                start = start(x$Fstats),
+                end = end(x$Fstats),
+                frequency = frequency(x$Fstats))
+    return(bound)
 }
 
 
