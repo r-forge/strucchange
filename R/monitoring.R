@@ -171,7 +171,8 @@ print.mefp <- function(obj){
     }
 }
 
-plot.mefp <- function(obj, main=NULL, ...){
+plot.mefp <- function(obj, main=NULL, ylab="empirical fluctuation
+                      process", ...){
 
     if(obj$last>obj$histsize){
         y1 <- rbind(as.matrix(obj$efpprocess),
@@ -180,7 +181,7 @@ plot.mefp <- function(obj, main=NULL, ...){
                  frequency=frequency(obj$efpprocess))
         y2 <- ts(obj$border((obj$histsize+1):obj$last),
                  end = end(y1), frequency=frequency(y1))
-        plot(y1, ty="l", ylim=c(min(y1,-y2), max(y1,y2)), ...)
+        plot(y1, ty="l", ylab=ylab, ylim=c(min(y1,-y2), max(y1,y2)), ...)
         lines(y2, col=2)
         lines(-y2, col=2)
         abline(v=max(time(obj$efpprocess)), lty=2)
