@@ -106,4 +106,4 @@ plot(temp.me)
 ## and perform the corresponding test
 sctest(temp.me)
 }
-\keyword{htest}
+\keyword{regression}

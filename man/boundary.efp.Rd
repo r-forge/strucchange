@@ -2,7 +2,8 @@
 \alias{boundary}
 \alias{boundary.efp}
 \title{Boundary Function for Structural Change Tests}
-\description{a generic function computing boundaries for structural change tests}
+\description{A generic function computing boundaries for structural change
+tests}
 \usage{
 boundary(x, ...)
 boundary(x, alpha = 0.05, alt.boundary = FALSE)}
@@ -40,4 +41,4 @@ bound <- boundary(temp.cus, alpha = 0.01)
 lines(bound, col=2)
 lines(-bound, col=2)
 }
-\keyword{dplot}
+\keyword{regression}

@@ -39,4 +39,4 @@ plot(fs, pval = TRUE, alpha = 0.01)
 ## add the boundary in another colour
 lines(boundary(fs, pval = TRUE, alpha = 0.01), col = 2)
 }
-\keyword{dplot}
+\keyword{regression}

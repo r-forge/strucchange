@@ -59,7 +59,7 @@ Ploberger W., Kraemer W. (1992), The CUSUM test with OLS residuals,
 Zeileis A. (2000), p Values and Alternative Boundaries for CUSUM Tests,
 Working Paper 78, SFB "Adaptive Information Systems and Modelling in Economics
 and Management Science", Vienna University of Economics,
-\url{http://www.wu-wien.ac.at/am/}.
+\url{http://www.wu-wien.ac.at/am/wp00.htm#78}.
 }
 \author{Achim Zeileis \email{zeileis@ci.tuwien.ac.at}}
 

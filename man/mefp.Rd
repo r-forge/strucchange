@@ -52,8 +52,8 @@ monitor(obj, data=NULL, verbose=TRUE)
     for arbitrary \code{alpha}s. By default the pre-computed table
     \code{monitorMECritvalTable} is used.}
   \item{rescale}{If \code{TRUE} the estimates will be standardized by
-    the regressor matrix of the corresponding subsample according to
-    Kuan & Chen (1994); if \code{FALSE} the whole regressor matrix will
+    the regressor matrix of the corresponding subsample similar to
+    Kuan & Chen (1994); if \code{FALSE} the historic regressor matrix will
     be used.}
   \item{verbose}{If \code{TRUE}, signal breaks by text output.}
 }

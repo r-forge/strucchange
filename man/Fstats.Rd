@@ -67,4 +67,4 @@ plot(fs, pval = TRUE, alpha = 0.01)
 ## perform the aveF test
 sctest(fs, type = "aveF")
 }
-\keyword{htest}
+\keyword{regression}
