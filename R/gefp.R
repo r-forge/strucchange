@@ -10,8 +10,12 @@ gefp <- function(...,
 
   if(!is.null(order.by))
   {
-    z <- model.matrix(order.by, data = data)
-    z <- as.vector(z[,ncol(z)])
+    if("formula" %in% class(order.by)) {
+      z <- model.matrix(order.by, data = data)
+      z <- as.vector(z[,ncol(z)])
+    } else {
+      z <- order.by
+    }
     index <- order(z)
     psi <- psi[index, , drop = FALSE]
     z <- z[index]
@@ -20,7 +24,11 @@ gefp <- function(...,
     if(is.ts(psi)) z <- time(psi)
       else z <- index/n
   }
-  z <- c(z[1] - diff(z[1:2]), z)
+
+  if("POSIXt" %in% class(z))
+    z <- c(z[1] + as.numeric(difftime(z[1], z[2], units = "secs")), z)
+  else
+    z <- c(z[1] - diff(z[1:2]), z)
 
   process <- psi/sqrt(n)
 
@@ -53,7 +61,7 @@ gefp <- function(...,
   colnames(process) <- colnames(psi)
   if(!is.null(parm)) process <- process[, parm]
 
-  retval <- list(process = process,
+  retval <- list(process = quasits(process, z),
                  nreg = k,
                  nobs = n,
                  call = match.call(),
@@ -165,7 +173,7 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
 		     computePval = NULL,
 		     computeCritval = NULL,
 		     lim.process = "Brownian bridge",
-		     nobs = 1000, nrep = 5000, h = 0.5)
+		     nobs = 10000, nrep = 50000, nproc = 1:20, h = 0.5)
 {		     
   if(is.list(functional)) {
     if(names(functional) == c("comp", "time")) {
@@ -189,11 +197,22 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
     myfun(x)
     
   if(is.null(computePval)) {
-    z <- simulateDist(nobs = nobs, nrep = nrep, nproc = 1, ## FIXME
-           h = h, lim.process = lim.process, functional = myfun)
-    computePval <- function(x, nproc = 1) sum(x > z)/length(x)
-    if(is.null(computeCritval))
-      computeCritval <- function(alpha) quantile(z, 1 - alpha)
+    if(is.null(nproc)) {
+      z <- simulateDist(nobs = nobs, nrep = nrep, nproc = 1,
+             h = h, lim.process = lim.process, functional = myfun)
+      computePval <- function(x, nproc = 1) 1 - (sum(x <= z)/nrep)^nproc
+      if(is.null(computeCritval))
+        computeCritval <- function(alpha, nproc = 1) quantile(z, (1-alpha)^(1/nproc))
+    } else {
+      z <- matrix(rep(0, nrep * length(nproc)), ncol = length(nproc))
+      colnames(z) <- as.character(nproc)
+      for(i in nproc)
+        z[, as.character(i)] <- simulateDist(nobs = nobs, nrep = nrep, nproc = i,
+               h = h, lim.process = lim.process, functional = myfun)
+      computePval <- function(x, nproc = 1) sum(x > z[, as.character(nproc)])/nrep
+      if(is.null(computeCritval))
+        computeCritval <- function(alpha, nproc = 1) quantile(z[, as.character(nproc)], 1-alpha)
+    }
   }
   if(is.null(computeCritval)) {
     computeCritval <- function(alpha, nproc = 1)
@@ -272,3 +291,32 @@ simulateDist <- function(nobs = 1000, nrep = 5000, nproc = 1,
   return(rval)
 }
 
+
+
+quasits <- function(x, order.by)
+{
+  index <- order(order.by)
+  order.by <- order.by[index]
+  
+  if(is.vector(x))
+    x <- x[index]
+  else if(is.matrix(x))
+    x <- x[index, , drop = FALSE]
+  else
+    stop("`x' has to be a vector a matrix")
+
+  attr(x, "time") <- order.by
+  class(x) <- "quasits"
+  return(x)
+}
+
+time.quasits <- function(x, ...)
+{
+  attr(x, "time")
+}
+
+plot.quasits <- function(x, xlab = "Time",
+  ylab = deparse(substitute(x)), type = "l", ...)
+{
+  plot(time(x), x, xlab = xlab, ylab = ylab, type = type, ...)
+}
