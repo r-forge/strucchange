@@ -67,8 +67,9 @@ efp <- function(formula, data=list(),
            ## empirical process of OLS-based CUSUM model
 
            "OLS-CUSUM" = {
-               e <- lm.fit(X,y)$residuals
-               sigma <- sqrt(var(e)*(n-1)/(n-k))
+               fm <- lm.fit(X,y)
+               e <- fm$residuals
+               sigma <- sqrt(sum(e^2)/fm$df.residual)
                process <- cumsum(c(0,e))/(sigma*sqrt(n))
                if(is.ts(data))
                    process <- ts(process, end = end(data),
@@ -116,14 +117,15 @@ efp <- function(formula, data=list(),
            ## empirical process of OLS-based MOSUM model
 
            "OLS-MOSUM" = {
-               e <- lm.fit(X,y)$residuals
+               fm <- lm.fit(X,y)
+               e <- fm$residuals
+               sigma <- sqrt(sum(e^2)/fm$df.residual)
                nh <- floor(n*h)
                process <- rep(0, n-nh+1)
                for(i in 0:(n-nh))
                {
                    process[i+1] <- sum(e[(i+1):(i+nh)])
                }
-               sigma <- sqrt(var(e)*(n-1)/(n-k))
                process <- process/(sigma*sqrt(n))
                if(is.ts(data))
                    process <- ts(process, end = time(data)[(n-floor(0.5 + nh/2))],
@@ -783,10 +785,16 @@ boundary.Fstats <- function(x, alpha = 0.05, pval = FALSE, aveF =
                             FALSE, asymptotic = FALSE, ...)
 {
     if(aveF)
+    {
       myfun <-  function(y) {pvalue.Fstats(y, type="ave", x$nreg, x$par) - alpha}
+      upper <- 20
+    }
     else
+    {
       myfun <-  function(y) {pvalue.Fstats(y, type="sup", x$nreg, x$par) - alpha}
-    bound <- uniroot(myfun, c(0,40))$root
+      upper <- 40
+    }
+    bound <- uniroot(myfun, c(0,upper))$root
     if(pval)
     {
         if(asymptotic)
