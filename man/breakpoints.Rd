@@ -135,7 +135,7 @@
 
   For illustration see the commented examples below and Zeileis et al. (2002).
 }
-\value{
+\section{Value}{
   An object of class \code{"breakpoints"} is a list with the following
   elements:
   \describe{
@@ -146,7 +146,8 @@
    \item{nreg}{the number of regressors,}
    \item{call}{the function call,}
    \item{datatsp}{the time series properties \code{tsp} of the data,
-     if any, \code{c(0, 1, , nobs)} otherwise.}}
+     if any, \code{c(0, 1, , nobs)} otherwise.}
+  }
 
   If applied to a \code{formula} \code{breakpoints} returns an object of class
   \code{"breakpointsfull"} (which inherits from \code{"breakpoints"}), that
@@ -157,8 +158,8 @@
      the residual sum of squares for a segment starting at observation \code{i} and
      ending at \code{j} by looking up the corresponding element in the triangular
      RSS matrix \code{RSS.triang},}
-   \item{RSS.triang}{a list encoding the triangular RSS matrix.}}
-
+   \item{RSS.triang}{a list encoding the triangular RSS matrix.}
+  }
 }
 
 \references{
