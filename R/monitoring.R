@@ -105,7 +105,8 @@ monitor.efp <-
                 computeEmpProc=computeEmpProc,
                 border=border, computeStat=computeStat,
                 functional=functional, alpha=alpha, critval=critval,
-                histcoef=histcoef, formula=obj$formula)
+                histcoef=histcoef, formula=obj$formula,
+                type.name=paste("Monitoring with", obj$type.name))
 
     class(obj) <- "mefp"
     obj
@@ -139,11 +140,10 @@ monitor.mefp <- function(obj, data=NULL, verbose=TRUE){
                              obj$computeEmpProc(newcoef))
         stat <- obj$computeStat(obj$process)
         obj$statistic <- c(obj$statistic, stat)
-        if(stat > obj$border(k)){
+        if(!foundBreak & (stat > obj$border(k))){
             foundBreak <- TRUE
             obj$breakpoint <- k
-            if(verbose) cat("Break detected at ", k, "\n")
-            break
+            if(verbose) cat("Break detected at observation #", k, "\n")
         }   
     }
     obj$last <- k
@@ -154,8 +154,9 @@ monitor.mefp <- function(obj, data=NULL, verbose=TRUE){
 
 print.mefp <- function(obj){
 
+    cat(obj$type.name, "\n\n")
     cat("Initial call:\n ", deparse(obj$initcall), "\n\n")
-    cat("Last call   :\n ", deparse(obj$call), "\n\n")
+    cat("Last call:\n ", deparse(obj$call), "\n\n")
     cat("Significance level   : ", obj$alpha, "\n")
     cat("Critical value       : ", obj$critval, "\n")
     cat("History size         : ", obj$histsize, "\n")
@@ -170,7 +171,7 @@ print.mefp <- function(obj){
     }
 }
 
-plot.mefp <- function(obj){
+plot.mefp <- function(obj, main=NULL, ...){
 
     if(obj$last>obj$histsize){
         y1 <- rbind(as.matrix(obj$efpprocess),
@@ -179,11 +180,14 @@ plot.mefp <- function(obj){
                  frequency=frequency(obj$efpprocess))
         y2 <- ts(obj$border((obj$histsize+1):obj$last),
                  end = end(y1), frequency=frequency(y1))
-        plot(y1, ty="l", ylim=c(min(y1,-y2), max(y1,y2)))
+        plot(y1, ty="l", ylim=c(min(y1,-y2), max(y1,y2)), ...)
         lines(y2, col=2)
         lines(-y2, col=2)
         abline(v=max(time(obj$efpprocess)), lty=2)
         abline(h=0)
+        if(is.null(main))
+            main <- obj$type.name
+        title(main)
     }
     else{
         cat("Nothing monitored yet!\n")
