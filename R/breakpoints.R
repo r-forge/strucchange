@@ -394,13 +394,15 @@ confint.breakpointsfull <- function(object, parm = NULL, level = 0.95, breaks = 
   lower <- rep(0, nbp)
   bp <- c(0, bp, n)
 
-  fm <- lm(y ~ 0 + X)
-  sigma1 <- sigma2 <- sum(residuals(fm)^2)/n
+  res <- residuals(object, breaks = breaks)
+  sigma1 <- sigma2 <- sum(res^2)/n
   Q1 <- Q2 <- crossprod(X)/n
 
   if(is.null(vcov))
     Omega1 <- Omega2 <- sigma1 * Q1
   else {
+    y.nb <- rowSums(X) + res
+    fm <- lm(y.nb ~ 0 + X)
     if(sandwich) {
       Omega1 <- Omega2 <- n * crossprod(Q1, vcov(fm)) %*% Q1
     } else {
@@ -657,13 +659,15 @@ vcov.breakpointsfull <- function(object, breaks = NULL, names = NULL, het.reg = 
     names <- paste(bd1, "-", bd2) 
   }
     
-  fm <- lm(y ~ 0 + X)
-  sigma2 <- sum(residuals(fm)^2)/n
+  res <- residuals(object, breaks = breaks)
+  sigma2 <- sum(res^2)/n
   Q2 <- crossprod(X)/n
 
   if(is.null(vcov))
     Omega2 <- sigma2 * solve(Q2) / n
   else {
+    y.nb <- rowSums(X) + res
+    fm <- lm(y.nb ~ 0 + X)
     if(sandwich) {
       Omega2 <- vcov(fm)
     } else {
