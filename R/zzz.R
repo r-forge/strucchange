@@ -3,4 +3,3 @@
     autoload("confint", "MASS")
   }
 }
-if(!require(weave)) warning("Could not load package weave")
