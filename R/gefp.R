@@ -42,6 +42,7 @@ gefp <- function(...,
             orig.y <- eval(attr(terms(form), "variables")[[2]], data, env)
             if(is.ts(orig.y)) z <- time(orig.y)
 	    else if(is.zoo(orig.y)) z <- time(orig.y)
+	    else z <- index/n
           } else z <- index/n
     order.name <- "Time"
   }
