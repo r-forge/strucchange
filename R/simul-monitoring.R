@@ -55,7 +55,7 @@ monitorMECritval <- function(x, probs=c(0.9,0.95))
 }
 
 monitorRECritvalData <- function(n, end=10, frequency=1000,
-                                 verbose=FALSE){
+                                 verbose=FALSE, const=FALSE){
     
     dn <- list(NULL, as.character(end))
     
@@ -68,7 +68,9 @@ monitorRECritvalData <- function(n, end=10, frequency=1000,
             cat("  Loop:    ",k,"\r")
         }
         b <- as.vector(rbridge(e,frequency))[-(1:frequency)]
-        b <- b^2/(t*(t-1)) - log(t/(t-1))
+        if(!const)
+            b <- b^2/(t*(t-1)) - log(t/(t-1))
+        
         for(ee in 1:length(end)){
             index <- 1:((end[ee]-1)*frequency)
             z[k,ee] <- max(b[index])
