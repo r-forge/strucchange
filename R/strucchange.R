@@ -60,9 +60,15 @@ efp <- function(formula, data = list(),
                w <- rec.res(X, y, tol = tol)
                sigma <- sqrt(var(w))
                process <- cumsum(c(0,w))/(sigma*sqrt(n-k))
+               if(is.ts(data))
+                   process <- ts(process, end = end(data),
+                                 frequency = frequency(data))
+               else
+               {
                if(is.ts(y))
                    process <- ts(process, end = end(y),
                                  frequency = frequency(y))
+               }
                retval$type.name <- "Standard CUSUM test"
            },
 
@@ -72,9 +78,15 @@ efp <- function(formula, data = list(),
                e <- lm.fit(X,y)$residuals
                sigma <- sqrt(var(e)*(n-1)/(n-k))
                process <- cumsum(c(0,e))/(sigma*sqrt(n))
+               if(is.ts(data))
+                   process <- ts(process, end = end(data),
+                                 frequency = frequency(data))
+               else
+               {
                if(is.ts(y))
                    process <- ts(process, end = end(y),
                                  frequency = frequency(y))
+               }
                retval$type.name <- "OLS-based CUSUM test"
            },
 
@@ -91,14 +103,20 @@ efp <- function(formula, data = list(),
                }
                sigma <- sqrt(var(w)*(nw-1)/(nw-k))
                process <- process/(sigma*sqrt(nw))
-               if(is.ts(y))
+               if(is.ts(data))
+                   process <- ts(process, end = time(data)[(n-floor(0.5 + nh/2))],
+                                 frequency = frequency(data))
+               else
+               {
+                 if(is.ts(y))
                    process <- ts(process,
                                  end = time(y)[(n-floor(0.5 + nh/2))],
                                  frequency = frequency(y))
-               else
+                 else
                    process <- ts(process,
                                  end = (n-floor(0.5 + nh/2))/n,
                                  frequency=n)
+               }
                retval$par <- h
                retval$type.name <- "Recursive MOSUM test"
            },
@@ -115,14 +133,20 @@ efp <- function(formula, data = list(),
                }
                sigma <- sqrt(var(e)*(n-1)/(n-k))
                process <- process/(sigma*sqrt(n))
-               if(is.ts(y))
+               if(is.ts(data))
+                   process <- ts(process, end = time(data)[(n-floor(0.5 + nh/2))],
+                                 frequency = frequency(data))
+               else
+               {
+                 if(is.ts(y))
                    process <- ts(process,
                                  end = time(y)[(n-floor(0.5 + nh/2))],
                                  frequency = frequency(y))
-               else
+                 else
                    process <- ts(process,
                                  end = (n-floor(0.5 + nh/2))/n,
                                  frequency=n)
+               }
                retval$par <- h
                retval$type.name <- "OLS-based MOSUM test"
            },
@@ -155,10 +179,16 @@ efp <- function(formula, data = list(),
                process <- t(cbind(0, process))*matrix(rep(sqrt((k-1):n),k),
                                                       ncol=k)/(sigma*sqrt(n))
                colnames(process) <- colnames(X)
-               if(is.ts(y))
-                   process <- ts(process, end = end(y), frequency = frequency(y))
+               if(is.ts(data))
+                   process <- ts(process, end = end(data),
+                                 frequency = frequency(data))
                else
+               {
+                 if(is.ts(y))
+                   process <- ts(process, end = end(y), frequency = frequency(y))
+                 else
                    process <- ts(process, start = 0, frequency = nrow(process) - 1)
+               }
                retval$type.name <- "Fluctuation test (recursive estimates test)"
            },
 
@@ -189,11 +219,17 @@ efp <- function(formula, data = list(),
                }
                process <- sqrt(nh/n)*t(process)/sigma
                colnames(process) <- colnames(X)
-               if(is.ts(y))
+               if(is.ts(data))
+                   process <- ts(process, end = time(data)[(n-floor(0.5 + nh/2))],
+                                 frequency = frequency(data))
+               else
+               {
+                 if(is.ts(y))
                    process <- ts(process, end = time(y)[(n-floor(0.5 + nh/2))],
                                  frequency = frequency(y))
-               else
+                 else
                    process <- ts(process, end = (n-floor(0.5 + nh/2))/n, frequency = n)
+               }
                retval$par <- h
                retval$type.name <- "ME test (moving estimates test)"
            })
