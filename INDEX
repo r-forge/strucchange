@@ -1,4 +1,6 @@
 Fstats                  F Statistics
+GermanM1                German M1 Money Demand
+Grossarl                Marriages and Births in Grossarl
 USIncExp                Income and Expenditures in the US
 boundary.Fstats         Boundary for F Statistics
 boundary                Boundary Function for Structural Change Tests
@@ -7,6 +9,7 @@ boundary.mefp           Boundary Function for Monitoring of Structural
                         Changes
 covHC                   Heteroskedasticity-Consistent Covariance Matrix
                         Estimation
+durab                   US Labor Productivity
 efp                     Empirical Fluctuation Process
 mefp                    Monitoring of Empirical Fluctuation Processes
 plot.Fstats             Plot F Statistics
