@@ -1,6 +1,6 @@
 \name{sctest.Fstats}
 \alias{sctest.Fstats}
-\title{supF-, aveF- and expF-test}
+\title{supF-, aveF- and expF-Test}
 \description{performs the supF-, aveF- or expF-test}
 \usage{
 sctest(x, type = c("supF", "aveF", "expF"), asymptotic = FALSE)}

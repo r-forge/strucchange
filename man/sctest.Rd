@@ -2,7 +2,7 @@
 \alias{sctest}
 \alias{sctest.formula}
 \title{structural change tests}
-\description{Performs tests on structural change}
+\description{Performs Tests on Structural Change}
 \usage{
 sctest(x, type = <<see below>>, h = 0.15, dynamic = FALSE, tol = 1e-7,
   alt = FALSE, functional = c("max", "range"), from = 0.15, to = NULL,

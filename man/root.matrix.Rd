@@ -1,6 +1,6 @@
 \name{root.matrix}
 \alias{root.matrix}
-\title{root of a matrix}
+\title{Root of a Matrix}
 \description{Computes the root of a symmetric and positive semidefinite matrix.}
 \usage{
 root.matrix(X)
