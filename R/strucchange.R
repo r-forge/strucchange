@@ -19,32 +19,6 @@ efp <- function(formula, data=list(),
     k <- ncol(X)
     type <- match.arg(type)
 
-    ## recursive residuals
-
-    rec.res <- function(X, y, tol = 1e-7)
-    {
-        n <- nrow(X)
-        q <- ncol(X)
-        w <- rep(0,(n-q))
-        Xr1 <- X[1:q,,drop = FALSE]
-        xr <- as.vector(X[q+1,])
-        X1 <- solve(t(Xr1)%*%Xr1, tol=tol)
-        fr <- as.vector((1 + (t(xr) %*% X1 %*% xr)))
-        betar <- X1 %*%t(Xr1)%*% y[1:q]
-        w[1] <- (y[q+1] - t(xr) %*% betar)/sqrt(fr)
-
-        for(r in ((q+2):n))
-        {
-            X1 <- X1 - (X1 %*% outer(xr, xr) %*% X1)/fr
-	    betar <- betar + X1 %*% xr * w[r-q-1]*sqrt(fr)
-    	    xr <- as.vector(X[r,])
-            fr <- as.vector((1 + (t(xr) %*% X1 %*% xr)))
-            w[r-q] <- (y[r] - t(xr) %*% betar)/sqrt(fr)
-        }
-        return(w)
-    }
-
-
     retval <- list(process = NULL,
                    type = type,
                    nreg = k,
@@ -63,7 +37,7 @@ efp <- function(formula, data=list(),
            ## empirical process of Standard CUSUM model
 
            "Rec-CUSUM" = {
-               w <- rec.res(X, y, tol = tol)
+               w <- recresid(X, y, tol = tol)
                sigma <- sqrt(var(w))
                process <- cumsum(c(0,w))/(sigma*sqrt(n-k))
                if(is.ts(data))
@@ -100,7 +74,7 @@ efp <- function(formula, data=list(),
            ## empirical process of Recursive MOSUM model
 
            "Rec-MOSUM" = {
-               w <- rec.res(X, y, tol = tol)
+               w <- recresid(X, y, tol = tol)
                nw <- n - k
                nh <- floor(nw*h)
                process <- rep(0, (nw-nh))
@@ -620,6 +594,9 @@ Fstats <- function(formula, from = 0.15, to = NULL, data = list(),
                     tol=tol) %*% beta2)
      }
   }
+
+  sup.point <- which.max(stats) + from - 1
+
   if(is.ts(data)){
       stats <- ts(stats, start = time(data)[from], frequency = frequency(data))
       datatsp <- tsp(data)
@@ -639,6 +616,7 @@ Fstats <- function(formula, from = 0.15, to = NULL, data = list(),
                  par = lambda,
                  call = match.call(),
                  formula = formula,
+		 breakpoint = sup.point,
                  datatsp = datatsp)
 
   class(retval) <- "Fstats"
