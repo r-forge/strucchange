@@ -13,7 +13,7 @@
  (instead of
      the standard linear boundaries) will be used (for CUSUM processes only).}
   \item{functional}{indicates which functional should be applied to the
-     estimates based processes (\code{"fluctuation"} and \code{"ME"}).}
+     empirical fluctuation process.}
   \item{...}{currently not used.}
 }
 

@@ -3,7 +3,7 @@
 \title{Boundary for Empirical Fluctuation Processes}
 \description{Computes boundary for an object of class \code{"efp"}}
 \usage{
-\method{boundary}{efp}(x, alpha = 0.05, alt.boundary = FALSE, ...)}
+\method{boundary}{efp}(x, alpha = 0.05, alt.boundary = FALSE, functional = "max", ...)}
 
 \arguments{
   \item{x}{an object of class \code{"efp"}.}
@@ -12,6 +12,8 @@
   \item{alt.boundary}{logical. If set to \code{TRUE} alternative boundaries
      (instead of the standard linear boundaries) will be computed (for CUSUM
      processes only).}
+  \item{functional}{indicates which functional should be applied to the
+     empirical fluctuation process.}
   \item{\dots}{currently not used.}
 }
 
