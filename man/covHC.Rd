@@ -17,11 +17,14 @@ covHC(formula, type = c("HC2", "const", "HC", "HC1", "HC3"), data=list())
     is called from.}
 }
 \details{When \code{type = "const"} constant variances are assumed and
-  and \code{cov.estim} just gives a diagonal matrix containing the usual
-  estimates for the variances of the coefficient estimates.
+  and \code{covHC} gives the usual estimate of the covariance matrix of
+  the coefficient estimates:
+
+  \deqn{\hat \sigma^2 (X^\top X)^{-1}}{sigma^2 (X'X)^{-1}}
 
   All other methods do not assume constant variances and are suitable in case of
-  heterskedasticity. For details see the references.
+  heteroskedasticity. \code{"HC"} gives White's estimator; for details see the
+  references.
 }
 \value{A matrix containing the covariance matrix estimate.
 }
@@ -37,5 +40,14 @@ covariance matrix estimators with improved finite sample properties.
 \seealso{\code{\link{lm}}}
 
 \examples{
+## generate linear regression relationship
+## with homoskedastic variances
+x <- sin(1:100)
+y <- 1 + x + rnorm(100)
+## compute usual covariance matrix of coefficient estimates
+covHC(y~x, type="const")
+
+sigma2 <- sum(residuals(lm(y~x))^2)/98
+sigma2 * solve(crossprod(cbind(1,x)))
 }
 \keyword{htest}

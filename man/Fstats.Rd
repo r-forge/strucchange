@@ -21,7 +21,7 @@ Fstats(formula, from = 0.15, to = NULL, data,
      called from.}
  \item{cov.type}{a string indicating which type of covariance matrix
      estimator should be used. Constant homoskedastic variances are assumed
-     if set to \code{"const"} and White's heterskedasticity consistent
+     if set to \code{"const"} and White's heteroskedasticity consistent
      estimator is used if set to \code{"HC"}. And \code{"HC1"} stands for a
      standardized estimator of \code{"HC"}, see also \code{\link{covHC}}.}
  \item{tol}{tolerance when \code{solve} is used.}
@@ -35,7 +35,7 @@ computed, hence \code{k} parameters have to be estimated here. If \code{n} is
 the number of observations and \code{k} the number of regressors in the model,
 the formula is:
 
-\deqn{F = \frac{(RSS - ESS)/k}{ESS/(n - 2 k)}}{F = (RSS-ESS)/ESS * (n-2*k)/k}
+\deqn{F = \frac{(RSS - ESS)}{ESS/(n - 2 k)}}{F = (RSS-ESS)/ESS * (n-2*k)}
 }
 
 \value{\code{Fstats} returns an object of class \code{"Fstats"}, which contains
