@@ -1,6 +1,6 @@
 gefp <- function(...,
   fit = glm, scores = estfun, vcov = NULL,
-  scale = TRUE, sandwich = TRUE,
+  decorrelate = TRUE, sandwich = TRUE,
   order.by = NULL, parm = NULL, data = list())
 {
   fm <- fit(..., data = data)
@@ -22,9 +22,9 @@ gefp <- function(...,
   } else {
     index <- 1:n
     if(is.ts(psi)) z <- time(psi)
-      else if(is.quasits(psi)) z <- time(psi)
+      else if(is.itoo(psi)) z <- time(psi)
       else if(is.ts(data)) z <- time(data)
-      else if(is.quasits(data)) z <- time(data)
+      else if(is.itoo(data)) z <- time(data)
       else z <- index/n
   }
 
@@ -49,7 +49,7 @@ gefp <- function(...,
   process <- rbind(0, process)
   process <- apply(process, 2, cumsum)
 
-  if(scale) process <- t(chol2inv(chol(J12)) %*% t(process))
+  if(decorrelate) process <- t(chol2inv(chol(J12)) %*% t(process))
     else {
       process <- t(1/diag(J12) * t(process))
       if(length(parm) > 1) stop("limiting process is not a Brownian bridge")
@@ -58,12 +58,13 @@ gefp <- function(...,
   colnames(process) <- colnames(psi)
   if(!is.null(parm)) process <- process[, parm]
 
-  retval <- list(process = quasits(process, z),
+  retval <- list(process = itoo(process, z),
                  nreg = k,
                  nobs = n,
                  call = match.call(),
 		 fit = fit,
 		 scores = scores,
+		 fitted.model = fm,
                  par = NULL,
                  lim.process = "Brownian bridge",
 		 type.name = "M-fluctuation test",
@@ -104,21 +105,25 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
     else if(identical(names(functional), c("time", "comp")))
       myfun <- function(x) functional[[2]](apply(as.matrix(x), 2, functional[[1]]))
     else  
-      stop("`functional' should be a list with elements `comp' and `time'")
+      stop("\"functional\" should be a list with elements \"comp\" and \"time\"")
   } else {
     myfun <- functional
   }
 
   ## setup computeStatistic function
-  computeStatistic <- function(x)
-    myfun(as.matrix(x)[-1,])
+  computeStatistic <- function(x) {
+    if (all(as.matrix(x)[1,] < .Machine$double.eps)) 
+      x <- as.matrix(x)[-1,]
+    else x <- as.matrix(x)
+    myfun(x)
+  }
 
   ## if missing simulate values for
   ## computePval and computeCritval
   
   if(is.null(computePval) & is.null(computeCritval)) {
     if(is.null(nproc)) {
-      z <- simulateDist(nobs = nobs, nrep = nrep, nproc = 1,
+      z <- simulateBMDist(nobs = nobs, nrep = nrep, nproc = 1,
              h = h, lim.process = lim.process, functional = myfun)
       
       zquant <- c(0, quantile(z, probs = probs))
@@ -136,7 +141,7 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
       z <- matrix(rep(0, nrep * length(nproc)), ncol = length(nproc))
       colnames(z) <- as.character(nproc)
       for(i in nproc)
-        z[, as.character(i)] <- simulateDist(nobs = nobs, nrep = nrep, nproc = i,
+        z[, as.character(i)] <- simulateBMDist(nobs = nobs, nrep = nrep, nproc = i,
                h = h, lim.process = lim.process, functional = myfun)
 
       zquant <- rbind(0, apply(z, 2, function(x) quantile(x, probs = probs)))
@@ -158,11 +163,13 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
   }
 
   if(is.null(computeCritval)) {
+    nproc <- NULL
     computeCritval <- function(alpha, nproc = 1)
       uniroot(function(y) {computePval(y, nproc = nproc) - alpha}, c(0, 1000))$root
   }
 
   if(is.null(computePval)) {
+    nproc <- NULL
     computePval <- function(x, nproc = 1)
       uniroot(function(y) {computeCritval(y, nproc = nproc) - x}, c(0, 1))$root
   }
@@ -187,10 +194,10 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
 	{
           n <- x$nobs
 	  bound <- computeCritval(alpha = alpha, nproc = NCOL(x$process)) * boundary(0:n/n)
-	  bound <- quasits(bound, time(x))
+	  bound <- itoo(bound, time(x))
 
 	  if(aggregate) {
-	    proc <- quasits(apply(as.matrix(x$process), 1, functional[[1]]), time(x))
+	    proc <- itoo(apply(as.matrix(x$process), 1, functional[[1]]), time(x))
 	    
 	    if(is.null(ylab)) ylab <- "empirical fluctuation process"
 	    if(is.null(ylim)) ylim <- range(c(range(proc), range(bound)))
@@ -222,12 +229,12 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
 	{
           n <- x$nobs
 	  bound <- computeCritval(alpha = alpha, nproc = NCOL(x$process)) * boundary(0:n/n)
-	  bound <- quasits(bound, time(x))
+	  bound <- itoo(bound, time(x))
           stat <- computeStatistic(x$process)
-	  stat <- quasits(rep(stat, length(time(x))), time(x))
+	  stat <- itoo(rep(stat, length(time(x))), time(x))
 
 	  if(aggregate) {
-	    proc <- quasits(apply(as.matrix(x$process), 1, functional[[1]]), time(x))
+	    proc <- itoo(apply(as.matrix(x$process), 1, functional[[1]]), time(x))
 	    
 	    if(is.null(ylab)) ylab <- "empirical fluctuation process"
 	    if(is.null(ylim)) ylim <- range(c(range(proc), range(bound), range(stat)))
@@ -308,13 +315,15 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
                computeStatistic = computeStatistic,
 	       computePval = computePval,
 	       computeCritval = computeCritval,
-	       boundary = boundary)
+	       boundary = boundary,
+	       lim.process = lim.process,
+	       nobs = nobs, nrep = nrep, nproc = nproc)
 	       
   class(rval) <- "efpFunctional"
   return(rval)
 }
 
-simulateDist <- function(nobs = 1000, nrep = 5000, nproc = 1,
+simulateBMDist <- function(nobs = 1000, nrep = 5000, nproc = 1,
                          lim.process = "Brownian bridge", 
 			 h = 0.5, functional = max)
 {
@@ -330,7 +339,7 @@ simulateDist <- function(nobs = 1000, nrep = 5000, nproc = 1,
       x <- matrix(rnorm(nproc * nobs), ncol = nproc)
       x <- apply(x, 2, cumsum)
       x <- rbind(0, x)/sqrt(nobs)
-      rval[i] <- functional(x)
+      rval[i] <- functional(x[-1,,drop = FALSE])
     }
   },
   
@@ -350,7 +359,7 @@ simulateDist <- function(nobs = 1000, nrep = 5000, nproc = 1,
       x <- matrix(rnorm(nproc * nobs), ncol = nproc)
       x <- apply(x, 2, function(z) cumsum(z - mean(z)))
       x <- rbind(0, x)/sqrt(nobs)
-      rval[i] <- functional(x)
+      rval[i] <- functional(x[-1,,drop = FALSE])
     }
   },
   
@@ -370,53 +379,72 @@ simulateDist <- function(nobs = 1000, nrep = 5000, nproc = 1,
 
 
 
-quasits <- function(x, order.by)
+itoo <- function(x, order.by)
 {
   index <- order(order.by)
   order.by <- order.by[index]
+
+  if(NROW(x) != length(index)) stop("dimensions of \"x\" and \"order.by\" do not match")
   
   if(is.vector(x))
     x <- x[index]
   else if(is.matrix(x))
     x <- x[index, , drop = FALSE]
+  else if(is.data.frame(x))
+    x <- x[index, , drop = FALSE]  
   else
-    stop("`x' has to be a vector a matrix")
+    stop("\"x\" has to be a vector, matrix, or data.frame")
 
-  attr(x, "time") <- order.by
-  class(x) <- "quasits"
+  attr(x, "index") <- order.by
+  class(x) <- "itoo"
   return(x)
 }
 
-time.quasits <- function(x, ...)
+index <- function(x, ...)
 {
-  attr(x, "time")
+  UseMethod("index")
 }
 
-as.quasits <- function(x, ...)
-{
-  UseMethod("as.quasits")
-}
-
-as.quasits.default <- function(x, ...)
+index.default <- function(x, ...)
 {
   rval <- as.vector(x)
   dim(rval) <- dim(x)
-  quasits(rval, 1:ifelse(is.null(dim(x)), length(x), dim(x)[1]))
+  1:ifelse(is.null(dim(x)), length(x), dim(x)[1])
+}
+
+index.itoo <- function(x, ...)
+{
+  attr(x, "index")
+}
+
+time.itoo <- function(x, ...)
+{
+  index(x)
+}
+
+as.itoo <- function(x, ...)
+{
+  UseMethod("as.itoo")
+}
+
+as.itoo.default <- function(x, ...)
+{
+  itoo(as.vector(x), index(x))
 }
   
-as.quasits.ts <- function(x, ...)
+as.itoo.ts <- function(x, ...)
 {
   rval <- as.vector(x)
   dim(rval) <- dim(x)
-  quasits(rval, time(x))
+  itoo(rval, time(x))
 }  
 
-as.quasits.irts <- function(x, ...)
+as.itoo.irts <- function(x, ...)
 {
-  quasits(x$value, x$time)
+  itoo(x$value, x$time)
 }
 
-plot.quasits <- function(x,
+plot.itoo <- function(x,
   plot.type = c("multiple", "single"), panel = lines,
   xlab = "Time", ylab = NULL, main = NULL, ylim = NULL,
   oma = c(6, 0, 5, 0), col = 1, lty = 1, nc, ...)
@@ -472,34 +500,32 @@ plot.quasits <- function(x,
   return(invisible(x))
 }
 
-lines.quasits <- function(x, type = "l", ...)
+lines.itoo <- function(x, type = "l", ...)
 {
   if(NCOL(x) == 1) lines(time(x), x, type = type, ...)
     else stop("Can't plot multivariate quasi time series object")
 }
 
-"[.quasits" <- function(x, i, j, ...)
+"[.itoo" <- function(x, i, j, drop = FALSE, ...)
 {
-  if(!is.quasits(x))
-    stop("method is only for quasits objects")
+  if(!is.itoo(x)) stop("method is only for itoo objects")
   x.time <- time(x)
-  attr(x, "time") <- NULL
-  nclass <- class(x)[-(1:which(class(x) == "quasits"))]
+  attr(x, "index") <- NULL
+  nclass <- class(x)[-(1:which(class(x) == "itoo"))]
   if(length(nclass) < 1) nclass <- NULL 
   class(x) <- nclass
   if(NCOL(x) < 2) x <- as.matrix(x)
   if(missing(i)) i <- 1:nrow(x)
   if(missing(j)) j <- 1:ncol(x)
-  return(quasits(x[i, j, ...], x.time[i]))
+  return(itoo(x[i, j, drop = drop, ...], x.time[i]))
 }
 
-print.quasits <- function(x, ...)
+print.itoo <- function(x, ...)
 {
-  if(!is.quasits(x))
-    stop("method is only for quasits objects")
+  if(!is.itoo(x)) stop("method is only for itoo objects")
   x.time <- time(x)
-  attr(x, "time") <- NULL
-  nclass <- class(x)[-(1:which(class(x) == "quasits"))]
+  attr(x, "index") <- NULL
+  nclass <- class(x)[-(1:which(class(x) == "itoo"))]
   if(length(nclass) < 1) nclass <- NULL 
   class(x) <- nclass
   cat("Value:\n")
@@ -508,27 +534,41 @@ print.quasits <- function(x, ...)
   print(x.time)
 }
 
-is.quasits <- function(object)
-  inherits(object, "quasits")
+is.itoo <- function(object)
+  inherits(object, "itoo")
   
 
 
 
-plot.gefp <- function(x, alpha = 0.05, functional = efpMax, ...)
+plot.gefp <- function(x, alpha = 0.05, functional = maxBB, ...)
 {
-  ## if(is.character(functional)) {
-  ##   functional <- match.arg(functional, c("max", "range", "maxL2", "meanL2"))
-  ##   functional <- switch(functional,
-  ##     "max" = efpMax,
-  ##     "range" = efpRange,
-  ##     "maxL2" = efpMaxL2,
-  ##     "meanL2" = efpMeanL2)
-  ## }
+  if(is.character(functional)) {
+    functional <- match.arg(functional, c("max", "range", "maxL2", "meanL2"))
+    lim.process <- switch(x$lim.process,
+      "Brownian motion" = "BM",
+      "Brownian motion increments" = "BMI",
+      "Brownian bridge" = "BB",
+      "Brownian bridge increments" = "BBI")
+    functional <- get(paste(functional, lim.process, sep = "")) ##, pos = "package:strucchange")
+  }
+  if(functional$lim.process != x$lim.process)
+    stop("Limiting process of \"functional\" does not match that of \"x\"")
   functional$plotProcess(x, alpha = alpha, ...)
 }
 
-sctest.gefp <- function(x, functional = efpMax)
+sctest.gefp <- function(x, functional = maxBB)
 {
+  if(is.character(functional)) {
+    functional <- match.arg(functional, c("max", "range", "maxL2", "meanL2"))
+    lim.process <- switch(x$lim.process,
+      "Brownian motion" = "BM",
+      "Brownian motion increments" = "BMI",
+      "Brownian bridge" = "BB",
+      "Brownian bridge increments" = "BBI")
+    functional <- get(paste(functional, lim.process, sep = ""), pos = "package:strucchange")
+  }
+  if(functional$lim.process != x$lim.process)
+    stop("Limiting process of \"functional\" does not match that of \"x\"")
   stat <- functional$computeStatistic(x$process)
   names(stat) <- "f(efp)"
   rval <- list(statistic = stat,
@@ -571,9 +611,9 @@ gbreakpoints <- function(formula, order.by = NULL, h = 0.15, breaks = NULL,
   } else {
     index <- 1:n
     if(is.ts(y)) z <- time(y)
-      else if(is.quasits(y)) z <- time(y)
+      else if(is.itoo(y)) z <- time(y)
       else if(is.ts(data)) z <- time(data)
-      else if(is.quasits(data)) z <- time(data)
+      else if(is.itoo(data)) z <- time(data)
       else z <- index/n
   }
 
@@ -689,7 +729,7 @@ gbreakpoints <- function(formula, order.by = NULL, h = 0.15, breaks = NULL,
 
 boundary.gefp <- function(x, ...)
 {
-  quasits(as.vector(boundary.efp(x, ...)), time(x))
+  itoo(as.vector(boundary.efp(x, ...)), time(x))
 }
 
 ##plot.gefp <- function(x, alpha = 0.05, parm = NULL,
@@ -766,7 +806,7 @@ plotGEFP <- function(x, alpha = 0.05, parm = NULL,
             lines(y, ...)
             abline(0,0)
         }
-     if(!is.quasits(z)) z <- quasits(z, time(x))
+     if(!is.itoo(z)) z <- itoo(z, time(x))
      if(is.null(ylab) & NCOL(z) < 2) ylab <- "empirical fluctuation process"
      plot(z, main = main, xlab = xlab, ylab = ylab, ylim = ylim, panel = mpanel, ...)
 }
