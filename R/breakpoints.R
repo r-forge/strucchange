@@ -28,7 +28,7 @@ breakpoints.formula <- function(formula, h = 0.15, breaks = NULL,
   if(h < 1) h <- floor(n*h)
   if(h <= k)
     stop("minimum segment size must be greater than the number of regressors")
-  if(is.null(breaks)) breaks <- floor(n/h)
+  if(is.null(breaks)) breaks <- floor(n/h) - 1
 
   ## compute ith row of the SSR diagonal matrix, i.e,
   ## the recursive residuals for segments starting at i = 1:(n-h+1)
@@ -125,7 +125,11 @@ breakpoints.breakpointsfull <- function(obj, breaks = 1, ...)
 {
   SSR.tab <- obj$extend.SSR.table(obj$SSR.table, breaks)
   breakpoints <- obj$extract.breaks(SSR.tab, breaks)
+  bp <- c(0, breakpoints, obj$nobs)
+  SSR <- sum(apply(cbind(bp[-length(bp)]+1,bp[-1]), 1,
+                   function(x) obj$SSR(x[1], x[2])))
   RVAL <- list(breakpoints = breakpoints,
+               SSR = SSR,
                nobs = obj$nobs,
 	       nreg = obj$nreg,
 	       call = match.call(),
@@ -136,14 +140,14 @@ breakpoints.breakpointsfull <- function(obj, breaks = 1, ...)
 
 print.breakpoints <- function(x, format.times = FALSE, ...)
 {
-  cat(paste("\t Optimal ", length(x$breakpoints) + 1,
+  cat(paste("\n\t Optimal ", length(x$breakpoints) + 1,
             "-segment partition: \n\n", sep = ""))
   cat("Call:\n")
   print(x$call)
   cat("\nBreakpoints:\n")
-  print(x$breakpoints)
+  cat(x$breakpoints,"\n")
   cat("\nBreakdates:\n")
-  print(breakdates(x, format.times = format.times))
+  cat(breakdates(x, format.times = format.times),"\n")
 }
 
 breakdates <- function(obj, format.times = FALSE)
@@ -179,3 +183,83 @@ lines.breakpoints <- function(x, lty = 2, ...)
   abline(v = breakdates(x), lty = lty, ...)
 }
 
+summary.breakpoints <- function(object, ...)
+{
+  print(object)
+  cat(paste("\nSum of squared residuals:", round(object$SSR, ...),"\n"))
+}
+
+summary.breakpointsfull <- function(object, breaks = NULL,
+  sort = TRUE, format.times = NULL, ...)
+{
+  if(is.null(format.times)) format.times <- (object$datatsp[3] > 1)
+  if(is.null(breaks)) breaks <- length(object$breakpoints)
+  SSR <- c(object$SSR(1, object$nobs), rep(NA, breaks))
+  names(SSR) <- as.character(0:breaks)
+  bp <- breakpoints(object, breaks = breaks)
+  bd <- breakdates(bp, format.times = format.times)
+  SSR[breaks + 1] <- bp$SSR
+  bp <- bp$breakpoints
+  if(breaks > 1) {
+  for(m in (breaks-1):1)
+  {
+    bp <- rbind(NA, bp)
+    bd <- rbind(NA, bd)
+    bpm <- breakpoints(object, breaks = m)
+    if(sort) {
+      pos <- apply(outer(bpm$breakpoints, bp[nrow(bp),],
+                   FUN = function(x,y) abs(x - y)), 1, which.min)
+      if(length(pos) > unique(length(pos))) {
+        warning("sorting not possible")
+	sort <- FALSE
+      }
+    }
+    if(!sort) pos <- 1:m
+    bp[1,pos] <- bpm$breakpoints
+    bd[1,pos] <- breakdates(bpm, format.times = format.times)
+    SSR[m+1] <- bpm$SSR
+  }}
+  rownames(bp) <- as.character(1:breaks)
+  colnames(bp) <- rep("", breaks)
+  rownames(bd) <- as.character(1:breaks)
+  colnames(bd) <- rep("", breaks)
+  RVAL <- list(breakpoints = bp,
+               breakdates = bd,
+	       SSR = SSR,
+	       call = object$call)
+  class(RVAL) <- "summary.breakpointsfull"
+  return(RVAL)
+}
+
+print.summary.breakpointsfull <- function(x, ...)
+{
+  bp <- x$breakpoints
+  breaks <- ncol(bp)
+  bd <- x$breakdates
+  SSR <- x$SSR
+  bp[is.na(bp)] <- ""
+  bd[is.na(bd)] <- ""
+  rownames(bp) <- paste("m = ", rownames(bp), "  ", sep = "")
+  rownames(bd) <- paste("m = ", rownames(bd), "  ", sep = "")
+  SSR <- rbind(names(SSR), round(SSR))
+  rownames(SSR) <- c("m","SSR")
+  colnames(SSR) <- rep("", breaks + 1)
+
+
+  cat("\n\t Optimal m-segment partition: \n\n")
+  cat("Call:\n")
+  print(x$call)
+  cat("\nBreakpoints:\n")
+  print(bp, quote = FALSE)
+  cat("\nBreakdates:\n")
+  print(bd, quote = FALSE)
+  cat("\nSum of squared residuals:\n")
+  print(SSR, quote = FALSE)
+}
+
+
+plot.summary.breakpointsfull <- function(x, type = "b", ...)
+{
+  plot(as.numeric(names(x$SSR)), x$SSR, ylab = "Sum of squared residuals",
+       xlab = "Number of breakpoints", type = type, ...)
+}
