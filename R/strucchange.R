@@ -1,4 +1,4 @@
-efp <- function(formula, data = list(),
+efp <- function(formula, data=list(),
                 type = c("Rec-CUSUM", "OLS-CUSUM", "Rec-MOSUM",
                 "OLS-MOSUM", "fluctuation", "ME"), h = 0.15,
                 dynamic = FALSE, rescale = TRUE, tol = 1e-7)
@@ -192,7 +192,7 @@ efp <- function(formula, data = list(),
                  else
                    process <- ts(process, start = 0, frequency = nrow(process) - 1)
                }
-               retval$Q12 <- Q12
+               retval$Q12 <- Q12/sqrt(n)
                retval$type.name <- "Fluctuation test (recursive estimates test)"
            },
 
@@ -235,7 +235,7 @@ efp <- function(formula, data = list(),
                    process <- ts(process, end = (n-floor(0.5 + nh/2))/n, frequency = n)
                }
                retval$par <- h
-               retval$Q12 <- Q12
+               retval$Q12 <- Q12/sqrt(n)
                retval$type.name <- "ME test (moving estimates test)"
            })
 
@@ -243,7 +243,9 @@ efp <- function(formula, data = list(),
         process <- ts(process, start = 0, frequency = (length(process)-1))
 
     retval$process <- process
-    retval$coef <- lm.fit(X,y)$coefficients
+    m.fit <- lm.fit(X,y)
+    retval$coefficients <- coefficients(m.fit)
+    retval$sigma <-  sqrt(sum(m.fit$residual^2)/m.fit$df.residual)
     class(retval) <- c("efp")
     return(retval)
 }
