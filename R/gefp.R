@@ -22,6 +22,9 @@ gefp <- function(...,
   } else {
     index <- 1:n
     if(is.ts(psi)) z <- time(psi)
+      else if("quasits" %in% class(psi)) z <- time(psi)
+      else if(is.ts(data)) z <- time(data)
+      else if("quasits" %in% class(data)) z <- time(data)
       else z <- index/n
   }
 
@@ -61,7 +64,7 @@ gefp <- function(...,
   colnames(process) <- colnames(psi)
   if(!is.null(parm)) process <- process[, parm]
 
-  retval <- list(process = quasits(process, z),
+  retval <- list(process = process,
                  nreg = k,
                  nobs = n,
                  call = match.call(),
@@ -320,3 +323,28 @@ plot.quasits <- function(x, xlab = "Time",
 {
   plot(time(x), x, xlab = xlab, ylab = ylab, type = type, ...)
 }
+
+as.quasits <- function(x, ...)
+{
+  UseMethod("as.quasits")
+}
+
+as.quasits.default <- function(x, ...)
+{
+  rval <- as.vector(x)
+  dim(rval) <- dim(x)
+  quasits(rval, 1:ifelse(is.null(dim(x)), length(x), dim(x)[1]))
+}
+  
+as.quasits.ts <- function(x, ...)
+{
+  rval <- as.vector(x)
+  dim(rval) <- dim(x)
+  quasits(rval, time(x))
+}  
+
+as.quasits.irts <- function(x, ...)
+{
+  quasits(x$value, x$time)
+}
+
