@@ -17,5 +17,5 @@ Description: Testing, dating and monitoring of structural change in
              Finally, the breakpoints in regression models with structural
              changes can be estimated together with confidence intervals.
              Emphasis is always given to methods for visualizing the data.
-Depends: R (>= 1.5.0)
+Depends: zio, R (>= 1.5.0)
 License: GPL
