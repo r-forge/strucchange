@@ -70,14 +70,12 @@ mefp.efp <-
     "OLS-CUSUM" = {
 
         mreSize <- function(a){
-            -2*(pnorm(a)-a*dnorm(a))
+            2-2*(pnorm(a)-a*dnorm(a))
         }
         mreCritval <- function(a){
             abs(2*(pnorm(a)-a*dnorm(a))+alpha-2)
         }
-        critval <- optim(5, mreCritval)$par
-        if((mreSize(critval)-alpha) > tolerance)
-            stop("Could not find critical within tolerance")
+        critval <- optimize(mreCritval, c(0,10), tol = tolerance)$minimum
 
         computeEmpProc <- function(X, y)
         {
@@ -180,14 +178,12 @@ mefp.efp <-
 
         if(is.null(CritvalTable)){
             mreSize <- function(a){
-                -2*(pnorm(a)-a*dnorm(a))
+                2-2*(pnorm(a)-a*dnorm(a))
             }
             mreCritval <- function(a){
                 abs(2*(pnorm(a)-a*dnorm(a))+elemsiglevel-2)
             }
-            critval <- optim(5, mreCritval)$par
-            if((mreSize(critval)-elemsiglevel) > tolerance)
-                stop("Could not find critical within tolerance")
+            critval <- optimize(mreCritval, c(0,10), tol = tolerance)$minimum
         }
         else{
             dntab <- dimnames(CritvalTable)
