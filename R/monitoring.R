@@ -188,22 +188,22 @@ monitor <- function(obj, data=NULL, verbose=TRUE){
     obj
 }
 
-print.mefp <- function(obj, ...){
+print.mefp <- function(x, ...){
 
-    cat(obj$type.name, "\n\n")
-    cat("Initial call:\n ", deparse(obj$initcall), "\n\n")
-    cat("Last call:\n ", deparse(obj$call), "\n\n")
-    cat("Significance level   : ", obj$alpha, "\n")
-    cat("Critical value       : ", obj$critval, "\n")
-    cat("History size         : ", obj$histsize, "\n")
-    cat("Last point evaluated : ", obj$last, "\n")
-    if(!is.na(obj$breakpoint))
-        cat("Structural break at  : ", obj$breakpoint, "\n")
+    cat(x$type.name, "\n\n")
+    cat("Initial call:\n ", deparse(x$initcall), "\n\n")
+    cat("Last call:\n ", deparse(x$call), "\n\n")
+    cat("Significance level   : ", x$alpha, "\n")
+    cat("Critical value       : ", x$critval, "\n")
+    cat("History size         : ", x$histsize, "\n")
+    cat("Last point evaluated : ", x$last, "\n")
+    if(!is.na(x$breakpoint))
+        cat("Structural break at  : ", x$breakpoint, "\n")
     cat("\nParameter estimate on history :\n");
-    print(obj$histcoef)
-    if(!is.null(obj$lastcoef)){
+    print(x$histcoef)
+    if(!is.null(x$lastcoef)){
         cat("Last parameter estimate :\n");
-        print(obj$lastcoef)
+        print(x$lastcoef)
     }
 }
 
