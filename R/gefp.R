@@ -22,9 +22,9 @@ gefp <- function(...,
   } else {
     index <- 1:n
     if(is.ts(psi)) z <- time(psi)
-      else if(is.itoo(psi)) z <- time(psi)
+      else if(is.zio(psi)) z <- time(psi)
       else if(is.ts(data)) z <- time(data)
-      else if(is.itoo(data)) z <- time(data)
+      else if(is.zio(data)) z <- time(data)
       else z <- index/n
   }
 
@@ -58,7 +58,7 @@ gefp <- function(...,
   colnames(process) <- colnames(psi)
   if(!is.null(parm)) process <- process[, parm]
 
-  retval <- list(process = itoo(process, z),
+  retval <- list(process = zio(process, z),
                  nreg = k,
                  nobs = n,
                  call = match.call(),
@@ -70,14 +70,66 @@ gefp <- function(...,
 		 type.name = "M-fluctuation test",
                  J12 = J12)
 
-  class(retval) <- c("gefp", "efp")
+  class(retval) <- "gefp"
   return(retval)
+}
+
+plot.gefp <- function(x, alpha = 0.05, functional = maxBB, ...)
+{
+  if(is.null(functional)) functional <- "max"
+  if(is.character(functional)) {
+    functional <- match.arg(functional, c("max", "range", "maxL2", "meanL2"))
+    lim.process <- switch(x$lim.process,
+      "Brownian motion" = "BM",
+      "Brownian motion increments" = "BMI",
+      "Brownian bridge" = "BB",
+      "Brownian bridge increments" = "BBI")
+    functional <- get(paste(functional, lim.process, sep = ""), pos = "package:strucchange")
+  }
+  if(functional$lim.process != x$lim.process)
+    stop("Limiting process of \"functional\" does not match that of \"x\"")
+  functional$plotProcess(x, alpha = alpha, ...)
+}
+
+sctest.gefp <- function(x, functional = maxBB, ...)
+{
+  if(is.character(functional)) {
+    functional <- match.arg(functional, c("max", "range", "maxL2", "meanL2"))
+    lim.process <- switch(x$lim.process,
+      "Brownian motion" = "BM",
+      "Brownian motion increments" = "BMI",
+      "Brownian bridge" = "BB",
+      "Brownian bridge increments" = "BBI")
+    functional <- get(paste(functional, lim.process, sep = ""), pos = "package:strucchange")
+  }
+  if(functional$lim.process != x$lim.process)
+    stop("Limiting process of \"functional\" does not match that of \"x\"")
+  stat <- functional$computeStatistic(x$process)
+  names(stat) <- "f(efp)"
+  rval <- list(statistic = stat,
+               p.value = functional$computePval(stat, NCOL(x$process)),
+	       method = x$type.name,
+	       data.name = deparse(substitute(x)))
+  class(rval) <- "htest"
+  return(rval)
 }
 
 time.gefp <- function(x, ...)
 {
   time(x$process, ...)
 }
+
+print.gefp <- function(x, ...)
+{
+  cat("\nGeneralized Empirical M-Fluctuation Process\n\n")
+  cat("Call: ")
+  print(x$call)
+  cat("\n\n")
+  cat("Fitted model: ")
+  print(x$fitted.model)
+  cat("\n")
+}
+
 
 efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time = max),
 		     boundary = function(x) rep(1, length(x)),
@@ -194,10 +246,10 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
 	{
           n <- x$nobs
 	  bound <- computeCritval(alpha = alpha, nproc = NCOL(x$process)) * boundary(0:n/n)
-	  bound <- itoo(bound, time(x))
+	  bound <- zio(bound, time(x))
 
 	  if(aggregate) {
-	    proc <- itoo(apply(as.matrix(x$process), 1, functional[[1]]), time(x))
+	    proc <- zio(apply(as.matrix(x$process), 1, functional[[1]]), time(x))
 	    
 	    if(is.null(ylab)) ylab <- "empirical fluctuation process"
 	    if(is.null(ylim)) ylim <- range(c(range(proc), range(bound)))
@@ -232,12 +284,12 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
 	{
           n <- x$nobs
 	  bound <- computeCritval(alpha = alpha, nproc = NCOL(x$process)) * boundary(0:n/n)
-	  bound <- itoo(bound, time(x))
+	  bound <- zio(bound, time(x))
           stat <- computeStatistic(x$process)
-	  stat <- itoo(rep(stat, length(time(x))), time(x))
+	  stat <- zio(rep(stat, length(time(x))), time(x))
 
 	  if(aggregate) {
-	    proc <- itoo(apply(as.matrix(x$process), 1, functional[[1]]), time(x))
+	    proc <- zio(apply(as.matrix(x$process), 1, functional[[1]]), time(x))
 	    
 	    if(is.null(ylab)) ylab <- "empirical fluctuation process"
 	    if(is.null(ylim)) ylim <- range(c(range(proc), range(bound), range(stat)))
@@ -378,439 +430,5 @@ simulateBMDist <- function(nobs = 1000, nrep = 5000, nproc = 1,
   })
   
   return(rval)
-}
-
-
-
-itoo <- function(x, order.by)
-{
-  index <- order(order.by)
-  order.by <- order.by[index]
-
-  if(NROW(x) != length(index)) stop("dimensions of \"x\" and \"order.by\" do not match")
-  
-  if(is.vector(x))
-    x <- x[index]
-  else if(is.matrix(x))
-    x <- x[index, , drop = FALSE]
-  else if(is.data.frame(x))
-    x <- x[index, , drop = FALSE]  
-  else
-    stop("\"x\" has to be a vector, matrix, or data.frame")
-
-  attr(x, "index") <- order.by
-  class(x) <- "itoo"
-  return(x)
-}
-
-index <- function(x, ...)
-{
-  UseMethod("index")
-}
-
-index.default <- function(x, ...)
-{
-  rval <- as.vector(x)
-  dim(rval) <- dim(x)
-  1:ifelse(is.null(dim(x)), length(x), dim(x)[1])
-}
-
-index.itoo <- function(x, ...)
-{
-  attr(x, "index")
-}
-
-time.itoo <- function(x, ...)
-{
-  index(x)
-}
-
-as.itoo <- function(x, ...)
-{
-  UseMethod("as.itoo")
-}
-
-as.itoo.default <- function(x, ...)
-{
-  itoo(as.vector(x), index(x))
-}
-  
-as.itoo.ts <- function(x, ...)
-{
-  rval <- as.vector(x)
-  dim(rval) <- dim(x)
-  itoo(rval, time(x))
-}  
-
-as.itoo.irts <- function(x, ...)
-{
-  itoo(x$value, x$time)
-}
-
-plot.itoo <- function(x,
-  plot.type = c("multiple", "single"), panel = lines,
-  xlab = "Time", ylab = NULL, main = NULL, ylim = NULL,
-  oma = c(6, 0, 5, 0), col = 1, lty = 1, nc, ...)
-{
-  plot.type <- match.arg(plot.type)
-  nser <- NCOL(x)
-  x.time <- time(x)
-  if(is.ts(x.time)) x.time <- as.vector(x.time)
-
-  if(plot.type == "multiple" && nser > 1) {
-    if(is.null(main)) main <- deparse(substitute(x))
-    if(is.null(ylab)) ylab <- colnames(x)
-    if(is.null(ylab)) ylab <- paste("Series", 1:nser)
-    ylab <- rep(ylab, length.out = nser)
-    col <- rep(col, length.out = nser)
-    lty <- rep(lty, length.out = nser)
-
-    panel <- match.fun(panel)
-    if(nser > 10) stop("Can't plot more than 10 series")
-    if(missing(nc)) nc <- if(nser >  4) 2 else 1
-    oldpar <- par("mar", "oma", "mfcol")
-    on.exit(par(oldpar))
-    par(mar = c(0, 5.1, 0, 2.1), oma = oma)
-    nr <- ceiling(nser / nc)
-    par(mfcol = c(nr, nc))
-    for(i in 1:nser) {
-      if(i%%nr==0 || i == nser)
-        plot(x.time, x[, i], xlab= "", ylab= ylab[i], type = "n", ...)
-      else {      
-        plot(x.time, x[, i], axes = FALSE, xlab= "", ylab= ylab[i], type = "n", ...)
-        box()
-        axis(2, xpd = NA)
-      }
-      panel(x.time, x[, i], col = col[i], lty = lty[i], ...)
-    }
-    par(oldpar)
-  } else {
-    if(is.null(ylab)) ylab <- deparse(substitute(x))
-    if(is.null(main)) main <- ""
-    if(is.null(ylim)) ylim <- range(x)
-    
-    col <- rep(col, length.out = nser)
-    dummy <- rep(range(x), length.out = length(time(x)))
-	    
-    plot(x.time, dummy, xlab= xlab, ylab= ylab[1], type = "n", ylim = ylim, ...)
-    box()
-    y <- as.matrix(x)
-    for(i in 1:nser) {
-      panel(x.time, y[, i], col = col[i], lty = lty[i], ...)
-    }
-  }
-  title(main)
-  return(invisible(x))
-}
-
-lines.itoo <- function(x, type = "l", ...)
-{
-  if(NCOL(x) == 1) lines(time(x), x, type = type, ...)
-    else stop("Can't plot multivariate quasi time series object")
-}
-
-"[.itoo" <- function(x, i, j, drop = FALSE, ...)
-{
-  if(!is.itoo(x)) stop("method is only for itoo objects")
-  x.time <- time(x)
-  attr(x, "index") <- NULL
-  nclass <- class(x)[-(1:which(class(x) == "itoo"))]
-  if(length(nclass) < 1) nclass <- NULL 
-  class(x) <- nclass
-  if(NCOL(x) < 2) x <- as.matrix(x)
-  if(missing(i)) i <- 1:nrow(x)
-  if(missing(j)) j <- 1:ncol(x)
-  return(itoo(x[i, j, drop = drop, ...], x.time[i]))
-}
-
-print.itoo <- function(x, ...)
-{
-  if(!is.itoo(x)) stop("method is only for itoo objects")
-  x.time <- time(x)
-  attr(x, "index") <- NULL
-  nclass <- class(x)[-(1:which(class(x) == "itoo"))]
-  if(length(nclass) < 1) nclass <- NULL 
-  class(x) <- nclass
-  cat("Value:\n")
-  print(x)
-  cat("\nTime:\n")
-  print(x.time)
-}
-
-is.itoo <- function(object)
-  inherits(object, "itoo")
-  
-
-
-
-plot.gefp <- function(x, alpha = 0.05, functional = maxBB, ...)
-{
-  if(is.character(functional)) {
-    functional <- match.arg(functional, c("max", "range", "maxL2", "meanL2"))
-    lim.process <- switch(x$lim.process,
-      "Brownian motion" = "BM",
-      "Brownian motion increments" = "BMI",
-      "Brownian bridge" = "BB",
-      "Brownian bridge increments" = "BBI")
-    functional <- get(paste(functional, lim.process, sep = ""), pos = "package:strucchange")
-  }
-  if(functional$lim.process != x$lim.process)
-    stop("Limiting process of \"functional\" does not match that of \"x\"")
-  functional$plotProcess(x, alpha = alpha, ...)
-}
-
-sctest.gefp <- function(x, functional = maxBB)
-{
-  if(is.character(functional)) {
-    functional <- match.arg(functional, c("max", "range", "maxL2", "meanL2"))
-    lim.process <- switch(x$lim.process,
-      "Brownian motion" = "BM",
-      "Brownian motion increments" = "BMI",
-      "Brownian bridge" = "BB",
-      "Brownian bridge increments" = "BBI")
-    functional <- get(paste(functional, lim.process, sep = ""), pos = "package:strucchange")
-  }
-  if(functional$lim.process != x$lim.process)
-    stop("Limiting process of \"functional\" does not match that of \"x\"")
-  stat <- functional$computeStatistic(x$process)
-  names(stat) <- "f(efp)"
-  rval <- list(statistic = stat,
-               p.value = functional$computePval(stat, NCOL(x$process)),
-	       method = x$type.name,
-	       data.name = deparse(substitute(x)))
-  class(rval) <- "htest"
-  return(rval)
-}
-
-
-gbreakpoints <- function(formula, order.by = NULL, h = 0.15, breaks = NULL,
-  objective = function(x, y) sum(lm.fit(x,y)$residuals^2), data = list(), ...)
-{
-  mf <- model.frame(formula, data = data)
-  y <- model.response(mf)
-  modelterms <- terms(formula, data = data)
-  X <- model.matrix(modelterms, data = data)
-
-  n <- nrow(X)
-  k <- ncol(X)
-  if(is.null(h)) h <- k + 1
-  if(h < 1) h <- floor(n*h)
-  if(h <= k)
-    stop("minimum segment size must be greater than the number of regressors")
-  if(is.null(breaks)) breaks <- ceiling(n/h) - 2
-
-  if(!is.null(order.by))
-  {
-    if(inherits(order.by, "formula")) {
-      z <- model.matrix(order.by, data = data)
-      z <- as.vector(z[,ncol(z)])
-    } else {
-      z <- order.by
-    }
-    index <- order(z)
-    X <- X[index, , drop = FALSE]
-    y <- y[index]
-    z <- z[index]
-  } else {
-    index <- 1:n
-    if(is.ts(y)) z <- time(y)
-      else if(is.itoo(y)) z <- time(y)
-      else if(is.ts(data)) z <- time(data)
-      else if(is.itoo(data)) z <- time(data)
-      else z <- index/n
-  }
-
-  ## compute ith row of the RSS diagonal matrix, i.e,
-  ## the recursive residuals for segments starting at i = 1:(n-h+1)
-
-  RSSi <- function(i)
-  {
-    rval <- rep(NA, n - i + 1)
-    for(j in (k+1):(n-i+1)) {
-      rval[j] <- objective(X[i:(i+j-1),,drop = FALSE], y[i:(i+j-1)])
-    }
-    return(rval)
-  }
-  RSS.triang <- sapply(1:(n-h+1), RSSi)
-
-  ## function to extract the RSS(i,j) from RSS.triang
-
-  RSS <- function(i,j) RSS.triang[[i]][j - i + 1]
-
-  ## compute optimal previous partner if observation i is the mth break
-  ## store results together with RSSs in RSS.table
-
-  ## breaks = 1
-
-  index <- h:(n-h)
-  break.RSS <- sapply(index, function(i) RSS(1,i))
-
-  RSS.table <- cbind(index, break.RSS)
-  rownames(RSS.table) <- as.character(index)
-
-  ## breaks >= 2
-
-  extend.RSS.table <- function(RSS.table, breaks)
-  {
-    if((breaks*2) > ncol(RSS.table)) {
-      for(m in (ncol(RSS.table)/2 + 1):breaks)
-      {
-        my.index <- (m*h):(n-h)
-        my.RSS.table <- RSS.table[,c((m-1)*2 - 1, (m-1)*2)]
-        my.RSS.table <- cbind(my.RSS.table, NA, NA)
-        for(i in my.index)
-        {
-          pot.index <- ((m-1)*h):(i - h)
-          break.RSS <- sapply(pot.index, function(j) my.RSS.table[as.character(j), 2] + RSS(j+1,i))
-          opt <- which.min(break.RSS)
-          my.RSS.table[as.character(i), 3:4] <- c(pot.index[opt], break.RSS[opt])
-        }
-        RSS.table <- cbind(RSS.table, my.RSS.table[,3:4])
-      }
-      colnames(RSS.table) <- as.vector(rbind(paste("break", 1:breaks, sep = ""),
-                                             paste("RSS", 1:breaks, sep = "")))
-    }
-    return(RSS.table)
-  }
-
-  RSS.table <- extend.RSS.table(RSS.table, breaks)
-
-  ## extract optimal breaks
-
-  extract.breaks <- function(RSS.table, breaks)
-  {
-    if((breaks*2) > ncol(RSS.table)) stop("compute RSS.table with enough breaks before")
-    index <- RSS.table[, 1, drop = TRUE]
-    break.RSS <- sapply(index, function(i) RSS.table[as.character(i),breaks*2] + RSS(i + 1, n))
-    opt <- index[which.min(break.RSS)]
-    if(breaks > 1) {
-      for(i in ((breaks:2)*2 - 1))
-        opt <- c(RSS.table[as.character(opt[1]),i], opt)
-    }
-    names(opt) <- NULL
-    return(opt)
-  }
-
-  opt <- extract.breaks(RSS.table, breaks)
-
-  if(is.ts(data))
-      datatsp <- tsp(data)
-  else if(is.ts(y))
-      datatsp <- tsp(y)
-  else
-      datatsp <- c(0, 1, n)
-
-  RVAL <- list(breakpoints = opt,
-               RSS.table = RSS.table,
-	       RSS.triang = RSS.triang,
-	       RSS = RSS,
-	       extract.breaks = extract.breaks,
-	       extend.RSS.table = extend.RSS.table,
-	       nobs = n,
-	       nreg = k, y = y, X = X,
-	       call = match.call(),
-	       datatsp = datatsp)
-  class(RVAL) <- c("breakpointsfull", "breakpoints")
-  RVAL$breakpoints <- breakpoints(RVAL)$breakpoints
-  return(RVAL)
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## deprecated
-
-boundary.gefp <- function(x, ...)
-{
-  itoo(as.vector(boundary.efp(x, ...)), time(x))
-}
-
-##plot.gefp <- function(x, alpha = 0.05, parm = NULL,
-plotGEFP <- function(x, alpha = 0.05, parm = NULL,
-                     boundary = TRUE, functional = "max", 
-		     main = NULL,  ylim = NULL, xlab = "Time", ylab = NULL,
-		     ...)
-{
-    if(is.null(functional)) fun <- "max"
-      else fun <- match.arg(functional, c("max", "range", "maxL2", "meanL2"))
-    bound <- boundary(x, alpha = alpha, functional = fun)
-    pos <- FALSE
-    ave <- FALSE
-
-    if(is.null(main)){
-            if(fun == "meanL2")
-              main <- paste(x$type.name, "with mean L2 norm")
-	    else if(fun == "maxL2")
-	      main <- paste(x$type.name, "with max L2 norm")
-	    else
-	      main <- x$type.name
-    }
-    
-    z <- x$process
-    if(!is.null(parm)) z <- z[, parm]
-
-    if(!is.null(functional)) {
-      k <- NCOL(z)
-
-      switch(functional,
-        "max" = {
-          if(k > 1) {
-            z <- apply(abs(z), 1, max)
-            pos <- TRUE
-          }
-        },
-        "range" = { stop("no plot available for range functional") },
-        "maxL2" = {
-	  if(x$lim.process == "Brownian bridge") {
-            z <- rowSums(z^2)
-	    pos <- TRUE
-	  } else {
-	    stop("no test/plot available for mean L2 functional")
-	  }
-        },
-
-        "meanL2" = {
-	  if(x$lim.process == "Brownian bridge") {
-            z <- rowSums(z^2)
-	    ave <- TRUE
-	    pos <- TRUE
-	  } else {
-	    stop("no test/plot available for mean L2 functional")
-	  }
-        })
-    }
-    
-    if(is.null(ylim)) {
-      ymax <- max(c(z, bound))
-      if(pos) ymin <- 0
-      else ymin <- min(c(z, -bound))
-      ylim <- c(ymin, ymax)
-    }
-
-    if(boundary)
-        mpanel <- function(y, ...) {
-            lines(y, ...)
-            lines(bound, col=2)
-            lines(-bound, col=2)
-            abline(0,0)
-        }
-    else
-        mpanel <- function(y, ...) {
-            lines(y, ...)
-            abline(0,0)
-        }
-     if(!is.itoo(z)) z <- itoo(z, time(x))
-     if(is.null(ylab) & NCOL(z) < 2) ylab <- "empirical fluctuation process"
-     plot(z, main = main, xlab = xlab, ylab = ylab, ylim = ylim, panel = mpanel, ...)
 }
 

@@ -4,6 +4,10 @@
   }
 }
 
+if(!("package:zio" %in% search() || require(zio))) warning("Could not load package zio")
+if(!("package:sandwich" %in% search() || require(sandwich))) warning("Could not load package sandwich")
+
+
 maxBB <- efpFunctional(lim.process = "Brownian bridge",
   functional = list(comp = function(x) max(abs(x)), time = max),
   computePval = function(x, nproc = 1)

@@ -44,7 +44,8 @@ plot(ols)
 fs <- Fstats(durab.model, data = durab, from = 0.1)
 plot(fs)
 ## F statistics based on heteroskadisticy-consistent covariance matrix
-fsHC <- Fstats(durab.model, data = durab, from = 0.1, cov.type = "HC")
+fsHC <- Fstats(durab.model, data = durab, from = 0.1,
+               vcov = function(x, ...) vcovHC(x, type = "HC", ...))
 plot(fsHC)
 
 ## monitoring
