@@ -12,7 +12,9 @@ Fstats(formula, from = 0.15, to = NULL, data)}
      1 - \code{from}. F statistics will be calculated for the observations
      \code{(n*from):(n*to)}, when \code{n} is the number of observations in the
      model. If \code{from} is greater than 1 it is interpreted to be the index
-     and \code{to} defaults to \code{n - from}.}
+     and \code{to} defaults to \code{n - from}. If \code{from} is a vector with
+     two elements, then \code{from} and \{to} are interpreted as time
+     specifications like in \code{\link{ts}}, see also the examples.}
  \item{data}{an optional data frame containing the variables in the model. By
      default the variables are taken from the environment which \code{Fstats} is
      called from.} }
@@ -60,6 +62,8 @@ plot(nhtemp)
 ## 0.5) and 1962 (corresponds to to = 0.85)
 ## compute F statistics
 fs <- Fstats(nhtemp ~ 1, from = 0.5, to = 0.85)
+## this gives the same result
+fs <- Fstats(nhtemp ~ 1, from = c(1941,1), to = c(1962,1))
 ## plot the F statistics
 plot(fs, alpha = 0.01)
 ## and the corresponding p values

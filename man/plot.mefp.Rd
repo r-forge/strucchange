@@ -1,5 +1,6 @@
 \name{plot.mefp}
 \alias{plot.mefp}
+\alias{lines.mefp}
 \title{Plot Methods for mefp Objects}
 \description{This is a method of the generic \code{\link{plot}} function for
   for \code{"mefp"} objects as returned by \code{\link{mefp}} or

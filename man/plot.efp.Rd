@@ -1,5 +1,6 @@
 \name{plot.efp}
 \alias{plot.efp}
+\alias{lines.efp}
 \title{Plot Empirical Fluctuation Process}
 \description{Plotting method for objects of class \code{"efp"}}
 \usage{

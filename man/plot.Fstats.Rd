@@ -1,5 +1,6 @@
 \name{plot.Fstats}
 \alias{plot.Fstats}
+\alias{lines.Fstats}
 \title{Plot F Statistics}
 \description{Plotting method for objects of class \code{"Fstats"}}
 \usage{
