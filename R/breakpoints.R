@@ -185,7 +185,7 @@ breakdates.breakpoints <- function(obj, format.times = FALSE, breaks = NULL, ...
     return(RVAL)
   }
 
-  if(is.na(obj$breakpoints))
+  if(is.na(obj$breakpoints)[1])
     breakdates <- NA
   else {
     breakdates <- (obj$breakpoints - 1)/obj$datatsp[3] + obj$datatsp[1]
@@ -369,18 +369,17 @@ pargmaxV <- function(x, xi = 1, phi1 = 1, phi2 = 1)
   ifelse(x < 0, G1(x, xi = xi, phi = phi), G2(x, xi = xi, phi = phi))
 }
 
-confint <- function(object, level = 0.95, ...)
-{
-  UseMethod("confint")
-}
-
-confint.breakpointsfull <- function(object, level = 0.95, breaks = NULL,
+confint.breakpointsfull <- function(object, parm = NULL, level = 0.95, breaks = NULL,
                                     het.reg = TRUE, het.err = TRUE, ...)
 {
   X <- object$X
   y <- object$y
   n <- object$nobs
   a2 <- (1 - level)/2
+  if(!is.null(parm) & !is.null(breaks))
+    warning("`parm' and `breaks' are both specified: `breaks' is used")
+  else
+    if(!is.null(parm)) breaks <- parm
 
   myfun <- function(x, level = 0.975, xi = 1, phi1 = 1, phi2 = 1)
     (pargmaxV(x, xi = xi, phi1 = phi1, phi2 = phi2) - level)^2
