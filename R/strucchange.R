@@ -664,45 +664,11 @@ sctest.Fstats <- function(x, type = c("supF", "aveF", "expF"), asymptotic = FALS
     else
         PVAL <- pvalue.Fstats(STATISTIC, type = type,
                               k=x$nreg, lambda=x$par)
-    
+
     RVAL <- list(statistic = STATISTIC, p.value = PVAL,
                  method = METHOD, data.name = dname)
     class(RVAL) <- "htest"
     return(RVAL)
-}
-
-pvalue.Fstats <- function(x, type = c("supF", "aveF", "expF"), k, lambda)
-{
-  switch(match.arg(type),
-  supF = {
-    beta <- get("sc.beta.sup")
-  },
-  aveF = {
-    beta <- get("sc.beta.ave")
-  },
-  expF = {
-    beta <- get("sc.beta.exp")
-  })
-  m <- ncol(beta)-1
-  if(lambda<1) tau <- lambda
-  else tau <- 1/(1+sqrt(lambda))
-  beta <- beta[(((k-1)*25 +1):(k*25)),]
-  dummy <- beta[,(1:m)]%*%x^(0:(m-1))
-  dummy <- dummy*(dummy>0)
-  pp <- 1 - pchisq(dummy, beta[,(m+1)])
-  if(tau==0.5)
-    p <- 1 - pchisq(x, k)
-  else if(tau <= 0.01)
-    p <- pp[25]
-  else if(tau >= 0.49)
-    p <- ((0.5-tau)*pp[1] + (tau-0.49)*(1-pchisq(x,k)))*100
-  else
-  {
-    taua <- (0.51-tau)*50
-    tau1 <- floor(taua)
-    p <- (tau1 + 1 - taua)*pp[tau1] + (taua-tau1)*pp[tau1+1]
-  }
-  p
 }
 
 sctest <- function(x, ...)
