@@ -239,15 +239,15 @@ efp <- function(formula, data=list(),
 }
 
 
-plot.efp <- function(x, alpha = 0.05, alt = FALSE, boundary = TRUE,
+plot.efp <- function(x, alpha = 0.05, alt.boundary = FALSE, boundary = TRUE,
                      functional = "max", main = NULL,  ylim = NULL,
                      ylab = "empirical fluctuation process", ...)
 {
-    bound <- boundary(x, alpha = alpha, alt = alt)
+    bound <- boundary(x, alpha = alpha, alt.boundary = alt.boundary)
     pos <- FALSE
 
     if(is.null(main)){
-        if(alt & (x$type %in% c("Rec-CUSUM", "OLS-CUSUM"))){
+        if(alt.boundary & (x$type %in% c("Rec-CUSUM", "OLS-CUSUM"))){
             main <- paste(x$type.name, "with alternative boundaries")
         }
         else{
@@ -311,7 +311,7 @@ plot.efp <- function(x, alpha = 0.05, alt = FALSE, boundary = TRUE,
     }
 }
 
-pvalue.efp <- function(x, type, alt, functional = "max", h = NULL, k = NULL)
+pvalue.efp <- function(x, type, alt.boundary, functional = "max", h = NULL, k = NULL)
 {
   type <- match.arg(type,
     c("Rec-CUSUM", "OLS-CUSUM", "Rec-MOSUM", "OLS-MOSUM", "fluctuation", "ME"))
@@ -319,7 +319,7 @@ pvalue.efp <- function(x, type, alt, functional = "max", h = NULL, k = NULL)
   switch(type,
 
   "Rec-CUSUM" = {
-  if(alt)
+  if(alt.boundary)
   {
       pval <- c(1, 0.997, 0.99, 0.975, 0.949, 0.912, 0.864, 0.806, 0.739, 0.666,
            0.589, 0.512, 0.437, 0.368, 0.307, 0.253, 0.205, 0.163, 0.129, 0.100,
@@ -336,7 +336,7 @@ pvalue.efp <- function(x, type, alt, functional = "max", h = NULL, k = NULL)
   },
 
   "OLS-CUSUM" = {
-    if(alt)
+    if(alt.boundary)
     {
       pval <- c(1, 1, 0.997, 0.99, 0.977, 0.954, 0.919, 0.871, 0.812, 0.743,
        0.666, 0.585, 0.504, 0.426, 0.353, 0.288, 0.230, 0.182, 0.142, 0.109,
@@ -427,7 +427,7 @@ pvalue.efp <- function(x, type, alt, functional = "max", h = NULL, k = NULL)
 }
 
 
-sctest.efp <- function(x, alt = FALSE, functional = c("max", "range"))
+sctest.efp <- function(x, alt.boundary = FALSE, functional = c("max", "range"))
 {
     
     k <- x$nreg
@@ -443,7 +443,7 @@ sctest.efp <- function(x, alt = FALSE, functional = c("max", "range"))
            "Rec-CUSUM" = {
                j <- (1:(length(x)-1))/(length(x)-1)
                x <- x[-1]
-               if(alt)
+               if(alt.boundary)
                {
                    STAT <- max(abs(x/sqrt(j)))
                    METHOD <- paste(METHOD, "with alternative boundaries")
@@ -456,7 +456,7 @@ sctest.efp <- function(x, alt = FALSE, functional = c("max", "range"))
            },
 
            "OLS-CUSUM" = {
-               if(alt)
+               if(alt.boundary)
                {
                    j <- (1:(length(x)-2))/(length(x)-1)
                    x <- x[-1*c(1,length(x))]
@@ -507,7 +507,7 @@ sctest.efp <- function(x, alt = FALSE, functional = c("max", "range"))
                       })
                names(STAT) <- "ME"
            })
-    PVAL <- pvalue.efp(STAT, type, alt,
+    PVAL <- pvalue.efp(STAT, type, alt.boundary,
                        functional = functional, h = h, k = k)
     RVAL <- list(statistic = STAT, p.value = PVAL,
                  method = METHOD, data.name = dname)
@@ -698,7 +698,7 @@ sctest <- function(x, ...)
 
 sctest.formula <- function(x, type = c("Rec-CUSUM", "OLS-CUSUM",
   "Rec-MOSUM", "OLS-MOSUM", "fluctuation", "ME", "Chow", "supF", "aveF",
-  "expF"), h = 0.15, dynamic = FALSE, tol = 1e-7, alt = FALSE,
+  "expF"), h = 0.15, dynamic = FALSE, tol = 1e-7, alt.boundary = FALSE,
   functional = c("max", "range"), from = 0.15, to = NULL,
   point = floor(0.5*nrow(model.frame(x))), asymptotic = FALSE, data = list())
 {
@@ -730,7 +730,7 @@ sctest.formula <- function(x, type = c("Rec-CUSUM", "OLS-CUSUM",
   {
     process <- efp(x, type = type, h = h, dynamic = dynamic, tol = tol,
     data = data)
-    RVAL <- sctest(process, alt = alt, functional = functional)
+    RVAL <- sctest(process, alt.boundary = alt.boundary, functional = functional)
   }
   else if(any(type == c("supF", "aveF", "expF")))
   {
@@ -746,22 +746,22 @@ boundary <- function(x, ...)
     UseMethod("boundary")
 }
 
-boundary.efp <- function(x, alpha = 0.05, alt = FALSE)
+boundary.efp <- function(x, alpha = 0.05, alt.boundary = FALSE)
 {
     pos <- FALSE
     k <- x$nreg
     h <- x$par
     
-    bound <- uniroot(function(y) {pvalue.efp(y, type=x$type, alt=alt, h=h, k=k) - alpha}, c(0,20))$root
+    bound <- uniroot(function(y) {pvalue.efp(y, type=x$type, alt.boundary=alt.boundary, h=h, k=k) - alpha}, c(0,20))$root
     switch(x$type,
            "Rec-CUSUM" = {
-               if(alt)
+               if(alt.boundary)
                    bound <- sqrt((0:(length(x$process)-1))/(length(x$process)-1))*bound
                else
                    bound <- bound + (2*bound*(0:(length(x$process)-1))/(length(x$process)-1))
            },
            "OLS-CUSUM" = {
-               if(alt)
+               if(alt.boundary)
                {
                    j <- (0:(length(x$process)-1))/(length(x$process)-1)
                    bound <- sqrt(j*(1-j))*bound
