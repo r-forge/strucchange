@@ -17,6 +17,6 @@ X <- matrix(c(1,2,2,8), ncol=2)
 test <- root.matrix(X)
 ## control results
 X
-test %*% test
+test \%*\% test
 }
 \keyword{}
