@@ -371,7 +371,7 @@ pargmaxV <- function(x, xi = 1, phi1 = 1, phi2 = 1)
 }
 
 confint.breakpointsfull <- function(object, parm = NULL, level = 0.95, breaks = NULL,
-                                    het.reg = TRUE, het.err = TRUE, vcov = NULL, ...)
+                                    het.reg = TRUE, het.err = TRUE, vcov = NULL, sandwich = TRUE, ...)
 {
   X <- object$X
   y <- object$y
@@ -396,8 +396,20 @@ confint.breakpointsfull <- function(object, parm = NULL, level = 0.95, breaks = 
   fm <- lm(y ~ 0 + X)
   sigma1 <- sigma2 <- sum(residuals(fm)^2)/n
   Q1 <- Q2 <- crossprod(X)/n
-  if(!is.null(vcov)) Omega1 <- Omega2 <- n * crossprod(Q1, vcov(fm)) %*% Q1
-    else Omega1 <- Omega2 <- sigma1 * Q1
+
+  if(is.null(vcov))
+    Omega1 <- Omega2 <- sigma1 * Q1
+  else {
+    if(sandwich) {
+      ## Q <- chol2inv(chol(summary(fm)$cov.unscaled))
+      ## Omega1 <- Omega2 <- (Q %*% vcov(fm) %*% Q)/n
+      ## we already have computed Q, so it is easier to use:
+      Omega1 <- Omega2 <- n * crossprod(Q1, vcov(fm)) %*% Q1
+    } else {
+      Omega1 <- Omega2 <- vcov(fm)/n
+    }
+  }
+
   xi <- 1
 
   X2 <- X[(bp[1]+1):bp[2],,drop = FALSE]
@@ -407,8 +419,12 @@ confint.breakpointsfull <- function(object, parm = NULL, level = 0.95, breaks = 
   if(het.reg) Q2 <- crossprod(X2)/nrow(X2)
   if(het.err) {
     sigma2 <- sum(residuals(fm2)^2)/nrow(X2)
-    if(!is.null(vcov)) Omega2 <- nrow(X2) * crossprod(Q2, vcov(fm2)) %*% Q2 #FIXME#
-      else Omega2 <- sigma2 * Q2
+    if(is.null(vcov))
+      Omega2 <- sigma2 * Q2
+    else {
+      if(sandwich) Omega2 <- nrow(X2) * crossprod(Q2, vcov(fm2)) %*% Q2
+        else Omega2 <- vcov(fm2)/nrow(X2)
+    }
   }
 
   for(i in 2:(nbp+1))
@@ -429,8 +445,12 @@ confint.breakpointsfull <- function(object, parm = NULL, level = 0.95, breaks = 
     if(het.reg) Q2 <- crossprod(X2)/nrow(X2)
     if(het.err) {
       sigma2 <- sum(residuals(fm2)^2)/nrow(X2)
-      if(!is.null(vcov)) Omega2 <- nrow(X2) * crossprod(Q2, vcov(fm2)) %*% Q2
-        else Omega2 <- sigma2 * Q2
+      if(is.null(vcov))
+        Omega2 <- sigma2 * Q2
+      else {
+        if(sandwich) Omega2 <- nrow(X2) * crossprod(Q2, vcov(fm2)) %*% Q2
+          else Omega2 <- vcov(fm2)/nrow(X2)
+      }
     }
         
     Oprod1 <- myprod(delta, Omega1)
