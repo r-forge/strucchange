@@ -338,11 +338,13 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
       ## lambda = lambda_comp(lambda_time(x))
 
         plotProcess <- function(x, alpha = 0.05, aggregate = TRUE,
-	    xlab = NULL, ylab = NULL, main = x$type.name, ylim = NULL, ...)
+	    xlab = NULL, ylab = NULL, main = x$type.name, xlim = NULL, ylim = NULL, ...)
         {
           k <- NCOL(x$process)
           bound <- computeCritval(alpha = alpha, nproc = NCOL(x$process)) * boundary(1:k/k)
-          stat <- rep(computeStatistic(x$process), k)
+	  ## for pretty printing
+	  bound <- c(bound[1], bound, bound[k])
+          stat <- rep(computeStatistic(x$process), k+2)
 
           if(aggregate) {
 	    proc <- apply(as.matrix(x$process), 2, functional[[1]])
@@ -352,15 +354,16 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
 	    if(is.null(xlab)) xlab <- "Component"
 	    if(is.null(ylab)) ylab <- "Statistic"
             if(is.null(ylim)) ylim <- range(c(range(proc), range(bound), range(stat), 0))
+            if(is.null(xlim)) xlim <- c(0.85, k + 0.15)
 	    
-	    plot(1:k, proc, xlab = xlab, ylab = ylab, main = main, ylim = ylim, axes = FALSE, type = "h", ...)
+	    plot(1:k, proc, xlab = xlab, ylab = ylab, main = main, xlim = xlim, ylim = ylim, axes = FALSE, type = "h", ...)
 	    points(1:k, proc)
 	    box()
 	    axis(2)
 	    axis(1, at = 1:k, labels = xlabels)
 	    abline(0, 0)
-	    lines(bound, col = 2)
-	    if(!identical(functional[[2]], max)) lines(stat, lty = 2)	    
+	    lines(c(0.9, 1:k, k+0.1), bound, col = 2)
+	    if(!identical(functional[[2]], max)) lines(c(0.9, 1:k, k+0.1), stat, lty = 2)	    
 	  } else {
             if(is.null(xlab)) {
 	      if(!is.null(x$order.name)) xlab <- x$order.name
