@@ -4,7 +4,7 @@
 \alias{monitorM1}
 \non_function{}
 \title{German M1 Money Demand}
-\usage{data(M1)}
+\usage{data(GermanM1)}
 \description{
 German M1 money demand.
 }

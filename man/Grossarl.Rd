@@ -2,7 +2,7 @@
 \alias{Grossarl}
 \non_function{}
 \title{Marriages and Births in Grossarl}
-\usage{data(births)}
+\usage{data(Grossarl)}
 \description{
 Data about the number of marriages and illegitimate and legitimate
 births in the Austrian Alpine village Grossarl between
