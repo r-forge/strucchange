@@ -13,7 +13,7 @@ covHC(formula, type = c("HC2", "const", "HC", "HC1", "HC3"), data=list())
   \item{type}{a character string specifying the estimation type. For
      details see below.}
  \item{data}{an optional data frame containing the variables in the model.
-    By default the variables are taken from the environment which \code{dwtest}
+    By default the variables are taken from the environment which \code{covHC}
     is called from.}
 }
 \details{When \code{type = "const"} constant variances are assumed and
