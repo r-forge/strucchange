@@ -1,0 +1,10 @@
+Package: strucchange
+Version: 1.1-4
+Date: 2001-03-21
+Title: Tests on structural change
+Author: Achim Zeileis, Bruce Hansen, Kurt Hornik,
+        Christian Kleiber, Fritz Leisch, Andrea Peters
+Maintainer: Achim Zeileis <zeileis@ci.tuwien.ac.at>
+Description: Various tests on structural change in regression relationships
+Depends: R (>= 1.3.0)
+License: GPL

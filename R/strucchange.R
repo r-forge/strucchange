@@ -1,0 +1,757 @@
+efp <- function(formula, type = c("Rec-CUSUM", "OLS-CUSUM",
+  "Rec-MOSUM", "OLS-MOSUM", "fluctuation", "ME"), h = 0.15,
+  dynamic = FALSE, rescale = TRUE, tol = 1e-7, data = list())
+{
+  mf <- model.frame(formula, data = data)
+  y <- model.response(mf)
+  X <- model.matrix(formula, data = data)
+  n <- nrow(X)
+  if(dynamic) X <- cbind(c(0,y[1:(n-1)]),X)
+  k <- ncol(X)
+
+## recursive residuals
+
+  rec.res <- function(X, y, tol = 1e-7)
+  {
+    n <- nrow(X)
+    q <- ncol(X)
+    w <- rep(0,(n-q))
+    for(r in ((q+1):n))
+    {
+      Xr1 <- X[1:(r-1),]
+      xr <- as.vector(X[r,])
+      X1 <- solve(t(Xr1)%*%Xr1, tol=tol)
+      fr <- sqrt(1 + (t(xr) %*% X1 %*% xr))
+      wr <- t(xr)%*% X1 %*%t(Xr1)%*% y[1:(r-1)]
+      w[r-q] <- (y[r] - wr)/fr
+    }
+    return(w)
+  }
+
+## root of a symmetric matrix
+
+  root.matrix <- function(X)
+  {
+    if((ncol(X)==1)&&(nrow(X)==1)) return(sqrt(X))
+    else
+    {
+     X.eigen <- eigen(X, symmetric=TRUE)
+     sqomega <- sqrt(diag(X.eigen$values))
+     V <- X.eigen$vectors
+     return(V%*%sqomega%*%t(V))
+    }
+  }
+
+  switch(match.arg(type),
+
+## emprical process of Standard CUSUM model
+
+  "Rec-CUSUM" = {
+    w <- rec.res(X, y, tol = tol)
+    sigma <- sqrt(var(w))
+    process <- cumsum(c(0,w))/(sigma*sqrt(n-k))
+    if(is.ts(y))
+      process <- ts(process, end = end(y), frequency = frequency(y))
+  },
+
+## empirical process of OLS-based CUSUM model
+
+  "OLS-CUSUM" = {
+    e <- lm.fit(X,y)$residuals
+    sigma <- sqrt(var(e)*(n-1)/(n-k))
+    process <- cumsum(c(0,e))/(sigma*sqrt(n))
+    if(is.ts(y))
+      process <- ts(process, end = end(y), frequency = frequency(y))
+  },
+
+## empirical process of Recursive MOSUM model
+
+  "Rec-MOSUM" = {
+    w <- rec.res(X, y, tol = tol)
+    nw <- n - k
+    nh <- floor(nw*h)
+    process <- rep(0, (nw-nh))
+    for(i in 0:(nw-nh))
+    {
+      process[i+1] <- sum(w[(i+1):(i+nh)])
+    }
+    sigma <- sqrt(var(w)*(nw-1)/(nw-k))
+    process <- process/(sigma*sqrt(nw))
+    if(is.ts(y))
+      process <- ts(process, end = time(y)[(n-floor(0.5 + nh/2))],
+                    frequency = frequency(y))
+    else
+      process <- ts(process, end = (n-floor(0.5 + nh/2))/n, frequency=n)
+    attr(process, "par") <- h
+  },
+
+## empirical process of OLS-based MOSUM model
+
+  "OLS-MOSUM" = {
+    e <- lm.fit(X,y)$residuals
+    nh <- floor(n*h)
+    process <- rep(0, n-nh+1)
+    for(i in 0:(n-nh))
+    {
+      process[i+1] <- sum(e[(i+1):(i+nh)])
+    }
+    sigma <- sqrt(var(e)*(n-1)/(n-k))
+    process <- process/(sigma*sqrt(n))
+    if(is.ts(y))
+      process <- ts(process, end = time(y)[(n-floor(0.5 + nh/2))],
+                    frequency = frequency(y))
+    else
+      process <- ts(process, end = (n-floor(0.5 + nh/2))/n, frequency=n)
+    attr(process, "par") <- h
+  },
+
+## empirical process of recursive estimates fluctuation
+
+  "fluctuation" = {
+    m.fit <- lm.fit(X,y)
+    beta.hat <- m.fit$coefficients
+    sigma <- sqrt(sum(m.fit$residual^2)/m.fit$df.residual)
+    process <- matrix(rep(0,k*(n-k+1)), nrow=k)
+    if(rescale)
+    {
+      for(i in k:(n-1))
+      {
+         process[,(i-k+1)] <- root.matrix(crossprod(X[1:i,])) %*% (
+          lm.fit(as.matrix(X[1:i,]), y[1:i])$coefficients - beta.hat)
+      }
+    }
+    else
+    {
+      Qn <- root.matrix(crossprod(X))
+      for(i in k:(n-1))
+      {
+         process[,(i-k+1)] <- Qn %*% (lm.fit(as.matrix(X[1:i,]),
+          y[1:i])$coefficients - beta.hat)
+      }
+    }
+    process <- t(cbind(0, process))*matrix(rep(sqrt((k-1):n),k),
+                 ncol=k)/(sigma*sqrt(n))
+    colnames(process) <- colnames(X)
+    if(is.ts(y))
+      process <- ts(process, end = end(y), frequency = frequency(y))
+    else
+      process <- ts(process, start = 0, frequency = nrow(process) - 1)
+  },
+
+## empirical process of moving estimates fluctuation
+
+  "ME" = {
+    m.fit <- lm.fit(X,y)
+    beta.hat <- m.fit$coefficients
+    sigma <- sqrt(sum(m.fit$residual^2)/m.fit$df.residual)
+    nh <- floor(n*h)
+    process <- matrix(rep(0,k*(n-nh+1)), nrow=k)
+    if(rescale)
+    {
+      for(i in 0:(n-nh))
+      {
+        process[, i+1] <- root.matrix(crossprod(X[(i+1):(i+nh),])) %*% (lm.fit(
+         as.matrix(X[(i+1):(i+nh),]), y[(i+1):(i+nh)])$coefficients - beta.hat)
+      }
+    }
+    else
+    {
+      Qn <- root.matrix(crossprod(X))
+      for(i in 0:(n-nh))
+      {
+        process[, i+1] <- Qn %*% (lm.fit(
+         as.matrix(X[(i+1):(i+nh),]), y[(i+1):(i+nh)])$coefficients - beta.hat)
+      }
+    }
+    process <- sqrt(nh/n)*t(process)/sigma
+    colnames(process) <- colnames(X)
+    if(is.ts(y))
+      process <- ts(process, end = time(y)[(n-floor(0.5 + nh/2))],
+                    frequency = frequency(y))
+    else
+      process <- ts(process, end = (n-floor(0.5 + nh/2))/n, frequency = n)
+    attr(process, "par") <- h
+  })
+
+  if(!is.ts(process))
+    process <- ts(process, start = 0, frequency = (length(process)-1))
+  attr(process, "type") <- match.arg(type)
+  attr(process, "nreg") <- k
+  attr(process, "call") <- match.call()
+  class(process) <- c("efp", class(process))
+  return(process)
+}
+
+
+plot.efp <- function(x, alpha = 0.05, alt = FALSE, boundary = TRUE,
+  functional = "max", main = NULL,  ylim = NULL,
+  ylab = "empirical fluctuation process", ...)
+{
+  bound <- boundary(x, alpha = alpha, alt = alt)
+  class(x) <- class(x)[-1]
+  pos <- FALSE
+  type <- match.arg(attr(x, "type"),
+    c("Rec-CUSUM", "OLS-CUSUM", "Rec-MOSUM", "OLS-MOSUM", "fluctuation", "ME"))
+  k <- attr(x, "nreg")
+  h <- attr(x, "par")
+  switch(type,
+
+  "Rec-CUSUM" = {
+    if(alt) {
+      if(is.null(main)) main <- "Standard CUSUM test with alternative boundaries"}
+    else {
+      if(is.null(main)) main <- "Standard CUSUM test"}
+  },
+
+  "OLS-CUSUM" = {
+    if(alt) {
+      if(is.null(main)) main <- "OLS-based CUSUM test with alternative boundaries"}
+    else {
+      if(is.null(main)) main <- "OLS-based CUSUM test"}
+  },
+
+  "Rec-MOSUM" = { if(is.null(main)) main <- "Recursive MOSUM test"},
+
+  "OLS-MOSUM" = {if(is.null(main)) main <- "OLS-based MOSUM test"},
+
+  "fluctuation" = {
+    if(is.null(main)) main <- "Fluctuation test (recursive estimates test)"
+    if(!is.null(functional) && (functional == "max"))
+    {
+      x <- ts(apply(abs(x), 1, 'max'),
+                      start = start(x), frequency = frequency(x))
+      pos <- TRUE
+    }
+  },
+
+  "ME" = {
+    if(is.null(main)) main <- "ME test (moving estimates test)"
+    if(!is.null(functional) && (functional == "max"))
+    {
+      x <- ts(apply(abs(x), 1, 'max'),
+                      start = start(x), frequency = frequency(x))
+      pos <- TRUE
+    }
+  })
+
+  ymax <- max(c(x, bound))
+  if(pos)
+    ymin <- 0
+  else
+    ymin <- min(c(x, -bound))
+  if(is.null(ylim)) ylim <- c(ymin, ymax)
+  if(boundary)
+    panel <- function(y, ...)
+    {
+      lines(y, ...)
+      lines(bound)
+      lines(-bound)
+      abline(0,0)
+    }
+  else
+    panel <- function(y, ...)
+    {
+      lines(y, ...)
+      abline(0,0)
+    }
+  if(any(attr(x, "class") == "mts"))
+    plot(x, main = main, panel = panel, ...)
+  else
+  {
+    plot(x, main = main, ylab = ylab, ylim = ylim, ...)
+    if(boundary)
+    {
+      lines(bound)
+      lines(-bound)
+    }
+    abline(0,0)
+  }
+}
+
+print.efp <- function(x, ...)
+{
+    x.orig <- x
+    cat("\nEmpirical fluctuation process of type", deparse(attr(x, "type")), "\n\n")
+    cat("Call: ", deparse(attr(x, "call")), "\n\n", sep = "")
+    attr(x, "type") <- attr(x, "call") <- NULL
+    class(x) <- class(x)[-1]
+    print(x, ...)
+    cat("\n")
+    invisible(x.orig)
+}
+
+pvalue.efp <- function(x, type, alt, functional = "max", h = NULL, k = NULL)
+{
+  type <- match.arg(type,
+    c("Rec-CUSUM", "OLS-CUSUM", "Rec-MOSUM", "OLS-MOSUM", "fluctuation", "ME"))
+  functional <- match.arg(functional, c("max", "range"))
+  switch(type,
+
+  "Rec-CUSUM" = {
+  if(alt)
+  {
+      pval <- c(1, 0.997, 0.99, 0.975, 0.949, 0.912, 0.864, 0.806, 0.739, 0.666,
+           0.589, 0.512, 0.437, 0.368, 0.307, 0.253, 0.205, 0.163, 0.129, 0.100,
+           0.077, 0.058, 0.043, 0.032, 0.024, 0.018, 0.012, 0.009, 0.006, 0.004,
+           0.003, 0.002, 0.001, 0.001, 0.001)
+      critval <- (10:44)/10
+      p <- approx(critval, pval, x, rule=2)$y
+    }
+    else
+    {
+      p <- ifelse(x < 0.3, 1 - 0.1465*x,
+       2*(1-pnorm(3*x) + exp(-4*(x^2))*(pnorm(x)+pnorm(5*x)-1)-exp(-16*(x^2))*(1-pnorm(x))))
+    }
+  },
+
+  "OLS-CUSUM" = {
+    if(alt)
+    {
+      pval <- c(1, 1, 0.997, 0.99, 0.977, 0.954, 0.919, 0.871, 0.812, 0.743,
+       0.666, 0.585, 0.504, 0.426, 0.353, 0.288, 0.230, 0.182, 0.142, 0.109,
+       0.082, 0.062, 0.046, 0.034, 0.025, 0.017, 0.011, 0.008, 0.005, 0.004,
+       0.003, 0.002, 0.001, 0.001, 0.0001)
+      critval <- (12:46)/10
+      p <- approx(critval, pval, x, rule=2)$y
+    }
+    else
+    {
+      p <- ifelse(x < 0.48, 1 - 0.1147*x,
+             2*(exp(-2*x^2)-exp(-8*x^2)))
+    }
+  },
+
+  "Rec-MOSUM" = {
+    crit.table <- cbind(c(3.2165, 2.9795, 2.8289, 2.7099, 2.6061, 2.5111, 2.4283, 2.3464, 2.2686, 2.2255),
+                        c(3.3185, 3.0894, 2.9479, 2.8303, 2.7325, 2.6418, 2.5609, 2.4840, 2.4083, 2.3668),
+                        c(3.4554, 3.2368, 3.1028, 2.9874, 2.8985, 2.8134, 2.7327, 2.6605, 2.5899, 2.5505),
+                        c(3.6622, 3.4681, 3.3382, 3.2351, 3.1531, 3.0728, 3.0043, 2.9333, 2.8743, 2.8334),
+                        c(3.8632, 3.6707, 3.5598, 3.4604, 3.3845, 3.3102, 3.2461, 3.1823, 3.1229, 3.0737),
+                        c(4.1009, 3.9397, 3.8143, 3.7337, 3.6626, 3.5907, 3.5333, 3.4895, 3.4123, 3.3912))
+    tablen <- dim(crit.table)[2]
+    tableh <- (1:10)*0.05
+    tablep <- c(0.2, 0.15, 0.1, 0.05, 0.025, 0.01)
+    tableipl <- numeric(tablen)
+    for(i in (1:tablen)) tableipl[i] <- approx(tableh, crit.table[,i], h, rule = 2)$y
+    p <- approx(c(0,tableipl), c(1,tablep), x, rule = 2)$y
+  },
+
+  "OLS-MOSUM" = {
+    if(k>6) k <- 6
+    data(me, package = strucchange)
+    crit.table <- as.matrix(me)[(((k-1)*10+1):(k*10)), ]
+    tablen <- dim(crit.table)[2]
+    tableh <- (1:10)*0.05
+    tablep <- c(0.1, 0.05, 0.025, 0.01)
+    tableipl <- numeric(tablen)
+    for(i in (1:tablen)) tableipl[i] <- approx(tableh, crit.table[,i], h, rule = 2)$y
+    p <- approx(c(0,tableipl), c(1,tablep), x, rule = 2)$y
+  },
+
+  "fluctuation" = {
+    switch(functional,
+    "max" = {
+      p <- ifelse(x<0.1, 1,
+      {
+        summand <- function(a,b)
+        {
+          exp(-2*(a^2)*(b^2))*(-1)^a
+        }
+        p <- 0
+        for(i in 1:100) p <- p + summand(i,x)
+        1-(1+2*p)^k
+      })
+    },
+    "range" = {
+      p <- ifelse(x<0.4,1,
+      {
+        p <- 0
+        for(i in 1:10) p <- p + (4*i^2*x^2 - 1) * exp(-2*i^2*x^2)
+        1-(1-2*p)^k
+      })
+    })
+  },
+
+  "ME" = {
+    switch(functional,
+    "max" = {
+      if(k>6) k <- 6
+      data(me, package = strucchange)
+      crit.table <- as.matrix(me)[(((k-1)*10+1):(k*10)), ]
+      tablen <- dim(crit.table)[2]
+      tableh <- (1:10)*0.05
+      tablep <- c(0.1, 0.05, 0.025, 0.01)
+      tableipl <- numeric(tablen)
+      for(i in (1:tablen)) tableipl[i] <- approx(tableh, crit.table[,i], h, rule = 2)$y
+      p <- approx(c(0,tableipl), c(1,tablep), x, rule = 2)$y
+    },
+    "range" = {
+      p <- ifelse(x<0.53,1,
+      {
+        p <- 0
+        for(i in 1:10) p <- p + (-1)^(i-1) * i * pnorm(-i*x)
+        1-(1-8*p)^k
+      })
+    })
+  })
+  return(p)
+}
+
+
+sctest.efp <- function(x, alt = FALSE, functional = c("max", "range"))
+{
+  k <- attr(x, "nreg")
+  h <- attr(x, "par")
+  type <- match.arg(attr(x, "type"),
+    c("Rec-CUSUM", "OLS-CUSUM", "Rec-MOSUM", "OLS-MOSUM", "fluctuation", "ME"))
+  functional <- match.arg(functional)
+  dname <- paste(deparse(substitute(x)))
+  switch(type,
+
+  "Rec-CUSUM" = {
+    j <- (1:(length(x)-1))/(length(x)-1)
+    x <- x[-1]
+    if(alt)
+    {
+      METHOD <- "Standard CUSUM test with alternative boundaries"
+      STAT <- max(abs(x/sqrt(j)))
+    }
+    else
+    {
+      METHOD <- "Standard CUSUM test"
+      STAT <- max(abs(x/(1 + 2*j)))
+    }
+    names(STAT) <- "S"
+  },
+
+  "OLS-CUSUM" = {
+    if(alt)
+    {
+      METHOD <- "OLS-based CUSUM test with alternative boundaries"
+      j <- (1:(length(x)-2))/(length(x)-1)
+      x <- x[-1*c(1,length(x))]
+      STAT <- max(abs(x/sqrt(j*(1-j))))
+    }
+    else
+    {
+      METHOD <- "OLS-based CUSUM test with alternative boundaries"
+      STAT <- max(abs(x))
+    }
+    names(STAT) <- "S0"
+  },
+
+  "Rec-MOSUM" = {
+    METHOD <- "Recursive MOSUM test"
+    STAT <- max(abs(x))
+    names(STAT) <- "M"
+  },
+
+  "OLS-MOSUM" = {
+    METHOD <- "OLS-based MOSUM test"
+    STAT <- max(abs(x))
+    names(STAT) <- "M0"
+  },
+
+  "fluctuation" = {
+    switch(functional,
+    "max" = {
+      STAT <- max(abs(x))
+      METHOD <- "Fluctuation test (recursive estimates test)"
+    },
+    "range" = {
+      myrange <- function(y) diff(range(y))
+      if(any(class(x)=="mts")) x <- x[-1,]
+      else x <- as.matrix(x[-1])
+      STAT <- max(apply(x,2,myrange))
+      METHOD <- "Fluctuation test (recursive estimates test) with range norm"
+    })
+    names(STAT) <- "FL"
+  },
+
+  "ME" = {
+    switch(functional,
+    "max" = {
+      STAT <- max(abs(x))
+      METHOD <- "Fluctuation test (moving estimates test)"
+    },
+    "range" = {
+      myrange <- function(y) diff(range(y))
+      STAT <- max(apply(x,2,myrange))
+      METHOD <- "Fluctuation test (moving estimates test) with range norm"
+    })
+    names(STAT) <- "ME"
+  })
+  PVAL <- pvalue.efp(STAT, type, alt, functional = functional, h = h, k = k)
+  RVAL <- list(statistic = STAT, p.value = PVAL, method = METHOD, data.name = dname)
+  class(RVAL) <- "htest"
+  return(RVAL)
+}
+
+Fstats <- function(formula, from = 0.15, to = NULL, data=list())
+{
+  mf <- model.frame(formula, data = data)
+  y <- model.response(mf)
+  X <- model.matrix(formula, data = data)
+  k <- ncol(X)
+  n <- length(y)
+  e <- lm.fit(X,y)$residuals
+
+  if(from < 1)
+  {
+    from <- floor(from*n)
+    to <- floor(to*n)
+  }
+  if(is.null(to) || is.na(to)) to <- n - from
+  if(from < (k+1))
+  {
+    from <- k+1
+    warning("'from' changed (was too small)")
+  }
+  if(to > (n-k-1))
+  {
+    to <- n-k-1
+    warning("'to' changed (was too large)")
+  }
+  if(from <= to)
+    point <- (from:to)
+  else
+    stop("inadmissable change points: 'from' is larger than 'to'")
+
+  lambda <- ((n-from)*to)/(from*(n-to))
+  np <- length(point)
+  stats <- rep(0,np)
+  for(i in 1:np)
+  {
+    u <- c(lm.fit(as.matrix(X[(1:point[i]),]),y[1:point[i]])$residuals,
+      lm.fit(as.matrix(X[((point[i]+1):n),]),y[((point[i]+1):n)])$residuals)
+    stats[i] <- ((sum(e^2)-sum(u^2))/k)/((sum(u^2))/(n-2*k))
+  }
+  if(is.ts(y))
+    stats <- ts(stats, start = time(y)[from], frequency = frequency(y))
+  else
+    stats <- ts(stats, start = from/n, frequency = n)
+  attr(stats, "nreg") <- k
+  attr(stats, "nobs") <- n
+  attr(stats, "par") <- lambda
+  attr(stats, "call") <- match.call()
+  attr(stats, "class") <- c("Fstats", class(stats))
+  return(stats)
+}
+
+print.Fstats <- function(x, ...)
+{
+    x.orig <- x
+    cat("\nF statistics \n\n")
+#    cat("number of regressors: ", deparse(attr(x, "nreg")), "\n")
+#    cat("number of observations: ", deparse(attr(x, "nobs")), "\n")
+#    cat("parameter: ", deparse(attr(x, "par")), "\n\n")
+    cat("Call: ", deparse(attr(x, "call")), "\n\n", sep = "")
+    attr(x, "call") <- NULL # attr(x, "nreg") <- attr(x, "nobs") <- attr(x, "par") <- NULL
+    class(x) <- class(x)[-1]
+    print(x, ...)
+    cat("\n")
+    invisible(x)
+}
+
+plot.Fstats <- function(x, pval = FALSE, asymptotic = FALSE,
+  alpha = 0.05, boundary = TRUE, xlab = "Time", ylab = NULL,
+  ylim = NULL, ...)
+{
+  k <- attr(x, "nreg")
+  n <- attr(x, "nobs")
+  bound <- boundary(x, alpha = alpha, pval = pval, asymptotic = asymptotic)
+  attr(x, "class") <- class(x)[-1]
+  if(pval)
+  {
+    if(asymptotic)
+      x <- 1 - pchisq(x, k)
+    else
+      x <- 1 - pf(x, k, (n-2*k))
+    if(is.null(ylab)) ylab <- "p values"
+  }
+  else
+    if(is.null(ylab)) ylab <- "F statistics"
+  if(is.null(ylim)) ylim <- c(0, max(c(x,bound)))
+  plot(x, xlab = xlab, ylab = ylab, ylim = ylim, ...)
+  abline(0,0)
+  if(boundary) lines(bound)
+}
+
+sctest.Fstats <- function(x, type = c("supF", "aveF", "expF"), asymptotic = FALSE)
+{
+  k <- attr(x, "nreg")
+  n <- attr(x, "nobs")
+  lambda <- attr(x, "par")
+  dname <- paste(deparse(substitute(x)))
+  switch(match.arg(type),
+  supF = {
+    STATISTIC <- max(x)
+    names(STATISTIC) <- "sup.F"
+    METHOD <- "supF test"
+  },
+  aveF = {
+    STATISTIC <- mean(x)
+    names(STATISTIC) <- "ave.F"
+    METHOD <- "aveF test"
+  },
+  expF = {
+    STATISTIC <- log(mean(exp(0.5*x)))
+    names(STATISTIC) <- "exp.F"
+    METHOD <- "expF test"
+  })
+  if((lambda == 1) & !(type == "expF") & !asymptotic)
+  {
+    METHOD <- "Chow test"
+    PVAL <- 1 - pf(STATISTIC, k, (n-2*k))
+  }
+  else
+      PVAL <- pvalue.Fstats(STATISTIC, type = type, k, lambda)
+  RVAL <- list(statistic = STATISTIC, p.value = PVAL, method = METHOD, data.name = dname)
+  class(RVAL) <- "htest"
+  return(RVAL)
+}
+
+pvalue.Fstats <- function(x, type = c("supF", "aveF", "expF"), k, lambda)
+{
+  switch(match.arg(type),
+  supF = {
+    data(beta.sup,package = strucchange)
+    beta <- as.matrix(beta.sup)
+  },
+  aveF = {
+    data(beta.ave, package = strucchange)
+    beta <- as.matrix(beta.ave)
+  },
+  expF = {
+    data(beta.exp, package = strucchange)
+    beta <- as.matrix(beta.exp)
+  })
+  m <- ncol(beta)-1
+  if(lambda<1) tau <- lambda
+  else tau <- 1/(1+sqrt(lambda))
+  beta <- beta[(((k-1)*25 +1):(k*25)),]
+  dummy <- beta[,(1:m)]%*%x^(0:(m-1))
+  dummy <- dummy*(dummy>0)
+  pp <- 1 - pchisq(dummy, beta[,(m+1)])
+  if(tau==0.5)
+    p <- 1 - pchisq(x, k)
+  else if(tau <= 0.01)
+    p <- pp[25]
+  else if(tau >= 0.49)
+    p <- ((0.5-tau)*pp[1] + (tau-0.49)*(1-pchisq(x,k)))*100
+  else
+  {
+    taua <- (0.51-tau)*50
+    tau1 <- floor(taua)
+    p <- (tau1 + 1 - taua)*pp[tau1] + (taua-tau1)*pp[tau1+1]
+  }
+  p
+}
+
+sctest <- function(x, ...)
+{
+  UseMethod("sctest")
+}
+
+sctest.formula <- function(x, type = c("Rec-CUSUM", "OLS-CUSUM",
+  "Rec-MOSUM", "OLS-MOSUM", "fluctuation", "ME", "Chow", "supF", "aveF",
+  "expF"), h = 0.15, dynamic = FALSE, tol = 1e-7, alt = FALSE,
+  functional = c("max", "range"), from = 0.15, to = NULL,
+  point = floor(0.5*nrow(model.frame(x))), asymptotic = FALSE, data = list())
+{
+  type <- match.arg(type)
+  dname <- paste(deparse(substitute(x)))
+  if(type == "Chow")
+  {
+    mf <- model.frame(x, data = data)
+    y <- model.response(mf)
+    X <- model.matrix(x, data = data)
+    METHOD <- "Chow test"
+    k <- ncol(X)
+    n <- length(y)
+    if(!((point>k) & (point<(n-k)))) stop("inadmissable change point")
+    e <- lm.fit(X,y)$residuals
+    u <- c(lm.fit(as.matrix(X[(1:point),]),y[1:point])$residuals,
+      lm.fit(as.matrix(X[((point+1):n),]),y[((point+1):n)])$residuals)
+    STATISTIC <- ((sum(e^2)-sum(u^2))/k)/((sum(u^2))/(n-2*k))
+    names(STATISTIC) <- "F"
+    if(asymptotic)
+      PVAL <- 1 - pchisq(STATISTIC, k)
+    else
+      PVAL <- 1 - pf(STATISTIC, k, (n-2*k))
+    RVAL <- list(statistic = STATISTIC, p.value = PVAL, method = METHOD, data.name = "formula")
+    class(RVAL) <- "htest"
+  }
+  else if(any(type == c("Rec-CUSUM", "OLS-CUSUM",
+  "Rec-MOSUM", "OLS-MOSUM", "fluctuation", "ME")))
+  {
+    process <- efp(x, type = type, h = h, dynamic = dynamic, tol = tol,
+    data = data)
+    RVAL <- sctest(process, alt = alt, functional = functional)
+  }
+  else if(any(type == c("supF", "aveF", "expF")))
+  {
+    fs <- Fstats(x, from = from, to = to, data=data)
+    RVAL <- sctest(fs, type = type)
+  }
+  RVAL$data.name <- dname
+  return(RVAL)
+}
+
+boundary.efp <- function(x, alpha = 0.05, alt = FALSE)
+{
+  class(x) <- class(x)[-1]
+  pos <- FALSE
+  type <- match.arg(attr(x, "type"),
+    c("Rec-CUSUM", "OLS-CUSUM", "Rec-MOSUM", "OLS-MOSUM", "fluctuation", "ME"))
+  k <- attr(x, "nreg")
+  h <- attr(x, "par")
+  bound <- uniroot(function(y) {pvalue.efp(y, type, alt, h=h, k=k) - alpha}, c(0,20))$root
+  switch(type,
+  "Rec-CUSUM" = {
+    if(alt)
+      bound <- sqrt((0:(length(x)-1))/(length(x)-1))*bound
+    else
+      bound <- bound + (2*bound*(0:(length(x)-1))/(length(x)-1))
+  },
+  "OLS-CUSUM" = {
+    if(alt)
+    {
+      j <- (0:(length(x)-1))/(length(x)-1)
+      bound <- sqrt(j*(1-j))*bound
+    }
+    else
+      bound <- rep(bound,length(x))
+  },
+  "Rec-MOSUM" = { bound <- rep(bound, length(x))},
+  "OLS-MOSUM" = { bound <- rep(bound, length(x))},
+  "fluctuation" = { bound <- rep(bound, length(x))},
+  "ME" = { bound <- rep(bound, length(x))})
+
+  bound <- ts(bound, end = end(x), frequency = frequency(x))
+  return(bound)
+}
+
+boundary <- function(x, ...)
+{
+  UseMethod("boundary")
+}
+
+boundary.Fstats <- function(x, alpha = 0.05, pval = FALSE, asymptotic = FALSE)
+{
+  k <- attr(x, "nreg")
+  n <- attr(x, "nobs")
+  lambda <- attr(x, "par")
+  bound <- uniroot(function(y) {pvalue.Fstats(y, type="sup", k, lambda) - alpha}, c(0,40))$root
+  if(pval)
+  {
+    if(asymptotic)
+      bound <- 1 - pchisq(bound, k)
+    else
+      bound <- 1 - pf(bound, k, (n-2*k))
+  }
+  bound <- ts(rep(bound, length(x)), end = end(x), frequency = frequency(x))
+  return(bound)
+}
+
+
