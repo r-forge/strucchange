@@ -536,3 +536,169 @@ lines.confint.breakpoints <- function(x, col = 2, angle = 90, length = 0.05,
   arrows(x[,1], at, x[,3], at, col = col, angle = angle, length = length, code = code, ...)
 }
 
+coef.breakpointsfull <- function(object, breaks = NULL, names = NULL, ...)
+{
+  X <- object$X
+  y <- object$y
+  n <- object$nobs
+  bp <- obp <- breakpoints(object, breaks = breaks)$breakpoints
+  if(any(is.na(bp))) {
+    nbp <- 0
+    bp <- c(0, n)
+  } else {
+    nbp <- length(bp)
+    bp <- c(0, bp, n)
+  }
+  
+  if(!is.null(names)) {
+    if(length(names) == 1) names <- paste(names, 1:(nbp+1))
+      else if(length(names) != (nbp+1)) names <- NULL
+  }
+  if(is.null(names)) {
+    bd1 <- structure(list(breakpoints = bp[-(nbp+2)] + 1, nobs = n, datatsp = object$datatsp),
+                    class = "breakpoints")
+    bd2 <- structure(list(breakpoints = bp[-1], nobs = n, datatsp = object$datatsp),
+                    class = "breakpoints")
+    bd1 <- breakdates(bd1, format.times = NULL)
+    bd2 <- breakdates(bd2, format.times = NULL)
+    names <- paste(bd1, "-", bd2) 
+  }
+    
+  rval <- NULL
+
+  for(i in 1:(nbp+1))
+  {
+    X2 <- X[(bp[i]+1):bp[i+1],,drop = FALSE]
+    y2 <- y[(bp[i]+1):bp[i+1]]
+    rval <- rbind(rval, lm.fit(X2, y2)$coef)
+  }
+  
+  rownames(rval) <- names
+  return(rval)
+}
+
+fitted.breakpointsfull <- function(object, breaks = NULL, ...)
+{
+  X <- object$X
+  y <- object$y
+  n <- object$nobs
+  bp <- obp <- breakpoints(object, breaks = breaks)$breakpoints
+  if(any(is.na(bp))) {
+    nbp <- 0
+    bp <- c(0, n)
+  } else {
+    nbp <- length(bp)
+    bp <- c(0, bp, n)
+  }
+  rval <- NULL
+
+  for(i in 1:(nbp+1))
+  {
+    X2 <- X[(bp[i]+1):bp[i+1],,drop = FALSE]
+    y2 <- y[(bp[i]+1):bp[i+1]]
+    rval <- c(rval, lm.fit(X2, y2)$fitted.values)
+  }
+  
+  return(rval)
+}
+
+residuals.breakpointsfull <- function(object, breaks = NULL, ...)
+{
+  X <- object$X
+  y <- object$y
+  n <- object$nobs
+  bp <- obp <- breakpoints(object, breaks = breaks)$breakpoints
+  if(any(is.na(bp))) {
+    nbp <- 0
+    bp <- c(0, n)
+  } else {
+    nbp <- length(bp)
+    bp <- c(0, bp, n)
+  }
+  rval <- NULL
+
+  for(i in 1:(nbp+1))
+  {
+    X2 <- X[(bp[i]+1):bp[i+1],,drop = FALSE]
+    y2 <- y[(bp[i]+1):bp[i+1]]
+    rval <- c(rval, lm.fit(X2, y2)$residuals)
+  }
+  
+  return(rval)
+}
+
+vcov.breakpointsfull <- function(object, breaks = NULL, names = NULL, het.reg = TRUE,
+                                 het.err = TRUE, vcov = NULL, sandwich = TRUE, ...)
+{
+  X <- object$X
+  y <- object$y
+  n <- object$nobs
+
+  bp <- breakpoints(object, breaks = breaks)$breakpoints
+  if(any(is.na(bp))) {
+    nbp <- 0
+    bp <- c(0, n)
+  } else {
+    nbp <- length(bp)
+    bp <- c(0, bp, n)
+  }
+
+  if(!is.null(names)) {
+    if(length(names) == 1) names <- paste(names, 1:(nbp+1))
+      else if(length(names) != (nbp+1)) names <- NULL
+  }
+  if(is.null(names)) {
+    bd1 <- structure(list(breakpoints = bp[-(nbp+2)] + 1, nobs = n, datatsp = object$datatsp),
+                    class = "breakpoints")
+    bd2 <- structure(list(breakpoints = bp[-1], nobs = n, datatsp = object$datatsp),
+                    class = "breakpoints")
+    bd1 <- breakdates(bd1, format.times = NULL)
+    bd2 <- breakdates(bd2, format.times = NULL)
+    names <- paste(bd1, "-", bd2) 
+  }
+    
+  fm <- lm(y ~ 0 + X)
+  sigma2 <- sum(residuals(fm)^2)/n
+  Q2 <- crossprod(X)/n
+
+  if(is.null(vcov))
+    Omega2 <- sigma2 * solve(Q2) / n
+  else {
+    if(sandwich) {
+      Omega2 <- vcov(fm)
+    } else {
+      modelv <- summary(fm)$cov.unscaled
+      Omega2 <- n * modelv %*% vcov(fm) %*% modelv
+    }
+  }
+  rownames(Omega2) <- colnames(Omega2) <- colnames(X)
+
+  rval <- list()
+
+  for(i in 1:(nbp+1))
+  {
+    X2 <- X[(bp[i]+1):bp[i+1],,drop = FALSE]
+    y2 <- y[(bp[i]+1):bp[i+1]]
+    fm2 <- lm(y2 ~ 0 + X2) 
+
+    if(het.reg) Q2 <- crossprod(X2)/nrow(X2)
+    if(het.err) {
+      sigma2 <- sum(residuals(fm2)^2)/nrow(X2)
+      if(is.null(vcov))
+        Omega2 <- sigma2 * solve(Q2) / nrow(X2)
+      else {
+        if(sandwich) {
+          Omega2 <- vcov(fm2)
+        } else {
+          modelv <- summary(fm2)$cov.unscaled
+          Omega2 <- n * modelv %*% vcov(fm2) %*% modelv
+        }
+      }
+      rownames(Omega2) <- colnames(Omega2) <- colnames(X)
+    }
+    rval[[i]] <- Omega2
+  }
+    
+  names(rval) <- names
+  return(rval)
+}
