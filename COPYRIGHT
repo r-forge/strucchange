@@ -5,10 +5,9 @@ The bulk of this code is
 
   Copyright (C) 2001 Achim Zeileis and Friedrich Leisch
 
-except the files 
+except the file 
 
-  src/???
-  src/???
+  R/pvalue.Fstats.R
 
 which are
 
