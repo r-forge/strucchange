@@ -360,6 +360,7 @@ pargmaxV <- function(x, xi = 1, phi1 = 1, phi2 = 1)
 
   G2 <- function(x, xi = 1, phi = 1)
   {
+    x <- abs(x)
     frac <- xi^2/phi
     rval <- 1 + sqrt(frac) * exp(log(x)/2 - (frac*x)/8  - log(2*pi)/2) +
             (xi/phi * (2*phi + xi)/(phi + xi)) * exp(((phi + xi) * x/2) + pnorm(-(phi + xi/2)/sqrt(phi) * sqrt(x), log.p = TRUE)) -
@@ -383,7 +384,7 @@ confint.breakpointsfull <- function(object, parm = NULL, level = 0.95, breaks = 
     if(!is.null(parm)) breaks <- parm
 
   myfun <- function(x, level = 0.975, xi = 1, phi1 = 1, phi2 = 1)
-    (pargmaxV(x, xi = xi, phi1 = phi1, phi2 = phi2) - level)^2
+    (pargmaxV(x, xi = xi, phi1 = phi1, phi2 = phi2) - level)
 
   myprod <- function(delta, mat) as.vector(crossprod(delta, mat) %*% delta)
 
@@ -464,12 +465,16 @@ confint.breakpointsfull <- function(object, parm = NULL, level = 0.95, breaks = 
     if(!is.null(vcov)) phi2 <- sqrt(Oprod2/Qprod2)
       else phi2 <- sqrt(sigma2)
 
-    upper[i-1] <- optimize(myfun, c(0, n/2), level = (1-a2), xi = xi, phi1 = phi1, phi2 = phi2)$minimum * phi1^2 / Qprod1
-    lower[i-1] <- optimize(myfun, c(-n/2,0), level = a2, xi = xi, phi1 = phi1, phi2 = phi2)$minimum * phi1^2 / Qprod1
+    upper[i-1] <- uniroot(myfun, c(0, 1000), level = (1-a2), xi = xi, phi1 = phi1, phi2 = phi2)$root
+    lower[i-1] <- uniroot(myfun, c(-1000,0), level = a2, xi = xi, phi1 = phi1, phi2 = phi2)$root
+    
+    upper[i-1] <- upper[i-1] * phi1^2 / Qprod1
+    lower[i-1] <- lower[i-1] * phi1^2 / Qprod1
   }
   
   bp <- bp[-c(1, nbp+2)]
-  bp <- cbind(bp+floor(lower), bp, bp+ceiling(upper))
+  bp <- cbind(bp - (as.integer(upper) + 1), bp, bp - (as.integer(lower) - 1))
+  ## bp <- cbind(bp+floor(lower), bp, bp+ceiling(upper))
   a2 <- round(a2 * 100, digits = 1)
   colnames(bp) <- c(paste(a2, "%"), "breakpoints", paste(100 - a2, "%"))
   rownames(bp) <- 1:nbp
