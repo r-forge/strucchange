@@ -10,12 +10,13 @@ mefp.formula <-
     functional <- match.arg(functional)
     val <- efp(obj, type=type, h=h, data=data, rescale=rescale)
     val <- mefp(val, alpha=alpha, functional=functional, period=period,
-         tolerance=tolerance, MECritvalTable=MECritvalTable,
-         rescale=rescale)
+                tolerance=tolerance, MECritvalTable=MECritvalTable,
+                rescale=rescale)
     if(length(data) == 0)
         val$data <- NULL
     else
         val$data <- deparse(substitute(data))
+    val$call <- val$initcall <- match.call()
     return(val)
 }
 
