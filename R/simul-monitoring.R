@@ -55,7 +55,7 @@ monitorMECritval <- function(x, probs=c(0.9,0.95))
 }
 
 monitorRECritvalData <- function(n, end=10, frequency=1000,
-                                 verbose=FALSE, const=FALSE){
+                                 verbose=FALSE, linear=FALSE){
     
     dn <- list(NULL, as.character(end))
     
@@ -68,7 +68,10 @@ monitorRECritvalData <- function(n, end=10, frequency=1000,
             cat("  Loop:    ",k,"\r")
         }
         b <- as.vector(rbridge(e,frequency))[-(1:frequency)]
-        if(!const)
+        if(linear)
+#            b <- b/pmax(1, 0.5*t+0.25)
+            b <- b / t
+        else
             b <- b^2/(t*(t-1)) - log(t/(t-1))
         
         for(ee in 1:length(end)){
@@ -77,6 +80,10 @@ monitorRECritvalData <- function(n, end=10, frequency=1000,
         }
     }
     cat("                               \r")
+    if(linear)
+        attr(z, "square") <- FALSE
+    else
+        attr(z, "square") <- TRUE
     z
 }
 
@@ -89,11 +96,12 @@ monitorRECritval <- function(x, probs=c(0.9,0.95))
     dimnames(z) <- list(dimnames(x)[[2]], probs)
 
     for(k in 1:dx[2]){
-        for(m in 1:lp){
             z[k,] <- quantile(x[,k],probs)
-        }
     }
-    
-    sqrt(z)
+
+    if(attr(x, "square"))
+        z <- sqrt(z)
+
+    z
 }
 
