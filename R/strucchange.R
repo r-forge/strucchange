@@ -26,14 +26,20 @@ efp <- function(formula, data=list(),
         n <- nrow(X)
         q <- ncol(X)
         w <- rep(0,(n-q))
-        for(r in ((q+1):n))
+        Xr1 <- X[1:q,,drop = FALSE]
+        xr <- as.vector(X[q+1,])
+        X1 <- solve(t(Xr1)%*%Xr1, tol=tol)
+        fr <- as.vector((1 + (t(xr) %*% X1 %*% xr)))
+        betar <- X1 %*%t(Xr1)%*% y[1:q]
+        w[1] <- (y[q+1] - t(xr) %*% betar)/sqrt(fr)
+
+        for(r in ((q+2):n))
         {
-            Xr1 <- X[1:(r-1),]
-            xr <- as.vector(X[r,])
-            X1 <- solve(t(Xr1)%*%Xr1, tol=tol)
-            fr <- sqrt(1 + (t(xr) %*% X1 %*% xr))
-            wr <- t(xr)%*% X1 %*%t(Xr1)%*% y[1:(r-1)]
-            w[r-q] <- (y[r] - wr)/fr
+            X1 <- X1 - (X1 %*% outer(xr, xr) %*% X1)/fr
+	    betar <- betar + X1 %*% xr * w[r-q-1]*sqrt(fr)
+    	    xr <- as.vector(X[r,])
+            fr <- as.vector((1 + (t(xr) %*% X1 %*% xr)))
+            w[r-q] <- (y[r] - t(xr) %*% betar)/sqrt(fr)
         }
         return(w)
     }
@@ -352,8 +358,7 @@ pvalue.efp <- function(x, type, alt.boundary, functional = "max", h = NULL, k =
     else
     {
       p <- ifelse(x < 0.3, 1 - 0.1465*x,
-       2*(1-pnorm(3*x) +
- exp(-4*(x^2))*(pnorm(x)+pnorm(5*x)-1)-exp(-16*(x^2))*(1-pnorm(x))))
+       2*(1-pnorm(3*x) + exp(-4*(x^2))*(pnorm(x)+pnorm(5*x)-1)-exp(-16*(x^2))*(1-pnorm(x))))
     }
   },
 
@@ -449,8 +454,7 @@ pvalue.efp <- function(x, type, alt.boundary, functional = "max", h = NULL, k =
 }
 
 
-sctest.efp <- function(x, alt.boundary = FALSE, functional = c("max", "range"),
- ...)
+sctest.efp <- function(x, alt.boundary = FALSE, functional = c("max", "range"), ...)
 {
 
     k <- x$nreg
