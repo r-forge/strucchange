@@ -29,11 +29,11 @@ mefp.efp <-
     if(! (obj$type %in% c("ME", "fluctuation")))
         stop("efp must be of type `fluctuation' or `ME'")
 
-    if(is.null(as.list(obj$efpcall)$data)){
+    if(is.null(as.list(obj$call)$data)){
        data <- NULL
     }
     else{
-       data <- as.character(as.list(obj$efpcall)$data)
+       data <- as.character(as.list(obj$call)$data)
     }
 
     ## Bonferroni correction
