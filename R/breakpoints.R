@@ -320,16 +320,16 @@ logLik.breakpoints <- function(object, ...)
   return(logL)
 }
 
-logLik.breakpointsfull <- function(object, ...)
+logLik.breakpointsfull <- function(object, breaks = NULL, ...)
 {
-  bp <- breakpoints(object, breaks = length(object$breakpoints))
+  bp <- breakpoints(object, breaks = breaks)
   logL <- logLik(bp)
   return(logL)
 }
 
 AIC.breakpointsfull <- function(object, breaks = NULL, ..., k = 2)
 {
-  if(is.null(breaks)) breaks <- 0:length(object$breakpoints)
+  if(is.null(breaks)) breaks <- 0:(ncol(object$RSS.table)/2)
   RVAL <- NULL
   for(m in breaks)
     RVAL <- c(RVAL, AIC(breakpoints(object, breaks = m), k = k))
@@ -376,6 +376,7 @@ confint.breakpointsfull <- function(object, level = 0.95, breaks = NULL,
   X <- object$X
   y <- object$y
   n <- object$nobs
+  a2 <- (1 - level)/2
 
   myfun <- function(x, level = 0.975, xi = 1, phi1 = 1, phi2 = 1)
     (pargmaxV(x, xi = xi, phi1 = phi1, phi2 = phi2) - level)^2
@@ -418,12 +419,13 @@ confint.breakpointsfull <- function(object, level = 0.95, breaks = NULL,
       xi <- as.vector(crossprod(delta, Q2) %*% delta)/(sigma1*frac)
     }
 
-    upper[i-1] <- optimize(myfun, c(0,n), level = (1-(1-level)/2), xi = xi, phi1 = sqrt(sigma1), phi2 = sqrt(sigma2))$minimum/frac
-    lower[i-1] <- optimize(myfun, c(-n,0), level = (1-level)/2, xi = xi, phi1 = sqrt(sigma1), phi2 = sqrt(sigma2))$minimum/frac
+    upper[i-1] <- optimize(myfun, c(0,n), level = (1-a2), xi = xi, phi1 = sqrt(sigma1), phi2 = sqrt(sigma2))$minimum/frac
+    lower[i-1] <- optimize(myfun, c(-n,0), level = a2, xi = xi, phi1 = sqrt(sigma1), phi2 = sqrt(sigma2))$minimum/frac
   }
   bp <- bp[-c(1,nbp+2)]
   bp <- cbind(bp+floor(lower),bp,bp+ceiling(upper))
-  colnames(bp) <- c("lower", "breakpoints", "upper")
+  a2 <- round(a2 * 100, digits = 1)
+  colnames(bp) <- c(paste(a2, "%"), "breakpoints", paste(100 - a2, "%"))
   rownames(bp) <- 1:nbp
   RVAL <- list(confint = bp,
                nobs = object$nobs,
@@ -467,10 +469,11 @@ print.confint.breakpoints <- function(x, format.times = NULL, ...)
     warning("Overlapping confidence intervals")
 }
 
-lines.confint.breakpoints <- function(x, col = 2, angle = 90, length = 0.05, code = 3, at = NULL, ...)
+lines.confint.breakpoints <- function(x, col = 2, angle = 90, length = 0.05,
+  code = 3, at = NULL, breakpoints = TRUE, ...)
 {
   x <- breakdates(x)
-  abline(v = x[,2], lty = 2)
+  if(breakpoints) abline(v = x[,2], lty = 2)
   if(is.null(at)) {
     at <- par("usr")[3:4]
     at <- diff(at)/1.08 * 0.02 + at[1]
