@@ -22,7 +22,7 @@ gefp <- function(...,
   } else {
     index <- 1:n
     if(is.ts(psi)) z <- time(psi)
-      else if("quasits" %in% class(psi)) z <- time(psi)
+      else if(is.quasits(psi)) z <- time(psi)
       else if(is.ts(data)) z <- time(data)
       else if("quasits" %in% class(data)) z <- time(data)
       else z <- index/n
@@ -55,16 +55,10 @@ gefp <- function(...,
       if(length(parm) > 1) stop("limiting process is not a Brownian bridge")
     }
 
-  if(is.ts(psi) & is.null(order.by))
-    process <- ts(process, end = end(psi), frequency = frequency(psi))
-
-  if(!is.ts(process))
-    process <- ts(process, start = 0, frequency = n-1)
-
   colnames(process) <- colnames(psi)
   if(!is.null(parm)) process <- process[, parm]
 
-  retval <- list(process = process,
+  retval <- list(process = quasits(process, z),
                  nreg = k,
                  nobs = n,
                  call = match.call(),
@@ -73,17 +67,25 @@ gefp <- function(...,
                  par = NULL,
                  lim.process = "Brownian bridge",
 		 type.name = "M-fluctuation test",
-                 J12 = J12,
-                 time = z)
+                 J12 = J12)
 
   class(retval) <- c("gefp", "efp")
   return(retval)
 }
 
+time.gefp <- function(x, ...)
+{
+  time(x$process, ...)
+}
+
+boundary.gefp <- function(x, ...)
+{
+  quasits(as.vector(boundary.efp(x, ...)), time(x))
+}
+
 plot.gefp <- function(x, alpha = 0.05, parm = NULL,
                      boundary = TRUE, functional = "max", 
-		     main = NULL,  ylim = NULL, xlab = "Time",
-		     ylab = "empirical fluctuation process",
+		     main = NULL,  ylim = NULL, xlab = "Time", ylab = NULL,
 		     ...)
 {
     if(is.null(functional)) fun <- "max"
@@ -105,7 +107,7 @@ plot.gefp <- function(x, alpha = 0.05, parm = NULL,
     if(!is.null(parm)) z <- z[, parm]
 
     if(!is.null(functional)) {
-      k <- ncol(z)
+      k <- NCOL(z)
 
       switch(functional,
         "max" = {
@@ -143,32 +145,20 @@ plot.gefp <- function(x, alpha = 0.05, parm = NULL,
     }
 
     if(boundary)
-        panel <- function(y, ...) {
+        mpanel <- function(y, ...) {
             lines(y, ...)
             lines(bound, col=2)
             lines(-bound, col=2)
             abline(0,0)
         }
     else
-        panel <- function(y, ...) {
+        mpanel <- function(y, ...) {
             lines(y, ...)
             abline(0,0)
         }
-
-    if(any(attr(z, "class") == "mts"))
-        plot(z, main = main, panel = panel, ...)
-    else {
-        plot(x$time, z, main = main, xlab = xlab, ylab = ylab, ylim = ylim, type = "l", ...)
-        if(boundary) {
-            lines(x$time, bound, col=2)
-            if(!pos) lines(x$time, -bound, col=2)
-            if(ave) {
-              avez <- ts(rep(mean(z), length(bound)), start = start(bound), frequency = frequency(bound))
-              lines(x$time, avez, lty = 2)
-            }
-        }
-        abline(0,0)
-    }
+     if(!is.quasits(z)) z <- quasits(z, time(x))
+     if(is.null(ylab) & NCOL(z) < 2) ylab <- "empirical fluctuation process"
+     plot(z, main = main, xlab = xlab, ylab = ylab, ylim = ylim, panel = mpanel, ...)
 }
 
 efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time = max),
@@ -219,7 +209,7 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
   }
   if(is.null(computeCritval)) {
     computeCritval <- function(alpha, nproc = 1)
-      uniroot(function(y) {computePval(y, nproc = nproc) - alpha}, c(0,100))$root
+      uniroot(function(y) {computePval(y, nproc = nproc) - alpha}, c(0, 1000))$root
   }
 
 
@@ -318,12 +308,6 @@ time.quasits <- function(x, ...)
   attr(x, "time")
 }
 
-plot.quasits <- function(x, xlab = "Time",
-  ylab = deparse(substitute(x)), type = "l", ...)
-{
-  plot(time(x), x, xlab = xlab, ylab = ylab, type = type, ...)
-}
-
 as.quasits <- function(x, ...)
 {
   UseMethod("as.quasits")
@@ -348,3 +332,97 @@ as.quasits.irts <- function(x, ...)
   quasits(x$value, x$time)
 }
 
+plot.quasits <- function(x,
+  plot.type = c("multiple", "single"), panel = lines,
+  xlab = "Time", ylab = NULL, main = NULL, ylim = NULL,
+  oma = c(6, 0, 5, 0), col = 1, nc, ...)
+{
+  plot.type <- match.arg(plot.type)
+  nser <- NCOL(x)
+  x.time <- time(x)
+  if(is.ts(x.time)) x.time <- as.vector(x.time)
+
+  if(plot.type == "multiple" && nser > 1) {
+    if(is.null(main)) main <- deparse(substitute(x))
+    if(is.null(ylab)) ylab <- colnames(x)
+    if(is.null(ylab)) ylab <- paste("Series", 1:nser)
+    ylab <- rep(ylab, length.out = nser)
+    col <- rep(col, length.out = nser)
+
+    panel <- match.fun(panel)
+    if(nser > 10) stop("Can't plot more than 10 series")
+    if(missing(nc)) nc <- if(nser >  4) 2 else 1
+    oldpar <- par("mar", "oma", "mfcol")
+    on.exit(par(oldpar))
+    par(mar = c(0, 5.1, 0, 2.1), oma = oma)
+    nr <- ceiling(nser / nc)
+    par(mfcol = c(nr, nc))
+    for(i in 1:nser) {
+      if(i%%nr==0 || i == nser)
+        plot(x.time, x[, i], xlab= "", ylab= ylab[i], type = "n", ...)
+      else {      
+        plot(x.time, x[, i], axes = FALSE, xlab= "", ylab= ylab[i], type = "n", ...)
+        box()
+        axis(2, xpd = NA)
+      }
+      panel(x.time, x[, i], col = col[i], ...)
+    }
+    par(oldpar)
+  } else {
+    if(is.null(ylab)) ylab <- deparse(substitute(x))
+    if(is.null(main)) main <- ""
+    if(is.null(ylim)) ylim <- range(x)
+    
+    col <- rep(col, length.out = nser)
+    dummy <- rep(range(x), length.out = length(time(x)))
+	    
+    plot(x.time, dummy, xlab= xlab, ylab= ylab[1], type = "n", ylim = ylim, ...)
+    box()
+    y <- as.matrix(x)
+    for(i in 1:nser) {
+      panel(x.time, y[, i], col = col[i], ...)
+    }
+  }
+  title(main)
+  return(invisible(x))
+}
+
+lines.quasits <- function(x, type = "l", ...)
+{
+  if(NCOL(x) == 1) lines(time(x), x, type = type, ...)
+    else stop("Can't plot multivariate quasi time series object")
+}
+
+"[.quasits" <- function(x, i, j, ...)
+{
+  if(!is.quasits(x))
+    stop("method is only for quasits objects")
+  x.time <- time(x)
+  attr(x, "time") <- NULL
+  nclass <- class(x)[-(1:which(class(x) == "quasits"))]
+  if(length(nclass) < 1) nclass <- NULL 
+  class(x) <- nclass
+  if(NCOL(x) < 2) x <- as.matrix(x)
+  if(missing(i)) i <- 1:nrow(x)
+  if(missing(j)) j <- 1:ncol(x)
+  return(quasits(x[i, j, ...], x.time[i]))
+}
+
+print.quasits <- function(x, ...)
+{
+  if(!is.quasits(x))
+    stop("method is only for quasits objects")
+  x.time <- time(x)
+  attr(x, "time") <- NULL
+  nclass <- class(x)[-(1:which(class(x) == "quasits"))]
+  if(length(nclass) < 1) nclass <- NULL 
+  class(x) <- nclass
+  cat("Value:\n")
+  print(x)
+  cat("\nTime:\n")
+  print(x.time)
+}
+
+is.quasits <- function(object)
+  inherits(object, "quasits")
+  
