@@ -402,12 +402,9 @@ confint.breakpointsfull <- function(object, parm = NULL, level = 0.95, breaks = 
     Omega1 <- Omega2 <- sigma1 * Q1
   else {
     if(sandwich) {
-      ## Q <- chol2inv(chol(summary(fm)$cov.unscaled))
-      ## Omega1 <- Omega2 <- (Q %*% vcov(fm) %*% Q)/n
-      ## we already have computed Q, so it is easier to use:
       Omega1 <- Omega2 <- n * crossprod(Q1, vcov(fm)) %*% Q1
     } else {
-      Omega1 <- Omega2 <- vcov(fm)/n
+      Omega1 <- Omega2 <- vcov(fm)
     }
   }
 
@@ -424,7 +421,7 @@ confint.breakpointsfull <- function(object, parm = NULL, level = 0.95, breaks = 
       Omega2 <- sigma2 * Q2
     else {
       if(sandwich) Omega2 <- nrow(X2) * crossprod(Q2, vcov(fm2)) %*% Q2
-        else Omega2 <- vcov(fm2)/nrow(X2)
+        else Omega2 <- vcov(fm2)
     }
   }
 
@@ -450,7 +447,7 @@ confint.breakpointsfull <- function(object, parm = NULL, level = 0.95, breaks = 
         Omega2 <- sigma2 * Q2
       else {
         if(sandwich) Omega2 <- nrow(X2) * crossprod(Q2, vcov(fm2)) %*% Q2
-          else Omega2 <- vcov(fm2)/nrow(X2)
+          else Omega2 <- vcov(fm2)
       }
     }
         

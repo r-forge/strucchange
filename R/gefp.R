@@ -40,9 +40,9 @@ gefp <- function(...,
   else {
     if(sandwich) {
       Q <- chol2inv(chol(summary(fm)$cov.unscaled))
-      J12 <- root.matrix((Q %*% vcov(fm) %*% Q)/n)
+      J12 <- root.matrix((Q %*% vcov(fm, order.by = order.by, data = data) %*% Q)/n)
     } else {
-      J12 <- root.matrix(vcov(fm)/n)
+      J12 <- root.matrix(vcov(fm, order.by = order.by, data = data))
     }
   }
 
