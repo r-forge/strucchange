@@ -463,9 +463,16 @@ confint.breakpointsfull <- function(object, parm = NULL, level = 0.95, breaks = 
       else phi1 <- sqrt(sigma1)
     if(!is.null(vcov)) phi2 <- sqrt(Oprod2/Qprod2)
       else phi2 <- sqrt(sigma2)
+ 
+    p0 <- pargmaxV(0, phi1 = phi1, phi2 = phi2, xi = xi)
+    if(p0 < a2 || p0 > (1-a2))
+      stop(paste("Confidence interval cannot be computed: P(argmax V <= 0) =", round(p0, digits = 4)))
+    ub <- lb <- 0
+    while(pargmaxV(ub, phi1 = phi1, phi2 = phi2, xi = xi) < (1 - a2)) ub <- ub + 1000
+    while(pargmaxV(lb, phi1 = phi1, phi2 = phi2, xi = xi) > a2) lb <- lb - 1000
 
-    upper[i-1] <- uniroot(myfun, c(0, 1000), level = (1-a2), xi = xi, phi1 = phi1, phi2 = phi2)$root
-    lower[i-1] <- uniroot(myfun, c(-1000,0), level = a2, xi = xi, phi1 = phi1, phi2 = phi2)$root
+    upper[i-1] <- uniroot(myfun, c(0, ub), level = (1-a2), xi = xi, phi1 = phi1, phi2 = phi2)$root
+    lower[i-1] <- uniroot(myfun, c(lb, 0), level = a2, xi = xi, phi1 = phi1, phi2 = phi2)$root
     
     upper[i-1] <- upper[i-1] * phi1^2 / Qprod1
     lower[i-1] <- lower[i-1] * phi1^2 / Qprod1
@@ -474,8 +481,6 @@ confint.breakpointsfull <- function(object, parm = NULL, level = 0.95, breaks = 
   bp <- bp[-c(1, nbp+2)]
   bp <- cbind(bp - ceiling(upper), bp, bp - floor(lower))
   #V.BP# bp <- cbind(floor(bp - upper) - 1, bp, floor(bp - lower) + 1)
-  #V.2# bp <- cbind(bp - (as.integer(upper) + 1), bp, bp - (as.integer(lower) - 1))
-  #V.1# bp <- cbind(bp+floor(lower), bp, bp+ceiling(upper))
   a2 <- round(a2 * 100, digits = 1)
   colnames(bp) <- c(paste(a2, "%"), "breakpoints", paste(100 - a2, "%"))
   rownames(bp) <- 1:nbp
