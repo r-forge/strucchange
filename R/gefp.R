@@ -17,8 +17,10 @@ gefp <- function(...,
     if(inherits(order.by, "formula")) {
       z <- model.matrix(order.by, data = data)
       z <- as.vector(z[,ncol(z)])
+      order.name <- deparse(order.by[[2]])
     } else {
       z <- order.by
+      order.name <- deparse(substitute(order.by))
     }
     index <- order(z)
     psi <- psi[index, , drop = FALSE]
@@ -30,6 +32,7 @@ gefp <- function(...,
       else if(is.ts(data)) z <- time(data)
       else if(is.zoo(data)) z <- time(data)
       else z <- index/n
+    order.name <- "Time"
   }
 
   if(inherits(z, "POSIXt"))
@@ -72,6 +75,7 @@ gefp <- function(...,
                  par = NULL,
                  lim.process = "Brownian bridge",
 		 type.name = "M-fluctuation test",
+		 order.name = order.name,
                  J12 = J12)
 
   class(retval) <- "gefp"
@@ -253,11 +257,15 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
       ## can also use boundary argument: b(t) = critval * boundary(t)
     
           plotProcess <- function(x, alpha = 0.05, aggregate = TRUE,
-	    xlab = "Time", ylab = NULL, main = x$type.name, ylim = NULL, ...)
+	    xlab = NULL, ylab = NULL, main = x$type.name, ylim = NULL, ...)
 	  {
             n <- x$nobs
 	    bound <- computeCritval(alpha = alpha, nproc = NCOL(x$process)) * boundary(0:n/n)
 	    bound <- zoo(bound, time(x))
+            if(is.null(xlab)) {
+	      if(!is.null(x$order.name)) xlab <- x$order.name
+	        else xlab <- "Time"
+            }
 
             if(aggregate) {
 	      proc <- zoo(apply(as.matrix(x$process), 1, functional[[1]]), time(x))
@@ -291,13 +299,17 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
       ## plot: first aggregate, add critval and statistic
 
           plotProcess <- function(x, alpha = 0.05, aggregate = TRUE,
-	    xlab = "Time", ylab = NULL, main = x$type.name, ylim = NULL, ...)
+	    xlab = NULL, ylab = NULL, main = x$type.name, ylim = NULL, ...)
 	  {
             n <- x$nobs
 	    bound <- computeCritval(alpha = alpha, nproc = NCOL(x$process)) * boundary(0:n/n)
 	    bound <- zoo(bound, time(x))
             stat <- computeStatistic(x$process)
 	    stat <- zoo(rep(stat, length(time(x))), time(x))
+            if(is.null(xlab)) {
+	      if(!is.null(x$order.name)) xlab <- x$order.name
+	        else xlab <- "Time"
+            }
 
 	    if(aggregate) {
 	      proc <- zoo(apply(as.matrix(x$process), 1, functional[[1]]), time(x))
@@ -326,7 +338,7 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
       ## lambda = lambda_comp(lambda_time(x))
 
         plotProcess <- function(x, alpha = 0.05, aggregate = TRUE,
-	    xlab = "Component", ylab = "Statistic", main = x$type.name, ylim = NULL, ...)
+	    xlab = NULL, ylab = NULL, main = x$type.name, ylim = NULL, ...)
         {
           k <- NCOL(x$process)
           bound <- computeCritval(alpha = alpha, nproc = NCOL(x$process)) * boundary(1:k/k)
@@ -337,6 +349,8 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
 	  
 	    xlabels <- colnames(x$process)
 	    if(is.null(xlabels)) xlabels <- paste("Series", 1:k)
+	    if(is.null(xlab)) xlab <- "Component"
+	    if(is.null(ylab)) ylab <- "Statistic"
             if(is.null(ylim)) ylim <- range(c(range(proc), range(bound), range(stat), 0))
 	    
 	    plot(1:k, proc, xlab = xlab, ylab = ylab, main = main, ylim = ylim, axes = FALSE, type = "h", ...)
@@ -348,6 +362,10 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
 	    lines(bound, col = 2)
 	    if(!identical(functional[[2]], max)) lines(stat, lty = 2)	    
 	  } else {
+            if(is.null(xlab)) {
+	      if(!is.null(x$order.name)) xlab <- x$order.name
+	        else xlab <- "Time"
+            }
 	    panel <- function(x, ...)
 	    {
               lines(x, ...)
@@ -365,8 +383,12 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
       ## functional is already the full functional lambda
       ## for plotting: just plot raw process
       plotProcess <- function(x, alpha = 0.05, aggregate = FALSE,
-        xlab = "Time", ylab = NULL, main = x$type.name, ...)
+        xlab = NULL, ylab = NULL, main = x$type.name, ...)
       {
+	if(is.null(xlab)) {
+	  if(!is.null(x$order.name)) xlab <- x$order.name
+	    else xlab <- "Time"
+	}
         if(aggregate) warning("aggregation not available")
         panel <- function(x, ...) {
           lines(x, ...)
