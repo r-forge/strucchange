@@ -1,8 +1,8 @@
 mefp <- function(obj, ...) UseMethod("mefp")
 
 mefp.formula <-
-    function(formula, data=list(), type = c("ME", "fluctuation"), h=1,
-             alpha=0.05, functional = c("max", "range"),
+    function(formula, type = c("OLS-CUSUM", "OLS-MOSUM", "ME", "fluctuation"),
+             data=list(), h=1, alpha=0.05, functional = c("max", "range"),
              period=10, tolerance=.Machine$double.eps^0.5,
              MECritvalTable=monitorMECritvalTable, rescale=FALSE, ...)
 {
@@ -26,8 +26,8 @@ mefp.efp <-
              MECritvalTable=monitorMECritvalTable, rescale=NULL, ...)
 {
     functional <- match.arg(functional)
-    if(! (obj$type %in% c("ME", "fluctuation")))
-        stop("efp must be of type `fluctuation' or `ME'")
+    if(! (obj$type %in% c("OLS-CUSUM", "OLS-MOSUM", "ME", "fluctuation")))
+        stop("efp must be of type `OLS-CUSUM', `OLS-MOSUM', `fluctuation' or `ME'")
 
     if(is.null(as.list(obj$call)$data)){
        data <- NULL
@@ -45,6 +45,7 @@ mefp.efp <-
     histsize <- obj$nobs
     switch(obj$type,
            "ME" = { winsize <- obj$par },
+           "OLS-MOSUM" = { winsize <- obj$par },
        { winsize <- 1 })
     K <- floor(winsize*obj$nobs)
     sigmahat <- obj$sigma
@@ -58,7 +59,69 @@ mefp.efp <-
 
     logPlus <- function(x) ifelse(x<=exp(1),1,log(x))
 
-    if(obj$type=="ME"){
+    switch(obj$type,
+
+    "OLS-CUSUM" = {
+
+        mreSize <- function(a){
+            -2*(pnorm(a)-a*dnorm(a))
+        }
+        mreCritval <- function(a){
+            abs(2*(pnorm(a)-a*dnorm(a))+alpha-2)
+        }
+        critval <- optim(5, mreCritval)$par
+        if((mreSize(critval)-alpha) > tolerance)
+            stop("Could not find critical within tolerance")
+
+        computeEmpProc <- function(X, y)
+        {
+          as.vector(cumsum((y - X %*% histcoef)/(sigmahat*sqrt(histsize))))
+        }
+        computeEstims <- NULL
+        functional <- "max"
+        border <- function(k){
+            x <- k/histsize
+            sqrt(x*(x-1)*(critval^2 + log(x/(x-1))))
+        }
+    },
+
+    "OLS-MOSUM" = {
+        dntab <- dimnames(MECritvalTable)
+        if(!(winsize %in% dntab[[1]]))
+            stop(paste("winsize h =",winsize,"not available, we have:",
+                       paste(dntab[[1]], collapse=", ")))
+        if(!(period %in% dntab[[2]]))
+            stop(paste("period",period,"not available, we have:",
+                       paste(dntab[[2]], collapse=", ")))
+        critval <- approx(x=as.numeric(dntab[[3]]),
+                          y=MECritvalTable[as.character(winsize),
+                          as.character(period),,functional],
+                          xout=1-alpha)$y
+        if(is.na(critval))
+            stop(paste("Necessary significance level per parameter of",
+                       alpha,
+                       "\n\toutside of available range",
+                       paste(range(1-as.numeric(dntab[[3]])),
+                             collapse="-")))
+
+        computeEmpProc <- function(X, y)
+        {
+               e <- as.vector(y - X %*% histcoef)
+               process <- rep(0, nrow(X)-K+1)
+               for(i in 0:(nrow(X)-K))
+               {
+                   process[i+1] <- sum(e[(i+1):(i+K)])
+               }
+               process/(sigmahat*sqrt(histsize))
+        }
+        functional <- "max"
+        computeEstims <- NULL
+        border <- function(k){
+            critval*sqrt(2*logPlus(k/histsize))
+        }
+    },
+
+    "ME" = {
         dntab <- dimnames(MECritvalTable)
         if(!(winsize %in% dntab[[1]]))
             stop(paste("winsize h =",winsize,"not available, we have:",
@@ -88,8 +151,9 @@ mefp.efp <-
         border <- function(k){
             critval*sqrt(2*logPlus(k/histsize))
         }
-    }
-    else{
+    },
+
+    "fluctuation" = {
 
         mreSize <- function(a){
             -2*(pnorm(a)-a*dnorm(a))
@@ -113,7 +177,7 @@ mefp.efp <-
             x <- k/histsize
             sqrt(x*(x-1)*(critval^2 + log(x/(x-1))))
         }
-    }
+    })
 
     if(functional=="max"){
         computeStat <- function(empproc){
@@ -130,8 +194,6 @@ mefp.efp <-
         }
     }
 
-
-
     obj <- list(breakpoint=NA, last=obj$nobs, process=NULL,
                 statistic=NULL, histsize=histsize,
                 initcall=match.call(), call=match.call(),
@@ -142,7 +204,7 @@ mefp.efp <-
                 functional=functional, alpha=alpha, critval=critval,
                 histcoef=histcoef, formula=obj$formula,
                 type.name=paste("Monitoring with", obj$type.name),
-                data=data, histtsp=obj$datatsp)
+                type=obj$type, data=data, histtsp=obj$datatsp)
 
     class(obj) <- "mefp"
     obj
@@ -170,20 +232,44 @@ monitor <- function(obj, data=NULL, verbose=TRUE){
     if(ncol(y)!=1)
         stop("multivariate response not implemented yet")
     foundBreak <- FALSE
-    for(k in (obj$last+1):nrow(x)){
-        newestims <- obj$computeEstims(x,y,k)
-        obj$process <- rbind(obj$process,
-                             obj$computeEmpProc(newestims$coef, newestims$Qr12))
-        stat <- obj$computeStat(obj$process)
-        obj$statistic <- c(obj$statistic, stat)
-        if(!foundBreak & (stat > obj$border(k))){
-            foundBreak <- TRUE
-            obj$breakpoint <- k
-            if(verbose) cat("Break detected at observation #", k, "\n")
-        }
+
+    if((obj$type == "OLS-MOSUM") | (obj$type == "OLS-CUSUM"))
+    {
+      if(obj$type == "OLS-CUSUM")
+      {
+        obj$process <- obj$computeEmpProc(x,y)[-(1:obj$histsize)]
+      }
+      else
+      {
+        obj$process <- obj$computeEmpProc(x,y)[-(1:length(obj$efpprocess))]
+      }
+      boundary <- obj$border((obj$histsize+1):nrow(x))
+      obj$statistic <- max(abs(obj$process))
+      if(!foundBreak & any(abs(obj$process) > boundary))
+      {
+        foundBreak <- TRUE
+        obj$breakpoint <- min(which(abs(obj$process) > boundary)) + obj$histsize
+        if(verbose) cat("Break detected at observation #", obj$breakpoint, "\n")
+      }
+      obj$lastcoef <- NULL
     }
-    obj$last <- k
-    obj$lastcoef <- newestims$coef
+    else
+    {
+      for(k in (obj$last+1):nrow(x)){
+          newestims <- obj$computeEstims(x,y,k)
+          obj$process <- rbind(obj$process,
+                               obj$computeEmpProc(newestims$coef, newestims$Qr12))
+          stat <- obj$computeStat(obj$process)
+          obj$statistic <- c(obj$statistic, stat)
+          if(!foundBreak & (stat > obj$border(k))){
+              foundBreak <- TRUE
+              obj$breakpoint <- k
+              if(verbose) cat("Break detected at observation #", k, "\n")
+          }
+      }
+      obj$lastcoef <- newestims$coef
+    }
+    obj$last <- nrow(x)
     obj$call <- match.call()
     obj
 }

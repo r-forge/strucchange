@@ -14,9 +14,9 @@
 \usage{
 mefp(obj, ...)
 
-\method{mefp}{formula}(formula, data, type = c("ME", "fluctuation"), h=1,
-    alpha=0.05, functional = c("max", "range"), period=10,
-    tolerance=.Machine$double.eps^0.5,
+\method{mefp}{formula}(formula, type = c("OLS-CUSUM", "OLS-MOSUM", "ME",
+     "fluctuation"), data, h=1, alpha=0.05, functional = c("max", "range"),
+    period=10, tolerance=.Machine$double.eps^0.5,
     MECritvalTable=monitorMECritvalTable,
     rescale=FALSE, ...)
 
