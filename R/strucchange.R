@@ -10,9 +10,9 @@ efp <- function(formula, data = list(),
     if(dynamic) X <- cbind(c(0,y[1:(n-1)]),X)
     k <- ncol(X)
     type <- match.arg(type)
-    
+
     ## recursive residuals
-    
+
     rec.res <- function(X, y, tol = 1e-7)
     {
         n <- nrow(X)
@@ -31,7 +31,7 @@ efp <- function(formula, data = list(),
     }
 
     ## root of a symmetric matrix
-    
+
     root.matrix <- function(X)
     {
         if((ncol(X)==1)&&(nrow(X)==1)) return(sqrt(X))
@@ -50,7 +50,9 @@ efp <- function(formula, data = list(),
                    call = match.call(),
                    formula = formula,
                    par = NULL,
-                   type.name = NULL)
+                   type.name = NULL,
+                   coef = NULL,
+                   Q12 = NULL)
 
     switch(type,
 
@@ -158,6 +160,7 @@ efp <- function(formula, data = list(),
                beta.hat <- m.fit$coefficients
                sigma <- sqrt(sum(m.fit$residual^2)/m.fit$df.residual)
                process <- matrix(rep(0,k*(n-k+1)), nrow=k)
+               Q12 <- root.matrix(crossprod(X))
                if(rescale)
                {
                    for(i in k:(n-1))
@@ -169,10 +172,9 @@ efp <- function(formula, data = list(),
                }
                else
                {
-                   Qn <- root.matrix(crossprod(X))
                    for(i in k:(n-1))
                    {
-                       process[,(i-k+1)] <- Qn %*% (lm.fit(as.matrix(X[1:i,]),
+                       process[,(i-k+1)] <- Q12 %*% (lm.fit(as.matrix(X[1:i,]),
                                                            y[1:i])$coefficients - beta.hat)
                    }
                }
@@ -189,6 +191,7 @@ efp <- function(formula, data = list(),
                  else
                    process <- ts(process, start = 0, frequency = nrow(process) - 1)
                }
+               retval$Q12 <- Q12
                retval$type.name <- "Fluctuation test (recursive estimates test)"
            },
 
@@ -200,6 +203,7 @@ efp <- function(formula, data = list(),
                sigma <- sqrt(sum(m.fit$residual^2)/m.fit$df.residual)
                nh <- floor(n*h)
                process <- matrix(rep(0,k*(n-nh+1)), nrow=k)
+               Q12 <- root.matrix(crossprod(X))
                if(rescale)
                {
                    for(i in 0:(n-nh))
@@ -210,10 +214,9 @@ efp <- function(formula, data = list(),
                }
                else
                {
-                   Qn <- root.matrix(crossprod(X))
                    for(i in 0:(n-nh))
                    {
-                       process[, i+1] <- Qn %*% (lm.fit(
+                       process[, i+1] <- Q12 %*% (lm.fit(
                                                         as.matrix(X[(i+1):(i+nh),]), y[(i+1):(i+nh)])$coefficients - beta.hat)
                    }
                }
@@ -231,6 +234,7 @@ efp <- function(formula, data = list(),
                    process <- ts(process, end = (n-floor(0.5 + nh/2))/n, frequency = n)
                }
                retval$par <- h
+               retval$Q12 <- Q12
                retval$type.name <- "ME test (moving estimates test)"
            })
 
@@ -238,6 +242,7 @@ efp <- function(formula, data = list(),
         process <- ts(process, start = 0, frequency = (length(process)-1))
 
     retval$process <- process
+    retval$coef <- lm.fit(X,y)$coefficients
     class(retval) <- c("efp")
     return(retval)
 }
@@ -373,8 +378,7 @@ pvalue.efp <- function(x, type, alt, functional = "max", h = NULL, k = NULL)
 
   "OLS-MOSUM" = {
     if(k>6) k <- 6
-    data(me, package = strucchange)
-    crit.table <- as.matrix(me)[(((k-1)*10+1):(k*10)), ]
+    crit.table <- get("sc.me")[(((k-1)*10+1):(k*10)), ]
     tablen <- dim(crit.table)[2]
     tableh <- (1:10)*0.05
     tablep <- c(0.1, 0.05, 0.025, 0.01)
@@ -411,8 +415,7 @@ pvalue.efp <- function(x, type, alt, functional = "max", h = NULL, k = NULL)
     switch(functional,
     "max" = {
       if(k>6) k <- 6
-      data(me, package = strucchange)
-      crit.table <- as.matrix(me)[(((k-1)*10+1):(k*10)), ]
+      crit.table <- get("sc.me")[(((k-1)*10+1):(k*10)), ]
       tablen <- dim(crit.table)[2]
       tableh <- (1:10)*0.05
       tablep <- c(0.1, 0.05, 0.025, 0.01)
@@ -656,16 +659,13 @@ pvalue.Fstats <- function(x, type = c("supF", "aveF", "expF"), k, lambda)
 {
   switch(match.arg(type),
   supF = {
-    data(beta.sup,package = strucchange)
-    beta <- as.matrix(beta.sup)
+    beta <- get("sc.beta.sup")
   },
   aveF = {
-    data(beta.ave, package = strucchange)
-    beta <- as.matrix(beta.ave)
+    beta <- get("sc.beta.ave")
   },
   expF = {
-    data(beta.exp, package = strucchange)
-    beta <- as.matrix(beta.exp)
+    beta <- get("sc.beta.exp")
   })
   m <- ncol(beta)-1
   if(lambda<1) tau <- lambda
