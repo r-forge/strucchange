@@ -88,8 +88,11 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
 		     computePval = NULL,
 		     computeCritval = NULL,
 		     lim.process = "Brownian bridge",
-		     nobs = 10000, nrep = 50000, nproc = 1:20, h = 0.5)
+		     nobs = 10000, nrep = 50000, nproc = 1:20, h = 0.5,
+		     probs = c(0:84/100, 850:1000/1000))
 {		     
+  probs <- probs[-which(probs == 0)]
+
   ## compute from functional list the full functional
   ## lambda = myfun
   
@@ -124,16 +127,16 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
              h = h, lim.process = lim.process, functional = myfun)
       computePval2 <- function(x, nproc = 1) 1 - (sum(z <= x)/nrep)^nproc
       
-      zrange <- range(c(0, z))
-      zstat <- seq(zrange[1], zrange[2], length = 100)
-      zval <- sapply(zstat, computePval2)
-      pfun <- approxfun(zstat, zval)
+      zquant <- c(0, quantile(z, probs = probs))
+      pfun <- approxfun(zquant, 1 - c(0, probs))
       computePval <- function(x, nproc = 1) {
-        1 - (1 - ifelse(x > zrange[2], 0, pfun(x)))^nproc
+        1 - (1 - ifelse(x > max(zquant), 0, pfun(x)))^nproc
       }
       
-      if(is.null(computeCritval))
-        computeCritval <- function(alpha, nproc = 1) quantile(z, (1-alpha)^(1/nproc))
+      cfun <- approxfun(c(0, probs), zquant)
+      computeCritval <- function(alpha, nproc = 1) cfun((1-alpha)^(1/nproc))
+      ## if(is.null(computeCritval))
+        computeCritval2 <- function(alpha, nproc = 1) quantile(z, (1-alpha)^(1/nproc))
     } else {
       z <- matrix(rep(0, nrep * length(nproc)), ncol = length(nproc))
       colnames(z) <- as.character(nproc)
@@ -141,18 +144,29 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
         z[, as.character(i)] <- simulateDist(nobs = nobs, nrep = nrep, nproc = i,
                h = h, lim.process = lim.process, functional = myfun)
 
-      ## FIXME
-
+      zquant <- rbind(0, apply(z, 2, function(x) quantile(x, probs = probs)))
       computePval <- function(x, nproc = 1) {
+        if(as.character(nproc) %in% colnames(zquant)) {
+          pfun <- approxfun(zquant[, as.character(nproc)], 1 - c(0, probs))
+          ifelse(x > max(zquant[, as.character(nproc)]), 0, pfun(x))
+	}
+	else stop("insufficient simulated values: cannot compute p value")
+      }
+      computeCritval <- function(alpha, nproc = 1) {
+        if(as.character(nproc) %in% colnames(z)) {
+          cfun <- approxfun(c(0, probs), zquant[, as.character(nproc)])
+          cfun(1 - alpha)
+        } else stop("insufficient simulated values: cannot compute critical value")
+      }
+      computePval2 <- function(x, nproc = 1) {
         if(as.character(nproc) %in% colnames(z))
           sum(z[, as.character(nproc)] > x)/nrep
 	else stop("insufficient simulated values: cannot compute p value")
       }
-      if(is.null(computeCritval)) {
-        computeCritval <- function(alpha, nproc = 1)
-          if(as.character(nproc) %in% colnames(z))
-            quantile(z[, as.character(nproc)], 1-alpha)
-          else stop("insufficient simulated values: cannot compute critical value")
+      computeCritval2 <- function(alpha, nproc = 1) {
+        if(as.character(nproc) %in% colnames(z))
+          quantile(z[, as.character(nproc)], 1-alpha)
+        else stop("insufficient simulated values: cannot compute critical value")
       }
     }
   }
@@ -303,7 +317,8 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
                computeStatistic = computeStatistic,
 	       computePval = computePval,
 	       computePval2 = computePval2,
-	       computeCritval = computeCritval)
+	       computeCritval = computeCritval,
+	       computeCritval2 = computeCritval2)
   class(rval) <- "efpFunctional"
   return(rval)
 }
