@@ -21,7 +21,7 @@ Dortmund,}}
 \maketitle
 
 \begin{abstract}
-This introduction to the \textsf{R} package \texttt{strucchange} is a (slighlty)
+This introduction to the \textsf{R} package \texttt{strucchange} is a (slightly)
 modified version of the paper of
 \cite{sc:Zeileis+Leisch+Hornik:2002}, which
 reviews tests for structural change in linear regression models from
@@ -241,7 +241,7 @@ the process should be close to 0 up to $t_0$ and leave its mean afterwards.
 show that the main properties of the CUSUM quantity remain the same even under 
 weaker assumptions, in particular in dynamic models. Therefore {\tt efp} has the
 logical argument {\tt dynamic}; if set to {\tt TRUE} the lagged observations
-$x_{t-1}$ will be included as regressors.\\
+$y_{t-1}$ will be included as regressors.\\
 
 \cite{Z:Ploberger+Kraemer:1992} suggested to
 base a structural change test on cumulative sums of the common OLS residuals.

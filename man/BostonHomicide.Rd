@@ -4,7 +4,7 @@
 \usage{data(BostonHomicide)}
 \description{
 Data about the number of youth homicides in Boston during the
-`Boston Gun Project'---an policing initiative aiming at lowering
+`Boston Gun Project'---a policing initiative aiming at lowering
 homicide victimization among young people in Boston.
 }
 \format{
@@ -23,6 +23,7 @@ youth homicides in Boston. The project began in early 1995 and implemented the
 so-called `Operation Ceasefire' intervention which began in the late spring of 1996.
 
 More information is available at:
+
   \url{http://www.ksg.harvard.edu/criminaljustice/research/bgp.htm}
 }
 
@@ -41,7 +42,8 @@ Serious Youth Offenders, and a Use-Reduction Strategy, \emph{Law and Contemporar
 \examples{
 data(BostonHomicide)
 
-fm <- glm(homicides ~ population + season, data = BostonHomicide, family = poisson)
+fm <- glm(homicides ~ population + season, data = BostonHomicide,
+          family = poisson)
 anova(fm, test = "F")
 }
 

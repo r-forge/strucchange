@@ -114,12 +114,9 @@ efp <- function(formula, data=list(),
                e <- fm$residuals
                sigma <- sqrt(sum(e^2)/fm$df.residual)
                nh <- floor(n*h)
-               process <- rep(0, n-nh+1)
-               for(i in 0:(n-nh))
-               {
-                   process[i+1] <- sum(e[(i+1):(i+nh)])
-               }
-               process <- process/(sigma*sqrt(n))
+               process <- cumsum(c(0,e))
+               process <- process[-(1:nh)] - process[1:(n-nh+1)]
+	       process <- process/(sigma*sqrt(n))
                if(is.ts(data))
                    process <- ts(process, end = time(data)[(n-floor(0.5 + nh/2))],
                                  frequency = frequency(data))
@@ -255,7 +252,43 @@ efp <- function(formula, data=list(),
                retval$type.name <- "Score-based CUSUM test"
                retval$lim.process <- "Brownian bridge"
                retval$Q12 <- Q12
+           },
+
+           "Score-MOSUM" = {
+               fm <- lm.fit(X,y)
+               e <- as.vector(fm$residuals)
+               sigma2 <- sum(e^2)/n
+	       k <- k + 1
+	       nh <- floor(n*h)
+               ## Q12 <- sqrt(sigma2) * root.matrix(crossprod(X))/sqrt(n)
+               ## Q12 <- rbind(cbind(Q12, 0), 0)
+               ## Q12[k,k] <- sqrt(2)*sigma2
+
+	       process <- cbind(X * e, e^2 - sigma2)/sqrt(n)
+	       Q12 <- root.matrix(crossprod(process))
+	       process <- rbind(0, process)
+               process <- apply(process, 2, cumsum)
+               process <- process[-(1:nh),] - process[1:(n-nh+1),]
+	       process <- t(solve(Q12) %*% t(process))
+
+	       colnames(process) <- c(names(coef(fm)), "(Variance)")
+               if(is.ts(data))
+                   process <- ts(process, end = time(data)[(n-floor(0.5 + nh/2))],
+                                 frequency = frequency(data))
+               else
+               {
+                 if(is.ts(y))
+                   process <- ts(process, end = time(y)[(n-floor(0.5 + nh/2))],
+                                 frequency = frequency(y))
+                 else
+                   process <- ts(process, end = (n-floor(0.5 + nh/2))/n, frequency = n)
+               }
+               retval$par <- h
+               retval$type.name <- "Score-based MOSUM test"
+               retval$lim.process <- "Brownian bridge increments"
+               retval$Q12 <- Q12
            })
+
 
     if(!is.ts(process))
         process <- ts(process, start = 0, frequency = (length(process)-1))
@@ -282,7 +315,7 @@ plot.efp <- function(x, alpha = 0.05, alt.boundary = FALSE, boundary = TRUE,
                      ylab = "empirical fluctuation process", ...)
 {
     if(is.null(functional)) fun <- "max"
-      else fun <- match.arg(functional, c("max", "range", "meanL2"))
+      else fun <- match.arg(functional, c("max", "range", "maxL2", "meanL2"))
     bound <- boundary(x, alpha = alpha, alt.boundary = alt.boundary, functional = fun)
     pos <- FALSE
     ave <- FALSE
@@ -295,6 +328,8 @@ plot.efp <- function(x, alpha = 0.05, alt.boundary = FALSE, boundary = TRUE,
             if(alt.boundary) warning("no alternative boundaries available")
             if(fun == "meanL2")
               main <- paste(x$type.name, "with mean L2 norm")
+	    else if(fun == "maxL2")
+	      main <- paste(x$type.name, "with max L2 norm")
 	    else
 	      main <- x$type.name
         }
@@ -306,10 +341,21 @@ plot.efp <- function(x, alpha = 0.05, alt.boundary = FALSE, boundary = TRUE,
 
       switch(functional,
         "max" = {
-          z <- apply(abs(z), 1, max)
-          if(k > 1) pos <- TRUE
+          if(k > 1) {
+            z <- apply(abs(z), 1, max)
+            pos <- TRUE
+          }
         },
         "range" = { stop("no plot available for range functional") },
+        "maxL2" = {
+	  if(x$lim.process == "Brownian bridge") {
+            z <- rowSums(z^2)
+	    pos <- TRUE
+	  } else {
+	    stop("no test/plot available for mean L2 functional")
+	  }
+        },
+
         "meanL2" = {
 	  if(x$lim.process == "Brownian bridge") {
             z <- rowSums(z^2)
@@ -364,7 +410,7 @@ pvalue.efp <- function(x, lim.process, alt.boundary, functional = "max", h = NUL
 {
   lim.process <- match.arg(lim.process,
     c("Brownian motion", "Brownian bridge", "Brownian motion increments", "Brownian bridge increments"))
-  functional <- match.arg(functional, c("max", "range", "meanL2"))
+  functional <- match.arg(functional, c("max", "range", "meanL2", "maxL2"))
 
   switch(lim.process,
 
@@ -424,8 +470,20 @@ pvalue.efp <- function(x, lim.process, alt.boundary, functional = "max", h = NUL
       })
     },
 
+    "maxL2" = {
+      if(k > 25) {
+        warning("number of regressors > 25, critical values for 25 regressors used")
+        k <- 25
+      }
+      critval <- get("sc.maxL2")[as.character(k), ]
+      p <- approx(c(0, critval), c(1, 1-as.numeric(names(critval))), x, rule=2)$y
+    },
+
     "meanL2" = {
-      if(k > 25) k <- 25
+      if(k > 25) {
+        warning("number of regressors > 25, critical values for 25 regressors used")
+        k <- 25
+      }
       critval <- get("sc.meanL2")[as.character(k), ]
       p <- approx(c(0, critval), c(1, 1-as.numeric(names(critval))), x, rule=2)$y
     })
@@ -476,7 +534,7 @@ pvalue.efp <- function(x, lim.process, alt.boundary, functional = "max", h = NUL
 }
 
 
-sctest.efp <- function(x, alt.boundary = FALSE, functional = c("max", "range", "meanL2"), ...)
+sctest.efp <- function(x, alt.boundary = FALSE, functional = c("max", "range", "maxL2", "meanL2"), ...)
 {
     h <- x$par
     type <- x$type
@@ -523,6 +581,10 @@ sctest.efp <- function(x, alt.boundary = FALSE, functional = c("max", "range", "
         myrange <- function(y) diff(range(y))
         STAT <- max(apply(x,2,myrange))
         METHOD <- paste(METHOD, "with range norm")
+      },
+      "maxL2" = {
+        STAT <- max(rowSums(x^2))
+        METHOD <- paste(METHOD, "with max L2 norm")
       },
       "meanL2" = {
         STAT <- mean(rowSums(x^2))
@@ -746,8 +808,8 @@ sctest <- function(x, ...)
 
 sctest.formula <- function(formula, type = c("Rec-CUSUM", "OLS-CUSUM",
   "Rec-MOSUM", "OLS-MOSUM", "RE", "ME", "fluctuation", "Score-CUSUM", "Nyblom-Hansen",
-  "Chow", "supF", "aveF", "expF"), h = 0.15, alt.boundary = FALSE, functional = c("max", "range", "meanL2"),
-  from = 0.15, to = NULL, point = 0.5, asymptotic = FALSE, data = list(), ...)
+  "Chow", "supF", "aveF", "expF"), h = 0.15, alt.boundary = FALSE, functional = c("max", "range",
+  "maxL2", "meanL2"), from = 0.15, to = NULL, point = 0.5, asymptotic = FALSE, data = list(), ...)
 {
   type <- match.arg(type)
   if(type == "fluctuation") type <- "RE"
@@ -831,7 +893,7 @@ boundary.efp <- function(x, alpha = 0.05, alt.boundary = FALSE, functional = "ma
     h <- x$par
     type <- x$type
     lim.process <- x$lim.process
-    functional <- match.arg(functional, c("max", "range", "meanL2"))
+    functional <- match.arg(functional, c("max", "range", "maxL2", "meanL2"))
     proc <- as.matrix(x$process)
     n <- nrow(proc)
     k <- ncol(proc)
@@ -925,15 +987,46 @@ root.matrix <- function(X)
     }
 }
 
-lines.efp <- function(x, ...)
+lines.efp <- function(x, functional = "max", ...)
 {
-    proc <- x$process
-    if(any(class(proc)=="mts"))
-    {
-        proc <- ts(apply(abs(x$process), 1, 'max'),
-                   start = start(x$process), frequency = frequency(x$process))
+    if(is.null(functional)) stop("lines() cannot be added for `functional = NULL'")
+    else functional <- match.arg(functional, c("max", "range", "maxL2", "meanL2"))
+
+    if(x$lim.process %in% c("Brownian bridge", "Brownian bridge increments")) {
+      z <- as.matrix(x$process)
+      k <- ncol(z)
+
+      switch(functional,
+        "max" = {
+          if(k > 1) {
+            z <- apply(abs(z), 1, max)
+            pos <- TRUE
+          }
+        },
+        "range" = { stop("no plot available for range functional") },
+        "maxL2" = {
+	  if(x$lim.process == "Brownian bridge") {
+            z <- rowSums(z^2)
+	    pos <- TRUE
+	  } else {
+	    stop("no test/plot available for max L2 functional")
+	  }
+        },
+        "meanL2" = {
+	  if(x$lim.process == "Brownian bridge") {
+            z <- rowSums(z^2)
+	    ave <- TRUE
+	    pos <- TRUE
+	  } else {
+	    stop("no test/plot available for mean L2 functional")
+	  }
+        })
+      z <- ts(as.vector(z), start = start(x$process), frequency = frequency(x$process))
+    } else {
+      z <- x$process
     }
-    lines(proc, ...)
+
+    lines(z, ...)
 }
 
 lines.Fstats <- function(x, ...)

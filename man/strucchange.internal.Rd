@@ -4,6 +4,7 @@
 \alias{sc.beta.exp}
 \alias{sc.me}
 \alias{sc.meanL2}
+\alias{sc.maxL2}
 \alias{pvalue.efp}
 \alias{pvalue.Fstats}
 \alias{monitorMECritval}
