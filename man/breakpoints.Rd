@@ -135,7 +135,7 @@
 
   For illustration see the commented examples below and Zeileis et al. (2002).
 }
-\section{Value}{
+\section{value}{
   An object of class \code{"breakpoints"} is a list with the following
   elements:
   \describe{
