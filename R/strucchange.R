@@ -1,6 +1,6 @@
 efp <- function(formula, data=list(),
                 type = c("Rec-CUSUM", "OLS-CUSUM", "Rec-MOSUM",
-                "OLS-MOSUM", "fluctuation", "ME"), h = 0.15,
+                "OLS-MOSUM", "RE", "ME", "fluctuation"), h = 0.15,
                 dynamic = FALSE, rescale = TRUE, tol = 1e-7)
 {
     mf <- model.frame(formula, data = data)
@@ -18,6 +18,7 @@ efp <- function(formula, data=list(),
     }
     k <- ncol(X)
     type <- match.arg(type)
+    if(type == "fluctuation") type <- "RE"
 
     retval <- list(process = NULL,
                    type = type,
@@ -135,7 +136,7 @@ efp <- function(formula, data=list(),
 
            ## empirical process of recursive estimates fluctuation
 
-           "fluctuation" = {
+           "RE" = {
                m.fit <- lm.fit(X,y)
                beta.hat <- m.fit$coefficients
                sigma <- sqrt(sum(m.fit$residual^2)/m.fit$df.residual)
@@ -257,7 +258,7 @@ plot.efp <- function(x, alpha = 0.05, alt.boundary = FALSE, boundary = TRUE,
 
     z <- x$process
     switch(x$type,
-           "fluctuation" = {
+           "RE" = {
                if(!is.null(functional) && (functional == "max"))
                {
                    z <- ts(apply(abs(x$process), 1, 'max'),
@@ -315,7 +316,7 @@ pvalue.efp <- function(x, type, alt.boundary, functional = "max", h = NULL, k =
  NULL)
 {
   type <- match.arg(type,
-    c("Rec-CUSUM", "OLS-CUSUM", "Rec-MOSUM", "OLS-MOSUM", "fluctuation", "ME"))
+    c("Rec-CUSUM", "OLS-CUSUM", "Rec-MOSUM", "OLS-MOSUM", "RE", "ME"))
   functional <- match.arg(functional, c("max", "range"))
   switch(type,
 
@@ -379,7 +380,7 @@ pvalue.efp <- function(x, type, alt.boundary, functional = "max", h = NULL, k =
     p <- approx(c(0,tableipl), c(1,tablep), x, rule = 2)$y
   },
 
-  "fluctuation" = {
+  "RE" = {
     switch(functional,
     "max" = {
       p <- ifelse(x<0.1, 1,
@@ -481,7 +482,7 @@ sctest.efp <- function(x, alt.boundary = FALSE, functional = c("max", "range"), 
                names(STAT) <- "M0"
            },
 
-           "fluctuation" = {
+           "RE" = {
                switch(functional,
                       "max" = {
                           STAT <- max(abs(x))
@@ -717,11 +718,12 @@ sctest <- function(x, ...)
 }
 
 sctest.formula <- function(formula, type = c("Rec-CUSUM", "OLS-CUSUM",
-  "Rec-MOSUM", "OLS-MOSUM", "fluctuation", "ME", "Chow", "supF", "aveF",
+  "Rec-MOSUM", "OLS-MOSUM", "RE", "ME", "fluctuation", "Chow", "supF", "aveF",
   "expF"), h = 0.15, alt.boundary = FALSE, functional = c("max", "range"),
   from = 0.15, to = NULL, point = 0.5, asymptotic = FALSE, data = list(), ...)
 {
   type <- match.arg(type)
+  if(type == "fluctuation") type <- "RE"
   dname <- paste(deparse(substitute(formula)))
   if(type == "Chow")
   {
@@ -771,7 +773,7 @@ sctest.formula <- function(formula, type = c("Rec-CUSUM", "OLS-CUSUM",
     class(RVAL) <- "htest"
   }
   else if(any(type == c("Rec-CUSUM", "OLS-CUSUM",
-  "Rec-MOSUM", "OLS-MOSUM", "fluctuation", "ME")))
+  "Rec-MOSUM", "OLS-MOSUM", "RE", "ME")))
   {
     process <- efp(formula, type = type, h = h, data = data, ...)
     RVAL <- sctest(process, alt.boundary = alt.boundary, functional = functional)
@@ -816,7 +818,7 @@ boundary.efp <- function(x, alpha = 0.05, alt.boundary = FALSE, ...)
            },
            "Rec-MOSUM" = { bound <- rep(bound, length(x$process))},
            "OLS-MOSUM" = { bound <- rep(bound, length(x$process))},
-           "fluctuation" = { bound <- rep(bound, length(x$process))},
+           "RE" = { bound <- rep(bound, length(x$process))},
            "ME" = { bound <- rep(bound, length(x$process))})
 
     bound <- ts(bound, end = end(x$process), frequency = frequency(x$process))
