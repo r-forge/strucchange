@@ -2,7 +2,7 @@ require(tcltk)
 require(strucchange)
 require(ts)
 
-local({
+{
     data(Nile)
     data(UKDriverDeaths)
     seatbelt <- log10(UKDriverDeaths)
@@ -97,4 +97,4 @@ local({
     tkpack(spec.frm, q.but)
 
     replot()
-})
+}
