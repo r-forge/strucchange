@@ -8,7 +8,7 @@ monitor.efp <-
     functional <- match.arg(functional)
     if(! (obj$type %in% c("ME", "fluctuation")))
         stop("efp must be of type `fluctuation' or `ME'")
-    
+
     ## Bonferroni correction
     elemsiglevel <- alpha / obj$nreg
     histcoef <- obj$coefficients
@@ -19,18 +19,14 @@ monitor.efp <-
     K <- floor(winsize*obj$nobs)
     Q12s <- obj$Q12 * K/(obj$sigma*sqrt(histsize))
 
-    computeEmpProc <- function(newcoef){
+    computeEmpProc <- function(newcoef, Q){
+        if(is.null(Q)) Q <- Q12s
+        else Q <- Q * K/(obj$sigma*sqrt(histsize))
         t(Q12s %*%(newcoef-histcoef))
     }
 
-    logPlus <- function(x){
-        klein<-x<=exp(1)
-        z <- x*0
-        z[klein] <- 1
-        z[!klein] <- log(x[!klein])
-        z
-    }
-    
+    logPlus <- function(x) ifelse(x<=exp(1),1,log(x))
+
     if(obj$type=="ME"){
         dntab <- dimnames(MECritvalTable)
         if(!(winsize %in% dntab[[1]]))
@@ -49,17 +45,20 @@ monitor.efp <-
                        "\n\toutside of available range",
                        paste(range(1-as.numeric(dntab[[3]])),
                              collapse="-")))
-        
-        computeCoef <- function(x, y, k){
-            ok <- (k-K):k
-            coef(lm.fit(x[ok,,drop=FALSE], y[ok,,drop=FALSE]))
+
+        computeEstims <- function(x, y, k){
+            ok <- (k-K+1):k
+            retval <- list(coef=NULL, Qr12=NULL)
+            retval$coef <- coef(lm.fit(x[ok,,drop=FALSE], y[ok,,drop=FALSE]))
+            retval$Qr12 <- root.matrix(crossprod(x[ok,,drop=FALSE]))/sqrt(K)
+            retval
         }
         border <- function(k){
             critval*sqrt(2*logPlus(k/histsize))
         }
     }
     else{
-        
+
         mreSize <- function(a){
             -2*(pnorm(a)-a*dnorm(a))
         }
@@ -68,18 +67,21 @@ monitor.efp <-
         }
         critval <- optim(5, mreCritval)$par
         if((mreSize(critval)-elemsiglevel) > tolerance)
-            stop("Could not find critical within tolerance")   
-        
-            
+            stop("Could not find critical within tolerance")
+
+
         computeCoef <- function(x, y, k){
-            coef(lm.fit(x[1:k,,drop=FALSE], y[1:k,,drop=FALSE]))
+            retval <- list(coef=NULL, Qr12=NULL)
+            retval$coef <- coef(lm.fit(x[1:k,,drop=FALSE], y[1:k,,drop=FALSE]))
+            retval$Qr12 <- root.matrix(crossprod(x[1:k,,drop=FALSE]))/sqrt(k)
+            retval
         }
         border <- function(k){
             x <- k/histsize
             sqrt(x*(x-1)*(critval^2 + log(x/(x-1))))
         }
     }
-    
+
     if(functional=="max"){
         computeStat <- function(empproc){
             max(abs(empproc))
@@ -95,8 +97,8 @@ monitor.efp <-
         }
     }
 
-    
-    
+
+
     obj <- list(breakpoint=NA, last=obj$nobs, process=NULL,
                 statistic=NULL, histsize=histsize,
                 initcall=match.call(), call=match.call(),
@@ -112,8 +114,8 @@ monitor.efp <-
     obj
 }
 
-monitor.mefp <- function(obj, data=NULL, verbose=TRUE){
-  
+monitor.mefp <- function(obj, data=NULL, verbose=TRUE, rescale=FALSE){
+
     if(!is.na(obj$breakpoint)) return(TRUE)
     if(missing(data)){
         if(is.null(as.list(obj$efpcall)$data)){
@@ -123,11 +125,11 @@ monitor.mefp <- function(obj, data=NULL, verbose=TRUE){
             data <- get(as.character(as.list(obj$efpcall)$data))
         }
     }
-    
+
     mf <- model.frame(obj$formula, data=data)
     y <- as.matrix(model.response(mf))
     x <- model.matrix(obj$formula, data = data)
-    
+
     if(nrow(x) <= obj$last) return(obj)
     if(nrow(x)!=nrow(y))
         stop("response and regressors must have the same number of rows")
@@ -135,16 +137,17 @@ monitor.mefp <- function(obj, data=NULL, verbose=TRUE){
         stop("multivariate response not implemented yet")
     foundBreak <- FALSE
     for(k in (obj$last+1):nrow(x)){
-        newcoef <- obj$computeCoef(x,y,k)
+        newestims <- obj$computeEstims(x,y,k)
+        if(!rescale) newestims$Qr12 <- NULL
         obj$process <- rbind(obj$process,
-                             obj$computeEmpProc(newcoef))
+                             obj$computeEmpProc(newestims$coef, newestims$Qr12))
         stat <- obj$computeStat(obj$process)
         obj$statistic <- c(obj$statistic, stat)
         if(!foundBreak & (stat > obj$border(k))){
             foundBreak <- TRUE
             obj$breakpoint <- k
             if(verbose) cat("Break detected at observation #", k, "\n")
-        }   
+        }
     }
     obj$last <- k
     obj$lastcoef <- newcoef
@@ -171,28 +174,71 @@ print.mefp <- function(obj){
     }
 }
 
-plot.mefp <- function(obj, main=NULL, ylab="empirical fluctuation
-                      process", ...){
+plot.mefp <- function(obj, boundary=TRUE, functional="max", main=NULL,
+                      ylab="empirical fluctuation process", ylim=NULL, ...){
 
     if(obj$last>obj$histsize){
-        y1 <- rbind(as.matrix(obj$efpprocess),
+        proc <- rbind(as.matrix(obj$efpprocess),
                     as.matrix(obj$process))
-        y1 <- ts(y1, start=start(obj$efpprocess),
+        proc <- ts(proc, start=start(obj$efpprocess),
                  frequency=frequency(obj$efpprocess))
-        y2 <- ts(obj$border((obj$histsize+1):obj$last),
-                 end = end(y1), frequency=frequency(y1))
-        plot(y1, ty="l", ylab=ylab, ylim=c(min(y1,-y2), max(y1,y2)), ...)
-        lines(y2, col=2)
-        lines(-y2, col=2)
-        abline(v=max(time(obj$efpprocess)), lty=2)
-        abline(h=0)
+        bound <- ts(obj$border((obj$histsize+1):obj$last),
+                 end = end(proc), frequency=frequency(proc))
+        pos <- FALSE
+        if(!is.null(functional) && (functional == "max"))
+        {
+            proc <- ts(apply(abs(proc), 1, 'max'),
+                       start = start(proc), frequency = frequency(proc))
+            pos <- TRUE
+        }
+        ymax <- max(c(proc, bound))
+        if(pos)
+            ymin <- 0
+        else
+            ymin <- min(c(proc, -bound))
+        if(is.null(ylim)) ylim <- c(ymin, ymax)
         if(is.null(main))
             main <- obj$type.name
-        title(main)
+        if(boundary)
+            panel <- function(y, ...)
+            {
+                lines(y, ...)
+                lines(bound, col=2)
+                lines(-bound, col=2)
+                abline(0,0)
+            }
+        else
+            panel <- function(y, ...)
+            {
+                lines(y, ...)
+                abline(0,0)
+            }
+        if(any(attr(proc, "class") == "mts"))
+            plot(proc, main = main, panel = panel, ...)
+        else
+        {
+            plot(proc, main = main, ylab = ylab, ylim = ylim, ...)
+            if(boundary)
+            {
+                lines(bound, col=2)
+                lines(-bound, col=2)
+            }
+            abline(0,0)
+        }
+        abline(v=max(time(obj$efpprocess)), lty=2)
     }
     else{
         cat("Nothing monitored yet!\n")
     }
 }
+
+boundary.mefp <- function(x)
+{
+        ts(x$border((x$histsize+1):x$last),
+           start = max(time(x$efpprocess))+deltat(x$efpprocess),
+           frequency=frequency(x$efpprocess))
+}
+
+
 
 

@@ -30,19 +30,6 @@ efp <- function(formula, data=list(),
         return(w)
     }
 
-    ## root of a symmetric matrix
-
-    root.matrix <- function(X)
-    {
-        if((ncol(X)==1)&&(nrow(X)==1)) return(sqrt(X))
-        else
-        {
-            X.eigen <- eigen(X, symmetric=TRUE)
-            sqomega <- sqrt(diag(X.eigen$values))
-            V <- X.eigen$vectors
-            return(V%*%sqomega%*%t(V))
-        }
-    }
 
     retval <- list(process = NULL,
                    type = type,
@@ -161,13 +148,13 @@ efp <- function(formula, data=list(),
                beta.hat <- m.fit$coefficients
                sigma <- sqrt(sum(m.fit$residual^2)/m.fit$df.residual)
                process <- matrix(rep(0,k*(n-k+1)), nrow=k)
-               Q12 <- root.matrix(crossprod(X))
+               Q12 <- root.matrix(crossprod(X))/sqrt(n)
                if(rescale)
                {
                    for(i in k:(n-1))
                    {
-                       process[,(i-k+1)] <-
-                           root.matrix(crossprod(X[1:i,])) %*%
+                       Qi12 <- root.matrix(crossprod(X[1:i,]))/sqrt(i)
+                       process[,(i-k+1)] <- Qi12 %*%
                                (lm.fit(as.matrix(X[1:i,]), y[1:i])$coefficients - beta.hat)
                    }
                }
@@ -179,7 +166,7 @@ efp <- function(formula, data=list(),
                                                            y[1:i])$coefficients - beta.hat)
                    }
                }
-               process <- t(cbind(0, process))*matrix(rep(sqrt((k-1):n),k),
+               process <- t(cbind(0, process))*matrix(rep((k-1):n,k),
                                                       ncol=k)/(sigma*sqrt(n))
                colnames(process) <- colnames(X)
                if(is.ts(data))
@@ -192,7 +179,7 @@ efp <- function(formula, data=list(),
                  else
                    process <- ts(process, start = 0, frequency = nrow(process) - 1)
                }
-               retval$Q12 <- Q12/sqrt(n)
+               retval$Q12 <- Q12
                retval$type.name <- "Fluctuation test (recursive estimates test)"
            },
 
@@ -204,13 +191,14 @@ efp <- function(formula, data=list(),
                sigma <- sqrt(sum(m.fit$residual^2)/m.fit$df.residual)
                nh <- floor(n*h)
                process <- matrix(rep(0,k*(n-nh+1)), nrow=k)
-               Q12 <- root.matrix(crossprod(X))
+               Q12 <- root.matrix(crossprod(X))/sqrt(n)
                if(rescale)
                {
                    for(i in 0:(n-nh))
                    {
-                       process[, i+1] <- root.matrix(crossprod(X[(i+1):(i+nh),])) %*% (lm.fit(
-                                                                                              as.matrix(X[(i+1):(i+nh),]), y[(i+1):(i+nh)])$coefficients - beta.hat)
+                       Qnh12 <- root.matrix(crossprod(X[(i+1):(i+nh),]))/sqrt(nh)
+                       process[, i+1] <-  Qnh12 %*% (lm.fit(
+                                             as.matrix(X[(i+1):(i+nh),]), y[(i+1):(i+nh)])$coefficients - beta.hat)
                    }
                }
                else
@@ -221,7 +209,7 @@ efp <- function(formula, data=list(),
                                                         as.matrix(X[(i+1):(i+nh),]), y[(i+1):(i+nh)])$coefficients - beta.hat)
                    }
                }
-               process <- sqrt(nh/n)*t(process)/sigma
+               process <- nh*t(process)/(sqrt(n)*sigma)
                colnames(process) <- colnames(X)
                if(is.ts(data))
                    process <- ts(process, end = time(data)[(n-floor(0.5 + nh/2))],
@@ -235,7 +223,7 @@ efp <- function(formula, data=list(),
                    process <- ts(process, end = (n-floor(0.5 + nh/2))/n, frequency = n)
                }
                retval$par <- h
-               retval$Q12 <- Q12/sqrt(n)
+               retval$Q12 <- Q12
                retval$type.name <- "ME test (moving estimates test)"
            })
 
@@ -798,4 +786,16 @@ boundary.Fstats <- function(x, alpha = 0.05, pval = FALSE, asymptotic = FALSE)
     return(bound)
 }
 
+root.matrix <- function(X)
+## root of a symmetric matrix
+{
+    if((ncol(X)==1)&&(nrow(X)==1)) return(sqrt(X))
+    else
+    {
+        X.eigen <- eigen(X, symmetric=TRUE)
+        sqomega <- sqrt(diag(X.eigen$values))
+        V <- X.eigen$vectors
+        return(V%*%sqomega%*%t(V))
+    }
+}
 
