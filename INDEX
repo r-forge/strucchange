@@ -13,8 +13,6 @@ breakfactor             Factor Coding of Segmentations
 breakpoints             Dating Breaks
 confint.breakpointsfull
                         Confidence Intervals for Breakpoints
-covHC                   Heteroskedasticity-Consistent Covariance
-                        Matrix Estimation
 durab                   US Labor Productivity
 efp                     Empirical Fluctuation Processes
 logLik.breakpoints      Log Likelihood and Information Criteria for
