@@ -517,6 +517,12 @@ pvalue.efp <- function(x, lim.process, alt.boundary, functional = "max", h = NUL
     tablen <- dim(crit.table)[2]
     tableh <- (1:10)*0.05
     tablep <- c(0.2, 0.15, 0.1, 0.05, 0.025, 0.01)
+
+    ## crit.table gives Table 1 of Chu, Hornik, Kuan (1995)
+    ## but the corresponding test statistic is scaled differently
+    ## by a factor of sqrt(h).
+    crit.table <- crit.table * sqrt(tableh)
+
     tableipl <- numeric(tablen)
     for(i in (1:tablen)) tableipl[i] <- approx(tableh, crit.table[,i], h, rule = 2)$y
     p <- approx(c(0,tableipl), c(1,tablep), x, rule = 2)$y
