@@ -23,7 +23,7 @@ mefp.formula <-
 mefp.efp <-
     function(obj, alpha=0.05, functional = c("max", "range"),
              period=10, tolerance=.Machine$double.eps^0.5,
-             MECritvalTable=monitorMECritvalTable, rescale=FALSE)
+             MECritvalTable=monitorMECritvalTable, rescale=NULL)
 {
     functional <- match.arg(functional)
     if(! (obj$type %in% c("ME", "fluctuation")))
@@ -35,6 +35,9 @@ mefp.efp <-
     else{
        data <- as.character(as.list(obj$call)$data)
     }
+
+    if(is.null(rescale)) rescale <- as.list(obj$call)$rescale
+    if(is.null(rescale)) rescale <- TRUE
 
     ## Bonferroni correction
     elemsiglevel <- alpha / obj$nreg
