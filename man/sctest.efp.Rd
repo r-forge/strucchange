@@ -1,7 +1,7 @@
 \name{sctest.efp}
 \alias{sctest.efp}
-\title{generalized fluctuation tests}
-\description{performs a generalized fluctuation test}
+\title{Generalized Fluctuation Tests}
+\description{Performs a generalized fluctuation test.}
 \usage{
 sctest(x, alt.boundary = FALSE, functional = c("max", "range"))
 }
