@@ -5,7 +5,8 @@ efp <- function(formula, data=list(),
 {
     mf <- model.frame(formula, data = data)
     y <- model.response(mf)
-    X <- model.matrix(formula, data = data)
+    modelterms <- terms(formula, data = data)
+    X <- model.matrix(modelterms, data = data)
     n <- nrow(X)
     if(dynamic) X <- cbind(c(0,y[1:(n-1)]),X)
     k <- ncol(X)
@@ -528,7 +529,8 @@ Fstats <- function(formula, from = 0.15, to = NULL, data=list())
 {
   mf <- model.frame(formula, data = data)
   y <- model.response(mf)
-  X <- model.matrix(formula, data = data)
+  modelterms <- terms(formula, data = data)
+  X <- model.matrix(modelterms, data = data)
   k <- ncol(X)
   n <- length(y)
   e <- lm.fit(X,y)$residuals
@@ -706,7 +708,8 @@ sctest.formula <- function(formula, type = c("Rec-CUSUM", "OLS-CUSUM",
   {
     mf <- model.frame(formula, data = data)
     y <- model.response(mf)
-    X <- model.matrix(formula, data = data)
+    modelterms <- terms(formula, data = data)
+    X <- model.matrix(modelterms, data = data)
     METHOD <- "Chow test"
     k <- ncol(X)
     n <- length(y)

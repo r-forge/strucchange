@@ -43,19 +43,10 @@ mefp.efp <-
     elemsiglevel <- alpha / obj$nreg
     histcoef <- obj$coefficients
     histsize <- obj$nobs
-    switch(obj$type,
-           "ME" = { winsize <- obj$par },
-           "OLS-MOSUM" = { winsize <- obj$par },
-       { winsize <- 1 })
+    winsize <- obj$par
     K <- floor(winsize*obj$nobs)
     sigmahat <- obj$sigma
-    Q12s <- obj$Q12 * K/(sigmahat*sqrt(histsize))
-
-    computeEmpProc <- function(newcoef, Q){
-        if(is.null(Q)) Q <- Q12s
-        else Q <- Q * K/(sigmahat*sqrt(histsize))
-        t(Q %*%(newcoef-histcoef))
-    }
+    Q12 <- obj$Q12
 
     logPlus <- function(x) ifelse(x<=exp(1),1,log(x))
 
@@ -156,6 +147,13 @@ mefp.efp <-
                 retval$Qr12 <- root.matrix(crossprod(x[ok,,drop=FALSE]))/sqrt(K)
             retval
         }
+
+        computeEmpProc <- function(newcoef, Q, k){
+            if(is.null(Q)) Q <- Q12
+            Q <- Q * K/(sigmahat*sqrt(histsize))
+            t(Q %*%(newcoef-histcoef))
+        }
+
         if(is.null(border)){
             border <- function(k){
                 critval*sqrt(2*logPlus(k/histsize))
@@ -200,6 +198,13 @@ mefp.efp <-
                 retval$Qr12 <- root.matrix(crossprod(x[1:k,,drop=FALSE]))/sqrt(k)
             retval
         }
+
+        computeEmpProc <- function(newcoef, Q, k){
+            if(is.null(Q)) Q <- Q12
+            Q <- Q * k/(sigmahat*sqrt(histsize))
+            t(Q %*%(newcoef-histcoef))
+        }
+
         if(is.null(border)){
             border <- function(k){
                 x <- k/histsize
@@ -253,7 +258,8 @@ monitor <- function(obj, data=NULL, verbose=TRUE){
 
     mf <- model.frame(obj$formula, data=data)
     y <- as.matrix(model.response(mf))
-    x <- model.matrix(obj$formula, data = data)
+    modelterms <- terms(obj$formula, data = data)
+    x <- model.matrix(modelterms, data = data)
 
     if(nrow(x) <= obj$last) return(obj)
     if(nrow(x)!=nrow(y))
@@ -287,7 +293,7 @@ monitor <- function(obj, data=NULL, verbose=TRUE){
       for(k in (obj$last+1):nrow(x)){
           newestims <- obj$computeEstims(x,y,k)
           obj$process <- rbind(obj$process,
-                               obj$computeEmpProc(newestims$coef, newestims$Qr12))
+                               obj$computeEmpProc(newestims$coef, newestims$Qr12,k))
           stat <- obj$computeStat(obj$process)
           obj$statistic <- c(obj$statistic, stat)
           if(!foundBreak & (stat > obj$border(k))){
@@ -330,7 +336,7 @@ plot.mefp <- function(x, boundary=TRUE, functional="max", main=NULL,
                     as.matrix(x$process))
         proc <- ts(proc,
                    end=x$histtsp[2]+(x$last-x$histsize)/x$histtsp[3],
-                   frequency=frequency(x$efpprocess))
+                   frequency=x$histtsp[3])
         bound <- ts(x$border((x$histsize+1):x$last),
                  end = end(proc), frequency=frequency(proc))
         pos <- FALSE
