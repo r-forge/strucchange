@@ -801,12 +801,12 @@ boundary.Fstats <- function(x, alpha = 0.05, pval = FALSE, aveF =
 }
 
 root.matrix <- function(X)
-## root of a symmetric matrix
 {
     if((ncol(X)==1)&&(nrow(X)==1)) return(sqrt(X))
     else
     {
         X.eigen <- eigen(X, symmetric=TRUE)
+        if(any(X.eigen$values < 0)) stop("matrix is not positive semidefinite")
         sqomega <- sqrt(diag(X.eigen$values))
         V <- X.eigen$vectors
         return(V%*%sqomega%*%t(V))

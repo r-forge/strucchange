@@ -203,15 +203,15 @@ print.mefp <- function(obj){
     }
 }
 
-plot.mefp <- function(obj, boundary=TRUE, functional="max", main=NULL,
+plot.mefp <- function(x, boundary=TRUE, functional="max", main=NULL,
                       ylab="empirical fluctuation process", ylim=NULL, ...){
 
-    if(obj$last>obj$histsize){
-        proc <- rbind(as.matrix(obj$efpprocess),
-                    as.matrix(obj$process))
-        proc <- ts(proc, start=start(obj$efpprocess),
-                 frequency=frequency(obj$efpprocess))
-        bound <- ts(obj$border((obj$histsize+1):obj$last),
+    if(x$last>x$histsize){
+        proc <- rbind(as.matrix(x$efpprocess),
+                    as.matrix(x$process))
+        proc <- ts(proc, start=start(x$efpprocess),
+                 frequency=frequency(x$efpprocess))
+        bound <- ts(x$border((x$histsize+1):x$last),
                  end = end(proc), frequency=frequency(proc))
         pos <- FALSE
         if(!is.null(functional) && (functional == "max"))
@@ -227,7 +227,7 @@ plot.mefp <- function(obj, boundary=TRUE, functional="max", main=NULL,
             ymin <- min(c(proc, -bound))
         if(is.null(ylim)) ylim <- c(ymin, ymax)
         if(is.null(main))
-            main <- obj$type.name
+            main <- x$type.name
         if(boundary)
             panel <- function(y, ...)
             {
@@ -254,7 +254,7 @@ plot.mefp <- function(obj, boundary=TRUE, functional="max", main=NULL,
             }
             abline(0,0)
         }
-        abline(v=max(time(obj$efpprocess)), lty=2)
+        abline(v=max(time(x$efpprocess)), lty=2)
     }
     else{
         cat("Nothing monitored yet!\n")
