@@ -18,7 +18,7 @@ and a factor coding seasonality.
        linearly interpolated from annual data.}
     \item{ahomicides25}{time series. Number of adult homicides (aged 25 and older).}
     \item{ahomicides35}{time series. Number of adult homicides (aged 35-44).}
-    \item{ahomicides35}{time series. Teen unemployment rate (in percent).}
+    \item{unemploy}{time series. Teen unemployment rate (in percent).}
     \item{season}{factor coding the month.}
     \item{year}{factor coding the year.}
 }
