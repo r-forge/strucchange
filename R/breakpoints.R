@@ -119,6 +119,7 @@ breakpoints.formula <- function(formula, h = 0.15, breaks = NULL,
 	       call = match.call(),
 	       datatsp = datatsp)
   class(RVAL) <- c("breakpointsfull", "breakpoints")
+  RVAL$breakpoints <- breakpoints(RVAL)$breakpoints
   return(RVAL)
 }
 
@@ -150,19 +151,26 @@ breakpoints.breakpointsfull <- function(obj, breaks = NULL, ...)
   return(RVAL)
 }
 
-print.breakpoints <- function(x, format.times = FALSE, ...)
+
+print.breakpoints <- function(x, format.times = NULL, ...)
 {
+  if(is.null(format.times)) format.times <- ((x$datatsp[3] > 1) & (x$datatsp[3] < x$nobs))
   cat(paste("\n\t Optimal ", length(x$breakpoints) + 1,
             "-segment partition: \n\n", sep = ""))
   cat("Call:\n")
   print(x$call)
-  cat("\nBreakpoints:\n")
+  cat("\nBreakpoints at obervation number:\n")
   cat(x$breakpoints,"\n")
-  cat("\nBreakdates:\n")
+  cat("\nCorresponding to breakdates:\n")
   cat(breakdates(x, format.times = format.times),"\n")
 }
 
-breakdates <- function(obj, format.times = FALSE)
+breakdates <- function(obj, format.times = FALSE, ...)
+{
+  UseMethod("breakdates")
+}
+
+breakdates.breakpoints <- function(obj, format.times = FALSE, ...)
 {
   format.time <- function(timevec, freq)
   {
@@ -184,8 +192,9 @@ breakdates <- function(obj, format.times = FALSE)
   return(breakdates)
 }
 
-breakfactor <- function(obj, labels = NULL, ...)
+breakfactor <- function(obj, breaks = NULL, labels = NULL, ...)
 {
+  if("breakpointsfull" %in% class(obj)) obj <- breakpoints(obj, breaks = breaks)
   breaks <- obj$breakpoints
   nbreaks <- length(breaks)
   fac <- rep(1:(nbreaks + 1), c(breaks[1], diff(c(breaks, obj$nobs))))
@@ -208,8 +217,8 @@ summary.breakpoints <- function(object, ...)
 summary.breakpointsfull <- function(object, breaks = NULL,
   sort = TRUE, format.times = NULL, ...)
 {
-  if(is.null(format.times)) format.times <- (object$datatsp[3] > 1)
-  if(is.null(breaks)) breaks <- length(object$breakpoints)
+  if(is.null(format.times)) format.times <- ((object$datatsp[3] > 1) & (object$datatsp[3] < object$nobs))
+  if(is.null(breaks)) breaks <- ncol(object$RSS.table)/2
   n <- object$nobs
   RSS <- c(object$RSS(1, n), rep(NA, breaks))
   BIC <- c(n * (log(RSS[1]) + 1 - log(n) + log(2*pi)) + log(n) * (object$nreg + 1),
@@ -271,16 +280,20 @@ print.summary.breakpointsfull <- function(x, ...)
   cat("\n\t Optimal (m+1)-segment partition: \n\n")
   cat("Call:\n")
   print(x$call)
-  cat("\nBreakpoints:\n")
+  cat("\nBreakpoints at obervation number:\n")
   print(bp, quote = FALSE)
-  cat("\nBreakdates:\n")
+  cat("\nCorresponding to breakdates:\n")
   print(bd, quote = FALSE)
   cat("\nFit:\n")
   print(RSS, quote = FALSE)
 }
 
+plot.breakpointsfull <- function(x, breaks = NULL, ...)
+{
+  plot(summary(x, breaks = breaks), ...)
+}
 
-plot.summary.breakpointsfull <- function(x, type = "b", col = c(1,4), ...)
+plot.summary.breakpointsfull <- function(x, type = "b", col = c(1,4), legend = TRUE, ...)
 {
   breaks <- as.numeric(colnames(x$RSS))
   RSS <- x$RSS["RSS",]
@@ -290,10 +303,12 @@ plot.summary.breakpointsfull <- function(x, type = "b", col = c(1,4), ...)
   par(new = TRUE)
   plot(breaks, RSS, type = type, axes = FALSE, col = col[2],
        xlab = "", ylab = "")
-  legend(length(breaks) - 2, RSS[1], c("BIC", "RSS"), lty = rep(1,2), col = col, bty = "n")
+  if(legend) legend(floor(length(breaks)*0.75), RSS[1], c("BIC", "RSS"), lty = rep(1,2), col = col, bty = "n")
   axis(4)
   par(new = FALSE)
 }
+
+
 
 logLik.breakpoints <- function(object, ...)
 {
@@ -321,3 +336,145 @@ AIC.breakpointsfull <- function(object, breaks = NULL, ..., k = 2)
   names(RVAL) <- breaks
   return(RVAL)
 }
+
+
+
+pargmaxV <- function(x, xi = 1, phi1 = 1, phi2 = 1)
+{
+  phi <- xi * (phi2/phi1)^2
+
+  G1 <- function(x, xi = 1, phi = 1)
+  {
+    x <- abs(x)
+    frac <- xi/phi
+    rval <- - exp(log(x)/2 - x/8 - log(2*pi)/2) -
+              (phi/xi * (phi + 2*xi)/(phi+xi)) * exp((frac * (1 + frac) * x/2) + pnorm(-(0.5 + frac) * sqrt(x), log.p = TRUE)) +
+	      exp(log(x/2 - 2 + ((phi + 2 * xi)^2)/((phi + xi)*xi)) + pnorm(-sqrt(x)/2, log.p = TRUE))
+    rval
+  }
+
+  G2 <- function(x, xi = 1, phi = 1)
+  {
+    frac <- xi^2/phi
+    rval <- 1 + sqrt(frac) * exp(log(x)/2 - (frac*x)/8  - log(2*pi)/2) +
+            (xi/phi * (2*phi + xi)/(phi + xi)) * exp(((phi + xi) * x/2) + pnorm(-(phi + xi/2)/sqrt(phi) * sqrt(x), log.p = TRUE)) -
+	    exp(log(((2*phi + xi)^2)/((phi+xi)*phi) - 2 + frac*x/2) + pnorm(-sqrt(frac) * sqrt(x)/2 , log.p = TRUE))
+    rval
+  }
+
+  ifelse(x < 0, G1(x, xi = xi, phi = phi), G2(x, xi = xi, phi = phi))
+}
+
+confint <- function(object, level = 0.95, ...)
+{
+  UseMethod("confint")
+}
+
+confint.breakpointsfull <- function(object, level = 0.95, breaks = NULL,
+                                    het.reg = TRUE, het.err = TRUE, ...)
+{
+  X <- object$X
+  y <- object$y
+  n <- object$nobs
+
+  myfun <- function(x, level = 0.975, xi = 1, phi1 = 1, phi2 = 1)
+    (pargmaxV(x, xi = xi, phi1 = phi1, phi2 = phi2) - level)^2
+
+  bp <- breakpoints(object, breaks = breaks)$breakpoints
+  nbp <- length(bp)
+  upper <- rep(0, nbp)
+  lower <- rep(0, nbp)
+  bp <- c(0, bp, n)
+
+  sigma1 <- sigma2 <- sum(lm.fit(X,y)$residuals^2)/n
+  Q1 <- Q2 <- crossprod(X)/n
+  xi <- 1
+
+  X2 <- X[(bp[1]+1):bp[2],,drop = FALSE]
+  y2 <- y[(bp[1]+1):bp[2]]
+  fm <- lm.fit(X2, y2)
+  beta2 <- fm$coefficients
+  if(het.err) sigma2 <- sum(fm$residuals^2)/nrow(X2)
+  if(het.reg) Q2 <- crossprod(X2)/nrow(X2)
+
+  for(i in 2:(nbp+1))
+  {
+    X1 <- X2
+    y1 <- y2
+    beta1 <- beta2
+    sigma1 <- sigma2
+    Q1 <- Q2
+
+    X2 <- X[(bp[i]+1):bp[i+1],,drop = FALSE]
+    y2 <- y[(bp[i]+1):bp[i+1]]
+    fm <- lm.fit(X2, y2)
+    beta2 <- fm$coefficients
+    delta <- beta2 - beta1
+    frac <- as.vector(crossprod(delta, Q1) %*% delta)/sigma1
+
+    if(het.err) sigma2 <- sum(fm$residuals^2)/nrow(X2)
+    if(het.reg) {
+      Q2 <- crossprod(X2)/nrow(X2)
+      xi <- as.vector(crossprod(delta, Q2) %*% delta)/(sigma1*frac)
+    }
+
+    upper[i-1] <- optimize(myfun, c(0,n), level = (1-(1-level)/2), xi = xi, phi1 = sqrt(sigma1), phi2 = sqrt(sigma2))$minimum/frac
+    lower[i-1] <- optimize(myfun, c(-n,0), level = (1-level)/2, xi = xi, phi1 = sqrt(sigma1), phi2 = sqrt(sigma2))$minimum/frac
+  }
+  bp <- bp[-c(1,nbp+2)]
+  bp <- cbind(bp+floor(lower),bp,bp+ceiling(upper))
+  colnames(bp) <- c("lower", "breakpoints", "upper")
+  rownames(bp) <- 1:nbp
+  RVAL <- list(confint = bp,
+               nobs = object$nobs,
+	       nreg = object$nreg,
+	       call = match.call(),
+               datatsp = object$datatsp)
+  class(RVAL) <- "confint.breakpoints"
+  return(RVAL)
+}
+
+breakdates.confint.breakpoints <- function(obj, format.times = FALSE, ...)
+{
+  if(any(obj$confint < 1) | any(obj$confint > obj$nobs))
+    stop("Cannot compute breakdates: breakpoints outside data time interval")
+  bp <- list(breakpoints = NA, nobs = obj$nobs, datatsp = obj$datatsp)
+  class(bp) <- "breakpoints"
+  RVAL <- obj$confint
+  for(i in 1:3) {
+    bp$breakpoints <- obj$confint[,i]
+    RVAL[,i] <- breakdates(bp, format.times = format.times, ...)
+  }
+  return(RVAL)
+}
+
+print.confint.breakpoints <- function(x, format.times = NULL, ...)
+{
+  if(is.null(format.times)) format.times <- ((x$datatsp[3] > 1) & (x$datatsp[3] < x$nobs))
+  cat("\n\t Confidence intervals for breakpoints")
+  cat(paste("\n\t of optimal ", nrow(x$confint) + 1, "-segment partition: \n\n", sep = ""))
+  cat("Call:\n")
+  print(x$call)
+  cat("\nBreakpoints at obervation number:\n")
+  print(x$confint, quote = FALSE)
+  if(any(x$confint < 1) | any(x$confint > x$nobs)) {
+    warning("Cannot compute breakdates: breakpoints outside data time interval")
+  } else {
+    cat("\nCorresponding to breakdates:\n")
+    print(breakdates(x, format.times = format.times, ...), quote = FALSE)
+  }
+  if(any(c(diff(x$confint[,1]), diff(x$confint[,3])) < 0))
+    warning("Overlapping confidence intervals")
+}
+
+lines.confint.breakpoints <- function(x, col = 2, angle = 90, length = 0.05, code = 3, at = NULL, ...)
+{
+  x <- breakdates(x)
+  abline(v = x[,2], lty = 2)
+  if(is.null(at)) {
+    at <- par("usr")[3:4]
+    at <- diff(at)/1.08 * 0.02 + at[1]
+  }
+  arrows(x[,1], at, x[,3], at, col = col, angle = angle, length = length, code = code, ...)
+}
+
