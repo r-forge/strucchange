@@ -3,7 +3,6 @@
 \alias{mefp.formula}
 \alias{mefp.efp}
 \alias{print.mefp}
-\alias{plot.mefp}
 \alias{monitor}
 \title{Monitoring of Empirical Fluctuation Processes}
 \description{
