@@ -5,12 +5,12 @@
 \usage{data(Grossarl)}
 \description{
 Data about the number of marriages and illegitimate and legitimate
-births in the Austrian Alpine village Grossarl between
-1700 and 1900.
+births in the Austrian Alpine village Grossarl in the 18th and 19th
+century.
 }
 \format{
 \code{births} is a data frame containing 5 annual time series
-(1700 - 1900) and 3 factors coding policy interventions.
+(1700 - 1899) and 3 factors coding policy interventions.
  \describe{
     \item{marriages}{time series. Number of marriages,}
     \item{illegitimate}{time series. Number of illegitimate births,}
@@ -24,7 +24,7 @@ births in the Austrian Alpine village Grossarl between
 }
 
 \details{The data frame contains historical demographical data from
-Gro{\ss}arl, a village in the Alpine region of Salzburg, Austria,
+Grossarl, a village in the Alpine region of Salzburg, Austria,
 during the 18th and 19th century.
 During this period total population of Grossarl did not vary much on the whole,
 with the very exception of the period of the protestant emigrations
@@ -125,4 +125,5 @@ plot(Grossarl$marriages)
 lines(fitted(fm.final), col = 3)
 lines(fitted(fm.bp), col = 4)
 }
+
 \keyword{datasets}

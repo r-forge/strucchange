@@ -39,11 +39,11 @@ breakpoints.formula <- function(formula, h = 0.15, breaks = NULL,
     ssr <- recresid(X[i:n,,drop = FALSE],y[i:n], tol = tol)
     c(rep(NA, k), cumsum(ssr^2))
   }
-  RSS.diag <- sapply(1:(n-h+1), RSSi)
+  RSS.triang <- sapply(1:(n-h+1), RSSi)
 
-  ## function to extract the RSS(i,j) from RSS.diag
+  ## function to extract the RSS(i,j) from RSS.triang
 
-  RSS <- function(i,j) RSS.diag[[i]][j - i + 1]
+  RSS <- function(i,j) RSS.triang[[i]][j - i + 1]
 
   ## compute optimal previous partner if observation i is the mth break
   ## store results together with RSSs in RSS.table
@@ -110,7 +110,7 @@ breakpoints.formula <- function(formula, h = 0.15, breaks = NULL,
 
   RVAL <- list(breakpoints = opt,
                RSS.table = RSS.table,
-	       RSS.diag = RSS.diag,
+	       RSS.triang = RSS.triang,
 	       RSS = RSS,
 	       extract.breaks = extract.breaks,
 	       extend.RSS.table = extend.RSS.table,
@@ -203,8 +203,9 @@ breakfactor <- function(obj, breaks = NULL, labels = NULL, ...)
   return(fac)
 }
 
-lines.breakpoints <- function(x, lty = 2, ...)
+lines.breakpoints <- function(x, breaks = NULL, lty = 2, ...)
 {
+  if("breakpointsfull" %in% class(x)) x <- breakpoints(x, breaks = breaks)
   abline(v = breakdates(x), lty = lty, ...)
 }
 

@@ -36,12 +36,20 @@ the unification. All three data frames contain the variables
 }
 }
 
-\details{Zeileis et al. (2002) use a model with
+\details{
+Lütkepohl et al. (2002) investigate the linearity and
+stability of German M1 money demand: they find a stable regression relation
+for the time before the monetary union on 1990-06-01 but a clear structural
+instability afterwards.
+
+Zeileis et al. (2002) use a model with
 \code{ecm.res} instead of \code{m1}, \code{y1} and \code{R1}, which
 leads to equivalent results in the history period but slightly
 different results in the monitoring period. The reason for the
 replacement is that stationary regressors are needed for the
-structural change tests. See references for details.}
+structural change tests. See references and the examples below for
+more details.
+}
 
 \source{The data is provided by the German central bank and is
 available online in the data archive of the Journal of Applied
@@ -88,8 +96,12 @@ plot(ols.mon)
 lines(boundary(ols.mon2), col = 2)
 
 ## dating
-bp <- breakpoints(LTW.model, data = M1)
+bp <- breakpoints(LTW.model, data = GermanM1)
 summary(bp)
-plot(summary(bp))
+plot(bp)
+
+plot(fs)
+lines(confint(bp))
 }
+
 \keyword{datasets}
