@@ -33,8 +33,8 @@ local({
 	else if(tp == "F statistics") {
 	  switch(dt,
           "Nile" = plot(Fstats(Nile ~ 1), main = "F statistics"),
-          "UK Seatbelt" = plot(Fstats(y ~ ylag1 + ylag12, data = seatbelt), main = "F statistics"),
-          "M1" = plot(Fstats(dm ~ dy2 + dR + dR1 + dp + ecm.res + season, data = GermanM1), main = "F statistics"),
+          "UK Seatbelt" = plot(Fstats(y ~ ylag1 + ylag12, data = seatbelt, from = 0.1), main = "F statistics"),
+          "M1" = plot(Fstats(dm ~ dy2 + dR + dR1 + dp + ecm.res + season, data = GermanM1, from = 0.2, to = 0.95), main = "F statistics"),
           "Grossarl" = plot(Fstats(fraction ~ politics, data = Grossarl), main = "F statistics"),
           "US Durables" = plot(Fstats(y ~ lag, data = durab), main = "F statistics")
 	  )}
@@ -82,7 +82,7 @@ local({
 
     frame3 <- tkframe(right.frm, relief = "groove", borderwidth = 2)
     tkpack(tklabel (frame3, text = "Bandwidth h"))
-    tkpack(tkscale(frame3, command = replot.maybe, from = 0.05, to = 0.5,
+    tkpack(tkscale(frame3, command = replot.maybe, from = 0.05, to = 0.95,
                    showvalue = TRUE, variable = h,
                    resolution = 0.005, orient = "horiz"))
 
