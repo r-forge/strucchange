@@ -287,8 +287,8 @@ plot.efp <- function(x, alpha = 0.05, alt = FALSE, boundary = TRUE,
         panel <- function(y, ...)
         {
             lines(y, ...)
-            lines(bound)
-            lines(-bound)
+            lines(bound, col=2)
+            lines(-bound, col=2)
             abline(0,0)
         }
     else
@@ -304,8 +304,8 @@ plot.efp <- function(x, alpha = 0.05, alt = FALSE, boundary = TRUE,
         plot(z, main = main, ylab = ylab, ylim = ylim, ...)
         if(boundary)
         {
-            lines(bound)
-            lines(-bound)
+            lines(bound, col=2)
+            lines(-bound, col=2)
         }
         abline(0,0)
     }
@@ -586,15 +586,16 @@ print.Fstats <- function(x, ...)
 }
 
 plot.Fstats <- function(x, pval = FALSE, asymptotic = FALSE,
-                        alpha = 0.05, boundary = TRUE,
+                        alpha = 0.05, boundary = TRUE, aveF = FALSE,
                         xlab = "Time", ylab = NULL,
                         ylim = NULL, ...)
 {
     k <- x$nreg
     n <- x$nobs
-    bound <- boundary(x, alpha = alpha, pval = pval, asymptotic = asymptotic)
+    bound <- boundary(x, alpha = alpha, pval = pval, aveF = aveF, asymptotic =
+                      asymptotic)
     x <- x$Fstats
-    
+
     if(pval)
     {
         if(asymptotic)
@@ -608,7 +609,12 @@ plot.Fstats <- function(x, pval = FALSE, asymptotic = FALSE,
     if(is.null(ylim)) ylim <- c(0, max(c(x,bound)))
     plot(x, xlab = xlab, ylab = ylab, ylim = ylim, ...)
     abline(0,0)
-    if(boundary) lines(bound)
+    if(boundary)
+    {
+        lines(bound, col=2)
+        if(aveF) lines(ts(rep(mean(x),length(x)),start=start(x),
+                       frequency = frequency(x)),lty=2)
+    }
 }
 
 sctest.Fstats <- function(x, type = c("supF", "aveF", "expF"), asymptotic = FALSE)
@@ -767,11 +773,14 @@ boundary.efp <- function(x, alpha = 0.05, alt = FALSE)
     return(bound)
 }
 
-boundary.Fstats <- function(x, alpha = 0.05, pval = FALSE, asymptotic = FALSE)
+boundary.Fstats <- function(x, alpha = 0.05, pval = FALSE, aveF =
+                            FALSE, asymptotic = FALSE)
 {
-    bound <- uniroot(function(y) {pvalue.Fstats(y, type="sup",
-                                                x$nreg, x$par) - alpha},
-                     c(0,40))$root
+    if(aveF)
+      myfun <-  function(y) {pvalue.Fstats(y, type="ave", x$nreg, x$par) - alpha}
+    else
+      myfun <-  function(y) {pvalue.Fstats(y, type="sup", x$nreg, x$par) - alpha}
+    bound <- uniroot(myfun, c(0,40))$root
     if(pval)
     {
         if(asymptotic)

@@ -70,7 +70,7 @@ monitor.efp <-
             stop("Could not find critical within tolerance")
 
 
-        computeCoef <- function(x, y, k){
+        computeEstims <- function(x, y, k){
             retval <- list(coef=NULL, Qr12=NULL)
             retval$coef <- coef(lm.fit(x[1:k,,drop=FALSE], y[1:k,,drop=FALSE]))
             retval$Qr12 <- root.matrix(crossprod(x[1:k,,drop=FALSE]))/sqrt(k)
@@ -103,7 +103,7 @@ monitor.efp <-
                 statistic=NULL, histsize=histsize,
                 initcall=match.call(), call=match.call(),
                 efpcall=obj$call, efpprocess=obj$process,
-                computeCoef=computeCoef,
+                computeEstims=computeEstims,
                 computeEmpProc=computeEmpProc,
                 border=border, computeStat=computeStat,
                 functional=functional, alpha=alpha, critval=critval,
@@ -150,7 +150,7 @@ monitor.mefp <- function(obj, data=NULL, verbose=TRUE, rescale=FALSE){
         }
     }
     obj$last <- k
-    obj$lastcoef <- newcoef
+    obj$lastcoef <- newestims$coef
     obj$call <- match.call()
     obj
 }
