@@ -10,7 +10,7 @@ gefp <- function(...,
 
   if(!is.null(order.by))
   {
-    if("formula" %in% class(order.by)) {
+    if(inherits(order.by, "formula")) {
       z <- model.matrix(order.by, data = data)
       z <- as.vector(z[,ncol(z)])
     } else {
@@ -24,11 +24,11 @@ gefp <- function(...,
     if(is.ts(psi)) z <- time(psi)
       else if(is.quasits(psi)) z <- time(psi)
       else if(is.ts(data)) z <- time(data)
-      else if("quasits" %in% class(data)) z <- time(data)
+      else if(is.quasits(data)) z <- time(data)
       else z <- index/n
   }
 
-  if("POSIXt" %in% class(z))
+  if(inherits(z, "POSIXt"))
     z <- c(z[1] + as.numeric(difftime(z[1], z[2], units = "secs")), z)
   else
     z <- c(z[1] - diff(z[1:2]), z)
@@ -538,6 +538,151 @@ sctest.gefp <- function(x, functional = efpMax)
   class(rval) <- "htest"
   return(rval)
 }
+
+
+gbreakpoints <- function(formula, order.by = NULL, h = 0.15, breaks = NULL,
+  objective = function(x, y) sum(lm.fit(x,y)$residuals^2), data = list(), ...)
+{
+  mf <- model.frame(formula, data = data)
+  y <- model.response(mf)
+  modelterms <- terms(formula, data = data)
+  X <- model.matrix(modelterms, data = data)
+
+  n <- nrow(X)
+  k <- ncol(X)
+  if(is.null(h)) h <- k + 1
+  if(h < 1) h <- floor(n*h)
+  if(h <= k)
+    stop("minimum segment size must be greater than the number of regressors")
+  if(is.null(breaks)) breaks <- ceiling(n/h) - 2
+
+  if(!is.null(order.by))
+  {
+    if(inherits(order.by, "formula")) {
+      z <- model.matrix(order.by, data = data)
+      z <- as.vector(z[,ncol(z)])
+    } else {
+      z <- order.by
+    }
+    index <- order(z)
+    X <- X[index, , drop = FALSE]
+    y <- y[index]
+    z <- z[index]
+  } else {
+    index <- 1:n
+    if(is.ts(y)) z <- time(y)
+      else if(is.quasits(y)) z <- time(y)
+      else if(is.ts(data)) z <- time(data)
+      else if(is.quasits(data)) z <- time(data)
+      else z <- index/n
+  }
+
+  ## compute ith row of the RSS diagonal matrix, i.e,
+  ## the recursive residuals for segments starting at i = 1:(n-h+1)
+
+  RSSi <- function(i)
+  {
+    rval <- rep(NA, n - i + 1)
+    for(j in (k+1):(n-i+1)) {
+      rval[j] <- objective(X[i:(i+j-1),,drop = FALSE], y[i:(i+j-1)])
+    }
+    return(rval)
+  }
+  RSS.triang <- sapply(1:(n-h+1), RSSi)
+
+  ## function to extract the RSS(i,j) from RSS.triang
+
+  RSS <- function(i,j) RSS.triang[[i]][j - i + 1]
+
+  ## compute optimal previous partner if observation i is the mth break
+  ## store results together with RSSs in RSS.table
+
+  ## breaks = 1
+
+  index <- h:(n-h)
+  break.RSS <- sapply(index, function(i) RSS(1,i))
+
+  RSS.table <- cbind(index, break.RSS)
+  rownames(RSS.table) <- as.character(index)
+
+  ## breaks >= 2
+
+  extend.RSS.table <- function(RSS.table, breaks)
+  {
+    if((breaks*2) > ncol(RSS.table)) {
+      for(m in (ncol(RSS.table)/2 + 1):breaks)
+      {
+        my.index <- (m*h):(n-h)
+        my.RSS.table <- RSS.table[,c((m-1)*2 - 1, (m-1)*2)]
+        my.RSS.table <- cbind(my.RSS.table, NA, NA)
+        for(i in my.index)
+        {
+          pot.index <- ((m-1)*h):(i - h)
+          break.RSS <- sapply(pot.index, function(j) my.RSS.table[as.character(j), 2] + RSS(j+1,i))
+          opt <- which.min(break.RSS)
+          my.RSS.table[as.character(i), 3:4] <- c(pot.index[opt], break.RSS[opt])
+        }
+        RSS.table <- cbind(RSS.table, my.RSS.table[,3:4])
+      }
+      colnames(RSS.table) <- as.vector(rbind(paste("break", 1:breaks, sep = ""),
+                                             paste("RSS", 1:breaks, sep = "")))
+    }
+    return(RSS.table)
+  }
+
+  RSS.table <- extend.RSS.table(RSS.table, breaks)
+
+  ## extract optimal breaks
+
+  extract.breaks <- function(RSS.table, breaks)
+  {
+    if((breaks*2) > ncol(RSS.table)) stop("compute RSS.table with enough breaks before")
+    index <- RSS.table[, 1, drop = TRUE]
+    break.RSS <- sapply(index, function(i) RSS.table[as.character(i),breaks*2] + RSS(i + 1, n))
+    opt <- index[which.min(break.RSS)]
+    if(breaks > 1) {
+      for(i in ((breaks:2)*2 - 1))
+        opt <- c(RSS.table[as.character(opt[1]),i], opt)
+    }
+    names(opt) <- NULL
+    return(opt)
+  }
+
+  opt <- extract.breaks(RSS.table, breaks)
+
+  if(is.ts(data))
+      datatsp <- tsp(data)
+  else if(is.ts(y))
+      datatsp <- tsp(y)
+  else
+      datatsp <- c(0, 1, n)
+
+  RVAL <- list(breakpoints = opt,
+               RSS.table = RSS.table,
+	       RSS.triang = RSS.triang,
+	       RSS = RSS,
+	       extract.breaks = extract.breaks,
+	       extend.RSS.table = extend.RSS.table,
+	       nobs = n,
+	       nreg = k, y = y, X = X,
+	       call = match.call(),
+	       datatsp = datatsp)
+  class(RVAL) <- c("breakpointsfull", "breakpoints")
+  RVAL$breakpoints <- breakpoints(RVAL)$breakpoints
+  return(RVAL)
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ## deprecated
