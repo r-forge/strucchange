@@ -115,7 +115,7 @@ breakpoints.formula <- function(formula, h = 0.15, breaks = NULL,
 	       extract.breaks = extract.breaks,
 	       extend.RSS.table = extend.RSS.table,
 	       nobs = n,
-	       nreg = k,
+	       nreg = k, y = y, X = X,
 	       call = match.call(),
 	       datatsp = datatsp)
   class(RVAL) <- c("breakpointsfull", "breakpoints")
