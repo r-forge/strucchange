@@ -3,7 +3,7 @@
 \title{supF-, aveF- and expF-Test}
 \description{Performs the supF-, aveF- or expF-test}
 \usage{
-sctest(x, type = c("supF", "aveF", "expF"), asymptotic = FALSE)}
+\method{sctest}{Fstats}(x, type = c("supF", "aveF", "expF"), asymptotic = FALSE)}
 \arguments{
  \item{x}{an object of class \code{"Fstats"}.}
  \item{type}{a character string specifying which test will be performed.}

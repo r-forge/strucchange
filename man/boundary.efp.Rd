@@ -5,8 +5,8 @@
 \description{A generic function computing boundaries for structural change
 tests}
 \usage{
-boundary(x, ...)
-boundary(x, alpha = 0.05, alt.boundary = FALSE)}
+boundary(x)
+\method{boundary}{efp}(x, alpha = 0.05, alt.boundary = FALSE)}
 
 \arguments{
   \item{x}{an object of class \code{"efp"}.}

@@ -4,13 +4,14 @@
 \title{Structural Change Tests}
 \description{Performs tests on structural change.}
 \usage{
-sctest(x, type = <<see below>>, h = 0.15, dynamic = FALSE, tol = 1e-7,
-  alt = FALSE, functional = c("max", "range"), from = 0.15, to = NULL,
-  point = floor(0.5*nrow(model.frame(x))), asymptotic = FALSE, data)
+\method{sctest}{formula}(formula, type = <<see below>>, h = 0.15, dynamic = FALSE,
+    tol = 1e-7, alt = FALSE, functional = c("max", "range"), from = 0.15,
+    to = NULL, point = floor(0.5*nrow(model.frame(x))), asymptotic = FALSE,
+    data)
 }
 
 \arguments{
-  \item{x}{a formula describing the model to be tested.}
+  \item{formula}{a formula describing the model to be tested.}
   \item{type}{a character string specifying the structural change test that ist
      to be performed. Besides the tests types described in \code{\link{efp}}
      and \code{\link{sctest.Fstats}} the Chow test is can be performed by

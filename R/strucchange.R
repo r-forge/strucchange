@@ -738,7 +738,7 @@ sctest.formula <- function(x, type = c("Rec-CUSUM", "OLS-CUSUM",
   return(RVAL)
 }
 
-boundary <- function(x, ...)
+boundary <- function(x)
 {
     UseMethod("boundary")
 }

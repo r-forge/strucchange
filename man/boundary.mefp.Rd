@@ -3,7 +3,7 @@
 \title{Boundary Function for Monitoring of Structural Changes}
 \description{Computes boundary for an object of class \code{"mefp"}}
 \usage{
-boundary(x)}
+\method{boundary}{mefp}(x)}
 \arguments{
   \item{x}{an object of class \code{"mefp"}.}
 }

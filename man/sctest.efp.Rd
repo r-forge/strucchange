@@ -3,7 +3,7 @@
 \title{Generalized Fluctuation Tests}
 \description{Performs a generalized fluctuation test.}
 \usage{
-sctest(x, alt.boundary = FALSE, functional = c("max", "range"))
+\method{sctest}{efp}(x, alt.boundary = FALSE, functional = c("max", "range"))
 }
 
 \arguments{
