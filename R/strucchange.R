@@ -533,6 +533,23 @@ Fstats <- function(formula, from = 0.15, to = NULL, data=list())
   n <- length(y)
   e <- lm.fit(X,y)$residuals
 
+  if(is.ts(data)){
+      ytime <- time(data)
+      yfreq <- frequency(data)
+  }
+  else if(is.ts(y)){
+      ytime <- time(y)
+      yfreq <- frequency(y)
+  }
+
+  ts.eps <- getOption("ts.eps")
+
+  if(length(from)==2)
+  {
+    from <- which(abs(ytime-(from[1]+(from[2]-1)/yfreq)) < ts.eps)
+    if(!is.null(to)) to <- which(abs(ytime-(to[1]+(to[2]-1)/yfreq)) < ts.eps)
+  }
+  else
   if(from < 1)
   {
     from <- floor(from*n)
@@ -793,3 +810,18 @@ root.matrix <- function(X)
     }
 }
 
+lines.efp <- function(x, ...)
+{
+    proc <- x$process
+    if(any(class(proc)=="mts"))
+    {
+        proc <- ts(apply(abs(x$process), 1, 'max'),
+                   start = start(x$process), frequency = frequency(x$process))
+    }
+    lines(proc, ...)
+}
+
+lines.Fstats <- function(x, ...)
+{
+    lines(x$Fstats, ...)
+}

@@ -273,6 +273,21 @@ boundary.mefp <- function(x)
        frequency=x$histtsp[3])
 }
 
-
+lines.mefp <- function(x, ...)
+{
+    if(x$last>x$histsize){
+        proc <- rbind(as.matrix(x$efpprocess),
+                    as.matrix(x$process))
+        proc <- ts(proc,
+                   end=x$histtsp[2]+(x$last-x$histsize)/x$histtsp[3],
+                   frequency=frequency(x$efpprocess))
+        proc <- ts(apply(abs(proc), 1, 'max'),
+                   start = start(proc), frequency = frequency(proc))
+        lines(proc, ...)
+    }
+    else{
+        cat("Nothing monitored yet!\n")
+    }
+}
 
 
