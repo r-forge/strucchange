@@ -23,7 +23,7 @@ mefp(obj, ...)
 \method{mefp}{efp}(obj, alpha=0.05, functional = c("max", "range"),
     period=10, tolerance=.Machine$double.eps^0.5,
     MECritvalTable=monitorMECritvalTable,
-    rescale=FALSE)
+    rescale=NULL)
 
 monitor(obj, data=NULL, verbose=TRUE)
 }
@@ -54,7 +54,8 @@ monitor(obj, data=NULL, verbose=TRUE)
   \item{rescale}{If \code{TRUE} the estimates will be standardized by
     the regressor matrix of the corresponding subsample similar to
     Kuan & Chen (1994); if \code{FALSE} the historic regressor matrix will
-    be used.}
+    be used. In \code{mefp.efp} the default is to take the same value as in
+    the original call of \code{efp}.}
   \item{verbose}{If \code{TRUE}, signal breaks by text output.}
 }
 \details{
