@@ -4,7 +4,8 @@
 \title{F Statistics}
 \description{Computes a series of F statistics for a specified data window.}
 \usage{
-Fstats(formula, from = 0.15, to = NULL, data)}
+Fstats(formula, from = 0.15, to = NULL, data,
+       cov.type = c("const", "HC", "HC1"), tol=1e-7)}
 \arguments{
  \item{formula}{a symbolic description for the model to be tested}
  \item{from, to}{numeric. If \code{from} is smaller than 1 they are
@@ -17,7 +18,14 @@ Fstats(formula, from = 0.15, to = NULL, data)}
      specifications like in \code{\link{ts}}, see also the examples.}
  \item{data}{an optional data frame containing the variables in the model. By
      default the variables are taken from the environment which \code{Fstats} is
-     called from.} }
+     called from.}
+ \item{cov.type}{a string indicating which type of covariance matrix
+     estimator should be used. Constant homoskedastic variances are assumed
+     if set to \code{"const"} and White's heterskedasticity consistent
+     estimator is used if set to \code{"HC"}. And \code{"HC1"} stands for a
+     standardized estimator of \code{"HC"}, see also \code{\link{covHC}}.}
+ \item{tol}{tolerance when \code{solve} is used.}
+}
 \details{For every potential change point in \code{from:to} a F statistic (Chow
 test statistic) is computed. For this an OLS model is fitted for the
 observations before and after the potential change point, i.e. \code{2k}

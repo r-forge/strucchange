@@ -331,7 +331,8 @@ plot.efp <- function(x, alpha = 0.05, alt.boundary = FALSE, boundary = TRUE,
     }
 }
 
-pvalue.efp <- function(x, type, alt.boundary, functional = "max", h = NULL, k = NULL)
+pvalue.efp <- function(x, type, alt.boundary, functional = "max", h = NULL, k =
+ NULL)
 {
   type <- match.arg(type,
     c("Rec-CUSUM", "OLS-CUSUM", "Rec-MOSUM", "OLS-MOSUM", "fluctuation", "ME"))
@@ -537,7 +538,8 @@ sctest.efp <- function(x, alt.boundary = FALSE, functional = c("max", "range"),
     return(RVAL)
 }
 
-Fstats <- function(formula, from = 0.15, to = NULL, data=list())
+Fstats <- function(formula, from = 0.15, to = NULL, data = list(),
+   cov.type = c("const","HC", "HC1"), tol=1e-7)
 {
   mf <- model.frame(formula, data = data)
   y <- model.response(mf)
@@ -546,6 +548,7 @@ Fstats <- function(formula, from = 0.15, to = NULL, data=list())
   k <- ncol(X)
   n <- length(y)
   e <- lm.fit(X,y)$residuals
+  cov.type <- match.arg(cov.type)
 
   if(is.ts(data)){
       ytime <- time(data)
@@ -585,14 +588,33 @@ Fstats <- function(formula, from = 0.15, to = NULL, data=list())
   else
     stop("inadmissable change points: 'from' is larger than 'to'")
 
+  sume2 <- sum(e^2)
   lambda <- ((n-from)*to)/(from*(n-to))
   np <- length(point)
   stats <- rep(0,np)
   for(i in 1:np)
   {
-    u <- c(lm.fit(as.matrix(X[(1:point[i]),]),y[1:point[i]])$residuals,
-      lm.fit(as.matrix(X[((point[i]+1):n),]),y[((point[i]+1):n)])$residuals)
-    stats[i] <- ((sum(e^2)-sum(u^2))/k)/((sum(u^2))/(n-2*k))
+    X1 <- as.matrix(X[(1:point[i]),])
+    X2 <- as.matrix(X[((point[i]+1):n),])
+    fm1 <- lm.fit(X1,y[1:point[i]])
+    fm2 <- lm.fit(X2,y[((point[i]+1):n)])
+    u <- c(fm1$residuals, fm2$residuals)
+    sigma2 <- (sum(u^2))/(n-2*k)
+    if(cov.type == "const") {
+      stats[i] <- (sume2-sum(u^2))/sigma2}
+    else {
+      allX <- cbind(X1, matrix(rep(0, point[i]*k), ncol=k))
+      allX <- rbind(allX, cbind(X2, X2))
+      beta2 <- fm2$coefficients - fm1$coefficients
+      Q1 <- solve(crossprod(allX), tol=tol)
+
+      VX <- apply(allX, 2, function(x) x * e)
+      V <- Q1 %*% t(VX) %*% VX %*% Q1
+      if(cov.type == "HC1") {V <- V * (n/(n-k))}
+
+      stats[i] <- as.vector(t(beta2) %*% solve(V[-(1:k),-(1:k)],
+                    tol=tol) %*% beta2)
+     }
   }
   if(is.ts(data)){
       stats <- ts(stats, start = time(data)[from], frequency = frequency(data))
@@ -752,7 +774,10 @@ sctest.formula <- function(formula, type = c("Rec-CUSUM", "OLS-CUSUM",
     STATISTIC <- ((sum(e^2)-sum(u^2))/k)/((sum(u^2))/(n-2*k))
     names(STATISTIC) <- "F"
     if(asymptotic)
+    {
+      STATISTIC <- STATISTIC * k
       PVAL <- 1 - pchisq(STATISTIC, k)
+    }
     else
       PVAL <- 1 - pf(STATISTIC, k, (n-2*k))
     RVAL <- list(statistic = STATISTIC, p.value = PVAL, method = METHOD, data.name = "formula")
@@ -866,4 +891,40 @@ lines.efp <- function(x, ...)
 lines.Fstats <- function(x, ...)
 {
     lines(x$Fstats, ...)
+}
+
+covHC <- function(formula, type=c("HC2", "const", "HC", "HC1", "HC3"),
+ data=list())
+{
+  mf <- model.frame(formula, data = data)
+  y <- model.response(mf)
+  X <- model.matrix(formula, data = data)
+  n <- nrow(X)
+  k <- ncol(X)
+  Q1 <- solve(crossprod(X))
+  res <- lm.fit(X,y)$residuals
+  sigma2 <- var(res)*(n-1)/(n-k)
+  type <- match.arg(type)
+
+  if( type == "const") {
+    V <- sigma2 * Q1 }
+  else
+  {
+    if(type == "HC2")
+    {
+      diaghat <- 1 - diag(X %*% Q1 %*% t(X))
+      res <- res/sqrt(diaghat)
+    }
+    if(type == "HC3")
+    {
+      diaghat <- 1 - diag(X %*% Q1 %*% t(X))
+      res <- res/diaghat
+      Xu <- as.vector(t(X) %*% res)
+    }
+    VX <- apply(X, 2, function(x) x * res)
+    if(type %in% c("HC", "HC1", "HC2")) {V <- Q1 %*% t(VX) %*% VX %*% Q1}
+    if(type == "HC1") {V <- V * (n/(n-k))}
+    if(type == "HC3") {V <- Q1 %*% (t(VX) %*% VX - (outer(Xu,Xu) /n)) %*% Q1 * (n-1)/n}
+  }
+  return(V)
 }
