@@ -596,6 +596,10 @@ Fstats <- function(formula, from = 0.15, to = NULL, data = list(),
   }
 
   sup.point <- which.max(stats) + from - 1
+  if(cov.type == "const")
+    min.RSS <- sume2/(1 + max(stats)/(n - 2*k))
+  else
+    min.RSS <- NA
 
   if(is.ts(data)){
       stats <- ts(stats, start = time(data)[from], frequency = frequency(data))
@@ -617,6 +621,7 @@ Fstats <- function(formula, from = 0.15, to = NULL, data = list(),
                  call = match.call(),
                  formula = formula,
 		 breakpoint = sup.point,
+		 RSS = min.RSS,
                  datatsp = datatsp)
 
   class(retval) <- "Fstats"
@@ -824,12 +829,12 @@ boundary.Fstats <- function(x, alpha = 0.05, pval = FALSE, aveF =
     if(aveF)
     {
       myfun <-  function(y) {pvalue.Fstats(y, type="ave", x$nreg, x$par) - alpha}
-      upper <- 20
+      upper <- 40
     }
     else
     {
       myfun <-  function(y) {pvalue.Fstats(y, type="sup", x$nreg, x$par) - alpha}
-      upper <- 40
+      upper <- 80
     }
     bound <- uniroot(myfun, c(0,upper))$root
     if(pval)
