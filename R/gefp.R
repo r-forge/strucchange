@@ -1,9 +1,13 @@
 gefp <- function(...,
   fit = glm, scores = estfun, vcov = NULL,
   decorrelate = TRUE, sandwich = TRUE,
-  order.by = NULL, parm = NULL, data = list())
+  order.by = NULL, fitArgs = NULL, parm = NULL, data = list())
 {
-  fm <- fit(..., data = data)
+  if(is.null(fitArgs))
+    fm <- fit(..., data = data)	
+  else
+    fm <- do.call("fit", c(..., fitArgs, list(data = data)))
+    
   psi <- as.matrix(scores(fm))
   n <- nrow(psi)
   k <- ncol(psi)
@@ -22,9 +26,9 @@ gefp <- function(...,
   } else {
     index <- 1:n
     if(is.ts(psi)) z <- time(psi)
-      else if(is.zio(psi)) z <- time(psi)
+      else if(is.zoo(psi)) z <- time(psi)
       else if(is.ts(data)) z <- time(data)
-      else if(is.zio(data)) z <- time(data)
+      else if(is.zoo(data)) z <- time(data)
       else z <- index/n
   }
 
@@ -58,7 +62,7 @@ gefp <- function(...,
   colnames(process) <- colnames(psi)
   if(!is.null(parm)) process <- process[, parm]
 
-  retval <- list(process = zio(process, z),
+  retval <- list(process = zoo(process, z),
                  nreg = k,
                  nobs = n,
                  call = match.call(),
@@ -86,8 +90,10 @@ plot.gefp <- function(x, alpha = 0.05, functional = maxBB, ...)
       "Brownian bridge increments" = "BBI")
     functional <- get(paste(functional, lim.process, sep = ""), pos = "package:strucchange")
   }
+  if(!("efpFunctional" %in% class(functional)))
+    stop(paste(dQuote("functional"), "has to be of class", sQuote("efpFunctional")))
   if(functional$lim.process != x$lim.process)
-    stop("Limiting process of \"functional\" does not match that of \"x\"")
+    stop(paste("limiting process of", dQuote("functional"), "does not match that of", dQuote("x")))
   functional$plotProcess(x, alpha = alpha, ...)
 }
 
@@ -102,8 +108,10 @@ sctest.gefp <- function(x, functional = maxBB, ...)
       "Brownian bridge increments" = "BBI")
     functional <- get(paste(functional, lim.process, sep = ""), pos = "package:strucchange")
   }
+  if(!("efpFunctional" %in% class(functional)))
+    stop(paste(dQuote("functional"), "has to be of class", sQuote("efpFunctional")))
   if(functional$lim.process != x$lim.process)
-    stop("Limiting process of \"functional\" does not match that of \"x\"")
+    stop(paste("limiting process of", dQuote("functional"), "does not match that of", dQuote("x")))
   stat <- functional$computeStatistic(x$process)
   names(stat) <- "f(efp)"
   rval <- list(statistic = stat,
@@ -128,6 +136,7 @@ print.gefp <- function(x, ...)
   cat("Fitted model: ")
   print(x$fitted.model)
   cat("\n")
+  invisible(x)
 }
 
 
@@ -135,11 +144,12 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
 		     boundary = function(x) rep(1, length(x)),
 		     computePval = NULL,
 		     computeCritval = NULL,
+		     plotProcess = NULL,
 		     lim.process = "Brownian bridge",
 		     nobs = 10000, nrep = 50000, nproc = 1:20, h = 0.5,
 		     probs = c(0:84/100, 850:1000/1000))
 {		     
-  probs <- probs[-which(probs == 0)]
+  probs <- probs[probs != 0]
 
   ## compute from functional list the full functional
   ## lambda = myfun
@@ -157,7 +167,7 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
     else if(identical(names(functional), c("time", "comp")))
       myfun <- function(x) functional[[2]](apply(as.matrix(x), 2, functional[[1]]))
     else  
-      stop("\"functional\" should be a list with elements \"comp\" and \"time\"")
+      stop(paste(dQuote("functional"), "should be a list with elements", dQuote("comp"), "and", dQuote("time")))
   } else {
     myfun <- functional
   }
@@ -229,142 +239,143 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
 
   ## define sensible default plotting method
 
-  if(is.list(functional)) {
+  if(is.null(plotProcess)) {
+    if(is.list(functional)) {
 
-    if(identical(names(functional), c("comp", "time"))) {
+      if(identical(names(functional), c("comp", "time"))) {
 
-    ## lambda = lambda_time(lambda_comp(x))
-    ## aggregate first over components then over time
+      ## lambda = lambda_time(lambda_comp(x))
+      ## aggregate first over components then over time
 
-      if(identical(functional[[2]], max)) {
+        if(identical(functional[[2]], max)) {
 
-    ## special case: lambda = max(lambda_comp(x))
-    ## can also use boundary argument: b(t) = critval * boundary(t)
+      ## special case: lambda = max(lambda_comp(x))
+      ## can also use boundary argument: b(t) = critval * boundary(t)
     
-        plotProcess <- function(x, alpha = 0.05, aggregate = TRUE,
-	  xlab = "Time", ylab = NULL, main = x$type.name, ylim = NULL, ...)
-	{
-          n <- x$nobs
-	  bound <- computeCritval(alpha = alpha, nproc = NCOL(x$process)) * boundary(0:n/n)
-	  bound <- zio(bound, time(x))
+          plotProcess <- function(x, alpha = 0.05, aggregate = TRUE,
+	    xlab = "Time", ylab = NULL, main = x$type.name, ylim = NULL, ...)
+	  {
+            n <- x$nobs
+	    bound <- computeCritval(alpha = alpha, nproc = NCOL(x$process)) * boundary(0:n/n)
+	    bound <- zoo(bound, time(x))
 
-	  if(aggregate) {
-	    proc <- zio(apply(as.matrix(x$process), 1, functional[[1]]), time(x))
+            if(aggregate) {
+	      proc <- zoo(apply(as.matrix(x$process), 1, functional[[1]]), time(x))
 	    
-	    if(is.null(ylab)) ylab <- "empirical fluctuation process"
-	    if(is.null(ylim)) ylim <- range(c(range(proc), range(bound)))
+              if(is.null(ylab)) ylab <- "empirical fluctuation process"
+	      if(is.null(ylim)) ylim <- range(c(range(proc), range(bound)))
 	    
-	    plot(proc, xlab = xlab, ylab = ylab, main = main, ylim = ylim, ...)
-	    abline(0, 0)
-	    lines(bound, col = 2)	    
-	  } else {
-	    if(is.null(ylim) & NCOL(x$process) < 2) ylim <- range(c(range(x$process), range(bound), range(-bound)))
-	    if(is.null(ylab) & NCOL(x$process) < 2) ylab <- "empirical fluctuation process"
-
-	    panel <- function(x, ...)
-	    {
-              lines(x, ...)
+	      plot(proc, xlab = xlab, ylab = ylab, main = main, ylim = ylim, ...)
 	      abline(0, 0)
-	      if(paste(deparse(functional[[1]]), collapse = "") == "function (x) max(abs(x))") {
-	        lines(bound, col = 2)
-		lines(-bound, col = 2)
-	      }	      
+	      lines(bound, col = 2)	    
+	    } else {
+	      if(is.null(ylim) & NCOL(x$process) < 2) ylim <- range(c(range(x$process), range(bound), range(-bound)))
+	      if(is.null(ylab) & NCOL(x$process) < 2) ylab <- "empirical fluctuation process"
+
+	      panel <- function(x, ...)
+	      {
+                lines(x, ...)
+  	        abline(0, 0)
+	        if(paste(deparse(functional[[1]]), collapse = "") == "function (x) max(abs(x))") {
+	          lines(bound, col = 2)
+		  lines(-bound, col = 2)
+	        }	      
+	      }
+	      plot(x$process, xlab = xlab, ylab = ylab, main = main, panel = panel, ylim = ylim, ...)
 	    }
-	    plot(x$process, xlab = xlab, ylab = ylab, main = main, panel = panel, ylim = ylim, ...)
 	  }
-	}
 
-      } else {
+        } else {
 
-    ## nothing specific known about lambda_time
-    ## plot: first aggregate, add critval and statistic
+      ## nothing specific known about lambda_time
+      ## plot: first aggregate, add critval and statistic
+
+          plotProcess <- function(x, alpha = 0.05, aggregate = TRUE,
+	    xlab = "Time", ylab = NULL, main = x$type.name, ylim = NULL, ...)
+	  {
+            n <- x$nobs
+	    bound <- computeCritval(alpha = alpha, nproc = NCOL(x$process)) * boundary(0:n/n)
+	    bound <- zoo(bound, time(x))
+            stat <- computeStatistic(x$process)
+	    stat <- zoo(rep(stat, length(time(x))), time(x))
+
+	    if(aggregate) {
+	      proc <- zoo(apply(as.matrix(x$process), 1, functional[[1]]), time(x))
+	    
+	      if(is.null(ylab)) ylab <- "empirical fluctuation process"
+	      if(is.null(ylim)) ylim <- range(c(range(proc), range(bound), range(stat)))
+	    
+	      plot(proc, xlab = xlab, ylab = ylab, main = main, ylim = ylim, ...)
+	      abline(0, 0)
+	      lines(bound, col = 2)
+	      lines(stat, lty = 2)	    
+	    } else {
+	      panel <- function(x, ...)
+	      {
+                lines(x, ...)
+	        abline(0, 0)
+	      }
+	      plot(x$process, xlab = xlab, ylab = ylab, main = main, panel = panel, ...)
+	    }
+	  }
+        }
+      }
+    
+      else if(identical(names(functional), c("time", "comp"))) {
+
+      ## lambda = lambda_comp(lambda_time(x))
 
         plotProcess <- function(x, alpha = 0.05, aggregate = TRUE,
-	  xlab = "Time", ylab = NULL, main = x$type.name, ylim = NULL, ...)
-	{
-          n <- x$nobs
-	  bound <- computeCritval(alpha = alpha, nproc = NCOL(x$process)) * boundary(0:n/n)
-	  bound <- zio(bound, time(x))
-          stat <- computeStatistic(x$process)
-	  stat <- zio(rep(stat, length(time(x))), time(x))
+	    xlab = "Component", ylab = "Statistic", main = x$type.name, ylim = NULL, ...)
+        {
+          k <- NCOL(x$process)
+          bound <- computeCritval(alpha = alpha, nproc = NCOL(x$process)) * boundary(1:k/k)
+          stat <- rep(computeStatistic(x$process), k)
 
-	  if(aggregate) {
-	    proc <- zio(apply(as.matrix(x$process), 1, functional[[1]]), time(x))
+          if(aggregate) {
+	    proc <- apply(as.matrix(x$process), 2, functional[[1]])
+	  
+	    xlabels <- colnames(x$process)
+	    if(is.null(xlabels)) xlabels <- paste("Series", 1:k)
+            if(is.null(ylim)) ylim <- range(c(range(proc), range(bound), range(stat), 0))
 	    
-	    if(is.null(ylab)) ylab <- "empirical fluctuation process"
-	    if(is.null(ylim)) ylim <- range(c(range(proc), range(bound), range(stat)))
-	    
-	    plot(proc, xlab = xlab, ylab = ylab, main = main, ylim = ylim, ...)
+	    plot(1:k, proc, xlab = xlab, ylab = ylab, main = main, ylim = ylim, axes = FALSE, type = "h", ...)
+	    points(1:k, proc)
+	    box()
+	    axis(2)
+	    axis(1, at = 1:k, labels = xlabels)
 	    abline(0, 0)
 	    lines(bound, col = 2)
-	    lines(stat, lty = 2)	    
+	    if(!identical(functional[[2]], max)) lines(stat, lty = 2)	    
 	  } else {
 	    panel <- function(x, ...)
 	    {
               lines(x, ...)
-	      abline(0, 0)
+              abline(0, 0)
 	    }
-	    plot(x$process, xlab = xlab, ylab = ylab, main = main, panel = panel, ...)
-	  }
-	}
+            plot(x$process, xlab = xlab, ylab = ylab, main = main, panel = panel, ...)
+	  }      
+        }
+
       }
-    }
     
-    else if(identical(names(functional), c("time", "comp"))) {
+    } else {
 
-    ## lambda = lambda_comp(lambda_time(x))
-
-      plotProcess <- function(x, alpha = 0.05, aggregate = TRUE,
-	  xlab = "Component", ylab = "Statistic", main = x$type.name, ylim = NULL, ...)
+      ## lambda = lambda(x)
+      ## functional is already the full functional lambda
+      ## for plotting: just plot raw process
+      plotProcess <- function(x, alpha = 0.05, aggregate = FALSE,
+        xlab = "Time", ylab = NULL, main = x$type.name, ...)
       {
-        k <- NCOL(x$process)
-        bound <- computeCritval(alpha = alpha, nproc = NCOL(x$process)) * boundary(1:k/k)
-        stat <- rep(computeStatistic(x$process), k)
-
-        if(aggregate) {
-	  proc <- apply(as.matrix(x$process), 2, functional[[1]])
-	  
-	  xlabels <- colnames(x$process)
-	  if(is.null(xlabels)) xlabels <- paste("Series", 1:k)
-          if(is.null(ylim)) ylim <- range(c(range(proc), range(bound), range(stat), 0))
-	    
-	  plot(1:k, proc, xlab = xlab, ylab = ylab, main = main, ylim = ylim, axes = FALSE, type = "h", ...)
-	  points(1:k, proc)
-	  box()
-	  axis(2)
-	  axis(1, at = 1:k, labels = xlabels)
+        if(aggregate) warning("aggregation not available")
+        panel <- function(x, ...) {
+          lines(x, ...)
 	  abline(0, 0)
-	  lines(bound, col = 2)
-	  if(!identical(functional[[2]], max)) lines(stat, lty = 2)	    
-	} else {
-	  panel <- function(x, ...)
-	  {
-            lines(x, ...)
-            abline(0, 0)
-	  }
-          plot(x$process, xlab = xlab, ylab = ylab, main = main, panel = panel, ...)
-	}      
-      }
-
+        }
+        plot(x$process, xlab = xlab, ylab = ylab, main = main, panel = panel, ...)
+      }  
     }
-    
-  } else {
-
-    ## lambda = lambda(x)
-    ## functional is already the full functional lambda
-    ## for plotting: just plot raw process
-    plotProcess <- function(x, alpha = 0.05, aggregate = FALSE,
-      xlab = "Time", ylab = NULL, main = x$type.name, ...)
-    {
-      if(aggregate) warning("aggregation not available")
-      panel <- function(x, ...) {
-        lines(x, ...)
-	abline(0, 0)
-      }
-      plot(x$process, xlab = xlab, ylab = ylab, main = main, panel = panel, ...)
-    }  
   }
-
   
   rval <- list(plotProcess = plotProcess,
                computeStatistic = computeStatistic,

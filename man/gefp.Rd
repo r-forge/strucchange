@@ -11,7 +11,7 @@ from the scores of a fitted model.}
 \usage{
 gefp(\dots, fit = glm, scores = estfun, vcov = NULL,
   decorrelate = TRUE, sandwich = TRUE, order.by = NULL,
-  parm = NULL, data = list())
+  fitArgs = NULL, parm = NULL, data = list())
 }
 \arguments{
   \item{\dots}{specification of some model which is passed together
@@ -31,6 +31,9 @@ gefp(\dots, fit = glm, scores = estfun, vcov = NULL,
     are ordered by the size of \code{z}. If set to \code{NULL} (the
     default) the observations are assumed to be ordered (e.g., a
     time series).}
+  \item{fitArgs}{List of additional arguments which could be passed to
+    the \code{fit} function. Usually, this is not needed and \code{\dots}
+    will be sufficient to pass arguments to \code{fit}.}
   \item{parm}{integer or character specifying the component of the estimating
     functions which should be used (by default all components are used).}
  \item{data}{an optional data frame containing the variables in the \code{\dots}

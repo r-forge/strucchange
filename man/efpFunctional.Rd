@@ -18,7 +18,7 @@ empirical fluctuation processes.}
 efpFunctional(functional = list(comp = function(x) max(abs(x)), time = max),
   boundary = function(x) rep(1, length(x)),
   computePval = NULL, computeCritval = NULL,
-  lim.process = "Brownian bridge",
+  plotProcess = NULL, lim.process = "Brownian bridge",
   nobs = 10000, nrep = 50000, nproc = 1:20, h = 0.5,
   probs = c(0:84/100, 850:1000/1000))
 }
@@ -32,7 +32,9 @@ efpFunctional(functional = list(comp = function(x) max(abs(x)), time = max),
   \item{computeCritval}{a function for computing critical values. If neither
     \code{computePval} nor \code{computeCritval} are specified
     critical values are simulated with settings as specified below.}
-  \item{lim.process}{a character specifying the limiting process.}
+  \item{plotProcess}{a function for plotting the empirical process,
+    if set to \code{NULL} a suitable function is set up.}
+  \item{lim.process}{a string specifying the limiting process.}
   \item{nobs}{integer specifying the number of observations of each
     Brownian motion simulated.}
   \item{nrep}{integer specifying the number of replications.}
@@ -43,6 +45,23 @@ efpFunctional(functional = list(comp = function(x) max(abs(x)), time = max),
   \item{h}{bandwidth parameter for increment processes.}
   \item{probs}{numeric vector specifying for which probabilities 
     critical values should be tabulated.}
+}
+
+\details{\code{efpFunctional} computes an object of class \code{"efpFunctional"}
+  which should know how to do inference based on empirical fluctuation processes
+  (currently only for \code{\link{gefp}} objects and not yet for \code{\link{efp}}
+  objects) and how to visualize the corresponding processes. In particular, it has
+  slots for the functions \code{computeStatistic}, \code{computePval} and \code{plotProcess}.
+  These should have the following interfaces:
+  {\itemize
+    \item{computeStatistic}{should take a single argument which is the process
+      itself, i.e., essentially a n x k matrix where n is the number of
+      observations and k the number of processes (regressors).}
+    \item{computePval}{should take two arguments: a scalar test statistic and the
+      number of processes k}
+    \item{plotProcess}{should take two arguments: an object of class \code{"gefp"}
+      and \code{alpha} the level of significance for any boundaries or critical
+      values to be visualized.}}
 }
 
 \value{
