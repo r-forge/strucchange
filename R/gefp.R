@@ -78,11 +78,6 @@ time.gefp <- function(x, ...)
   time(x$process, ...)
 }
 
-boundary.gefp <- function(x, ...)
-{
-  quasits(as.vector(boundary.efp(x, ...)), time(x))
-}
-
 efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time = max),
 		     boundary = function(x) rep(1, length(x)),
 		     computePval = NULL,
@@ -127,6 +122,8 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
              h = h, lim.process = lim.process, functional = myfun)
       
       zquant <- c(0, quantile(z, probs = probs))
+      rm(z)
+
       pfun <- approxfun(zquant, 1 - c(0, probs))
       computePval <- function(x, nproc = 1) {
         1 - (1 - ifelse(x > max(zquant), 0, pfun(x)))^nproc
@@ -134,6 +131,7 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
       
       cfun <- approxfun(c(0, probs), zquant)
       computeCritval <- function(alpha, nproc = 1) cfun((1-alpha)^(1/nproc))
+
     } else {
       z <- matrix(rep(0, nrep * length(nproc)), ncol = length(nproc))
       colnames(z) <- as.character(nproc)
@@ -142,6 +140,7 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
                h = h, lim.process = lim.process, functional = myfun)
 
       zquant <- rbind(0, apply(z, 2, function(x) quantile(x, probs = probs)))
+      rm(z)
       computePval <- function(x, nproc = 1) {
         if(as.character(nproc) %in% colnames(zquant)) {
           pfun <- approxfun(zquant[, as.character(nproc)], 1 - c(0, probs))
@@ -150,7 +149,7 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
 	else stop("insufficient simulated values: cannot compute p value")
       }
       computeCritval <- function(alpha, nproc = 1) {
-        if(as.character(nproc) %in% colnames(z)) {
+        if(as.character(nproc) %in% colnames(zquant)) {
           cfun <- approxfun(c(0, probs), zquant[, as.character(nproc)])
           cfun(1 - alpha)
         } else stop("insufficient simulated values: cannot compute critical value")
@@ -308,7 +307,9 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
   rval <- list(plotProcess = plotProcess,
                computeStatistic = computeStatistic,
 	       computePval = computePval,
-	       computeCritval = computeCritval)
+	       computeCritval = computeCritval,
+	       boundary = boundary)
+	       
   class(rval) <- "efpFunctional"
   return(rval)
 }
