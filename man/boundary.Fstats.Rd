@@ -4,7 +4,7 @@
 \description{Computes boundary for an object of class \code{"Fstats"}}
 \usage{
 \method{boundary}{Fstats}(x, alpha = 0.05, pval = FALSE, aveF = FALSE,
-    asymptotic = FALSE)}
+    asymptotic = FALSE, ...)}
 \arguments{
  \item{x}{an object of class \code{"Fstats"}.}
  \item{alpha}{numeric from interval (0,1) indicating the confidence level for
@@ -18,6 +18,7 @@
  \item{asymptotic}{logical. If set to \code{TRUE} the asymptotic (chi-square)
      distribution instead of the exact (F) distribution will be used to compute
      the p values (only if \code{pval} is \code{TRUE}).}
+ \item{...}{currently not used.}
 }
 
 \value{an object of class \code{"ts"} with the same time properties as

@@ -99,11 +99,19 @@ plot(temp.cus, alpha = 0.01, alt.boundary = TRUE)
 ## and calculate the test statistic
 sctest(temp.cus)
 
+
+## Load dataset "USIncExp" with income and expenditure in the US
+## and choose a suitable subset
+data(USIncExp)
+USIncExp2 <- window(USIncExp, start=c(1970,1), end=c(1989,12))
+
+## test the null hypothesis that the way the income is spent in expenditure
+## does not change over time
 ## compute moving estimates fluctuation process
-temp.me <- efp(nhtemp ~ 1, type = "ME", h = 0.2)
-## plot the process with functional = "max"
-plot(temp.me)
+me <- efp(expenditure~income, type="ME", data=USIncExp2, h=0.2)
+## plot the two dimensional fluctuation process with boundaries
+plot(me, functional=NULL)
 ## and perform the corresponding test
-sctest(temp.me)
+sctest(me)
 }
 \keyword{regression}
