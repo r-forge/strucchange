@@ -1,19 +1,19 @@
 \name{plot.efp}
 \alias{plot.efp}
 \title{plot empirical fluctuation process}
-\description{Plotting method for objects of class \code{efp}}
+\description{Plotting method for objects of class \code{"efp"}}
 \usage{
-plot(x, alpha = 0.05, alt = FALSE, boundary = TRUE,
+plot(x, alpha = 0.05, alt.boundary = FALSE, boundary = TRUE,
   functional = "max", main = NULL,  ylim = NULL,
   ylab = "empirical fluctuation process", ...)}
 
 \arguments{
-  \item{x}{an object of class "\code{efp}".}
+  \item{x}{an object of class \code{"efp"}.}
   \item{alpha}{numeric from interval (0,1) indicating the confidence level for
      which the boundary of the corresponding test will be computed.}
-  \item{alt}{logical. If set to \code{TRUE} alternative boundaries (instead of
-     the standard linear boundaries) will be plotted (for CUSUM processes
-     only).}
+  \item{alt.boundary}{logical. If set to \code{TRUE} alternative boundaries
+     (instead of the standard linear boundaries) will be plotted (for CUSUM
+     processes only).}
   \item{boundary}{logical. If set to \code{FALSE} the boundary will be computed
      but not plotted.}
   \item{functional}{indicates which functional should be applied to the
@@ -27,39 +27,39 @@ of the corresponding limiting process are available for the CUSUM-type
 processes.
 }
 
-\value{\code{\link{efp}} returns an object of class \code{efp} which inherits
-from the class \code{ts} or \code{mts} respectively. The function
+\value{\code{\link{efp}} returns an object of class \code{"efp"} which inherits
+from the class \code{"ts"} or \code{"mts"} respectively. The function
 \code{\link{plot}} has a method to plot the
 empirical fluctuation process; with \code{sctest} the corresponding test on
 structural change can be performed.}
 
 \references{Brown R.L., Durbin J., Evans J.M. (1975), Techniques for
-Testing Constancy of Regression Relationships over Time, \emph{Journal of the Royal
-Statistal Society}, B, \bold{37}, 149-163.
+testing constancy of regression relationships over time, \emph{Journal of the
+Royal Statistal Society}, B, \bold{37}, 149-163.
 
-Chu C.-S., Hornik K., Kuan C.-M. (1995), MOSUM Tests for Paramater
-Constancy, \emph{Biometrika}, \bold{82}, 603-617.
+Chu C.-S., Hornik K., Kuan C.-M. (1995), MOSUM tests for parameter
+constancy, \emph{Biometrika}, \bold{82}, 603-617.
 
-Chu C.-S., Hornik K., Kuan C.-M. (1995), The Moving-Estimates Test for
-Parameter Stability, \emph{Econometric Theory}, \bold{11}, 669-720.
+Chu C.-S., Hornik K., Kuan C.-M. (1995), The moving-estimates test for
+parameter stability, \emph{Econometric Theory}, \bold{11}, 669-720.
 
-Kraemer W., Ploberger W., Alt R. (1988), Testing for Structural Change in
-Dynamic Models, \emph{Econometrica}, \bold{56}, 1355-1369.
+Kraemer W., Ploberger W., Alt R. (1988), Testing for structural change in
+dynamic models, \emph{Econometrica}, \bold{56}, 1355-1369.
 
-Kuan C.-M., Hornik K. (1995), The Generalized Fluctuation Test: A
-Unifying View, \emph{Econometric Reviews}, \bold{14}, 135 - 161.
+Kuan C.-M., Hornik K. (1995), The generalized fluctuation test: A
+unifying view, \emph{Econometric Reviews}, \bold{14}, 135 - 161.
 
 Kuan C.-M., Chen (1994), Implementing the fluctuation and moving estimates
 tests in dynamic econometric models, \emph{Economics Letters}, \bold{44},
 235-239.
 
-Ploberger W., Kraemer W. (1992), The CUSUM Test with OLS Residuals,
+Ploberger W., Kraemer W. (1992), The CUSUM test with OLS residuals,
 \emph{Econometrica}, \bold{60}, 271-285.
 
 Zeileis A. (2000), p Values and Alternative Boundaries for CUSUM Tests,
 Working Paper 78, SFB "Adaptive Information Systems and Modelling in Economics
 and Management Science", Vienna University of Economics,
-\url{http://www.wu-wien.ac.at/am}.
+\url{http://www.wu-wien.ac.at/am/}.
 }
 \author{Achim Zeileis \email{zeileis@ci.tuwien.ac.at}}
 

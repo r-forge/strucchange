@@ -28,13 +28,14 @@ mefp(obj, alpha=0.05, functional = c("max", "range"), period=10,
 
 }
 
-\value{\code{\link{mefp}} returns an object of class \code{mefp} which contains
-a historic fluctuation process and sets the initialization for monitoring an
-empirical fluctuation process in the future. When new data gets available an
-\code{mefp} object can be monitored with the function \code{monitor}, which
-also returns an object of class \code{mefp}. The latter contains not only the
-historic but also a new empirical fluctuation process. Both can be plotted with
-boundaries for the monitoring period by \code{plot.mts}.}
+\value{\code{\link{mefp}} returns an object of class \code{"mefp"} which 
+contains a historic fluctuation process and sets the initialization for
+monitoring an empirical fluctuation process in the future. When new data gets
+available an \code{mefp} object can be monitored with the function
+\code{monitor}, which also returns an object of class \code{"mefp"}. The latter
+contains not only the historic but also a new empirical fluctuation process.
+Both can be plotted with boundaries for the monitoring period by
+\code{plot.mts}.}
 
 \author{Friedrich Leisch}
 

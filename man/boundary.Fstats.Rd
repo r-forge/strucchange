@@ -1,12 +1,12 @@
 \name{boundary.Fstats}
 \alias{boundary.Fstats}
 \title{boundary for F statistics}
-\description{Computes boundary for an object of class "\code{Fstats}"}
+\description{Computes boundary for an object of class \code{"Fstats"}}
 \usage{
 boundary(x, alpha = 0.05, pval = FALSE, asymptotic = FALSE)}
 
 \arguments{
- \item{x}{an object of class "\code{Fstats}".}
+ \item{x}{an object of class \code{"Fstats"}.}
  \item{alpha}{numeric from interval (0,1) indicating the confidence level for
      which the boundary of the supF test will be computed.}
  \item{pval}{logical. If set to \code{TRUE} a boundary for the corresponding p
@@ -16,7 +16,7 @@ boundary(x, alpha = 0.05, pval = FALSE, asymptotic = FALSE)}
      the p values (only if \code{pval} is \code{TRUE}).}
 }
 
-\value{an object of class "\code{ts}" with the same time properties as
+\value{an object of class \code{"ts"} with the same time properties as
 the time series in \code{x}}
 
 \author{Achim Zeileis \email{zeileis@ci.tuwien.ac.at}}

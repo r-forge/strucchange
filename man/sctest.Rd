@@ -1,21 +1,20 @@
-\name{sctest}
+\name{sctest.formula}
 \alias{sctest}
 \alias{sctest.formula}
 \title{structural change tests}
-\description{a generic function performing tests on structural change}
+\description{Performs tests on structural change}
 \usage{
-sctest(x, ...)
-sctest(x, type = c("Rec-CUSUM", "OLS-CUSUM", "Rec-MOSUM", "OLS-MOSUM",
-  "fluctuation", "ME", "Chow", "supF", "aveF", "expF"), h = 0.15,
-  dynamic = FALSE, tol = 1e-7, alt = FALSE, functional = c("max", "range"),
-  from = 0.15, to = NULL, point = floor(0.5*nrow(model.frame(x))),
-  asymptotic = FALSE, data)
+sctest(x, type = <<see below>>, h = 0.15, dynamic = FALSE, tol = 1e-7,
+  alt = FALSE, functional = c("max", "range"), from = 0.15, to = NULL,
+  point = floor(0.5*nrow(model.frame(x))), asymptotic = FALSE, data)
 }
 
 \arguments{
-  \item{x}{a \code{\link{formula}} describing the model to be tested.}
+  \item{x}{a formula describing the model to be tested.}
   \item{type}{a character string specifying the structural change test that ist
-     to be performed.}
+     to be performed. Besides the tests types described in \code{\link{efp}}
+     and \code{\link{sctest.Fstats}} the Chow test is can be performed by
+     setting type to \code{"Chow"}.}
   \item{h}{numeric from interval (0,1) specifying the bandwidth. Determins the
      size of the data window relative to sample size (for MOSUM and ME tests
      only).}
@@ -31,7 +30,7 @@ sctest(x, type = c("Rec-CUSUM", "OLS-CUSUM", "Rec-MOSUM", "OLS-MOSUM",
      the 1 - \code{from}. F statistics will be calculated for the observations
      \code{(n*from):(n*to)}, when \code{n} is the number of observations in the
      model. If \code{from} is greater than 1 it is interpreted to be the index
-     and \code{to} is by default \code{n - from}. (for F tests only)}
+     and \code{to} defaults to \code{n - from}. (for F tests only)}
   \item{point}{parameter of the Chow test for the potential change point. By
      default taken to be \code{floor(n*0.5)} if \code{n} is the  number of
      observations in the model.}
@@ -48,12 +47,12 @@ and \code{\link{sctest.Fstats}} as it fits an empirical fluctuation process
 first or computes the F statistics respectively and subsequently performs the
 corresponding test. The Chow test is available explicitely here.}
 
-\value{an object of class "\code{htest}" containing:
+\value{an object of class \code{"htest"} containing:
 \itemize
 \item{statistic}{the test statistic}
 \item{p.value}{the corresponding p value}
-\item{method}{the method used}
-\item{data.name}{the data name}}
+\item{method}{a character string with the method used}
+\item{data.name}{a character string with the data name}}
 
 \author{Achim Zeileis \email{zeileis@ci.tuwien.ac.at}}
 

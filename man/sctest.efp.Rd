@@ -3,12 +3,12 @@
 \title{generalized fluctuation tests}
 \description{performs a generalized fluctuation test}
 \usage{
-sctest(x, alt = FALSE, functional = c("max", "range"))
+sctest(x, alt.boundary = FALSE, functional = c("max", "range"))
 }
 
 \arguments{
-  \item{x}{an object of class "\code{efp}".}
-  \item{alt}{logical. If set to \code{TRUE} alternative boundaries (instead of
+  \item{x}{an object of class \code{"efp"}.}
+  \item{alt.boundary}{logical. If set to \code{TRUE} alternative boundaries (instead of
      the standard linear boundaries) will be used (for CUSUM processes only).}
   \item{functional}{indicates which functional should be applied to the
      estimates based processes (\code{"fluctuation"} and \code{"ME"}).}
@@ -18,28 +18,28 @@ sctest(x, alt = FALSE, functional = c("max", "range"))
 tabulated for confidence levels between 0.1 and 0.01, thus the p
 value approximations will be poor for other p values.}
 
-\value{an object of class "\code{htest}" containing:
+\value{an object of class \code{"htest"} containing:
 \itemize
 \item{statistic}{the test statistic}
 \item{p.value}{the corresponding p value}
-\item{method}{the method used}
-\item{data.name}{the data name}}
+\item{method}{a character string with the method used}
+\item{data.name}{a character string with the data name}}
 
 \references{Brown R.L., Durbin J., Evans J.M. (1975), Techniques for
-Testing Constancy of Regression Relationships over Time, \emph{Journal of the Royal
-Statistal Society}, B, \bold{37}, 149-163.
+testing constancy of regression relationships over time, \emph{Journal of the
+Royal Statistal Society}, B, \bold{37}, 149-163.
 
-Chu C.-S., Hornik K., Kuan C.-M. (1995), MOSUM Tests for Paramater
-Constancy, \emph{Biometrika}, \bold{82}, 603-617.
+Chu C.-S., Hornik K., Kuan C.-M. (1995), MOSUM tests for parameter
+constancy, \emph{Biometrika}, \bold{82}, 603-617.
 
-Chu C.-S., Hornik K., Kuan C.-M. (1995), The Moving-Estimates Test for
-Parameter Stability, \emph{Econometric Theory}, \bold{11}, 669-720.
+Chu C.-S., Hornik K., Kuan C.-M. (1995), The moving-estimates test for
+parameter stability, \emph{Econometric Theory}, \bold{11}, 669-720.
 
-Kraemer W., Ploberger W., Alt R. (1988), Testing for Structural Change in
-Dynamic Models, \emph{Econometrica}, \bold{56}, 1355-1369.
+Kraemer W., Ploberger W., Alt R. (1988), Testing for structural change in
+dynamic models, \emph{Econometrica}, \bold{56}, 1355-1369.
 
-Kuan C.-M., Hornik K. (1995), The Generalized Fluctuation Test: A
-Unifying View, \emph{Econometric Reviews}, \bold{14}, 135 - 161.
+Kuan C.-M., Hornik K. (1995), The generalized fluctuation test: A
+unifying view, \emph{Econometric Reviews}, \bold{14}, 135 - 161.
 
 Kuan C.-M., Chen (1994), Implementing the fluctuation and moving estimates
 tests in dynamic econometric models, \emph{Economics Letters}, \bold{44},
@@ -51,7 +51,7 @@ Ploberger W., Kraemer W. (1992), The CUSUM Test with OLS Residuals,
 Zeileis A. (2000), p Values and Alternative Boundaries for CUSUM Tests,
 Working Paper 78, SFB "Adaptive Information Systems and Modelling in Economics
 and Management Science", Vienna University of Economics,
-\url{http://www.wu-wien.ac.at/am}.
+\url{http://www.wu-wien.ac.at/am/}.
 }
 
 \author{Achim Zeileis \email{zeileis@ci.tuwien.ac.at}}
@@ -68,7 +68,7 @@ plot(nhtemp)
 ## over the years compute OLS-CUSUM fluctuation process
 temp.cus <- efp(nhtemp ~ 1, type = "OLS-CUSUM")
 ## plot the process with alternative boundaries
-plot(temp.cus, alpha = 0.01, alt = TRUE)
+plot(temp.cus, alpha = 0.01, alt.boundary = TRUE)
 ## and calculate the test statistic
 sctest(temp.cus)
 

@@ -1,13 +1,13 @@
 \name{plot.Fstats}
 \alias{plot.Fstats}
 \title{plot F statistics}
-\description{Plotting method for objects of class \code{Fstats}}
+\description{Plotting method for objects of class \code{"Fstats"}}
 \usage{
 plot(x, pval = FALSE, asymptotic = FALSE, alpha = 0.05, boundary = TRUE,
   xlab = "Time", ylab = NULL, ylim = NULL, ...)}
 
 \arguments{
- \item{x}{an object of class "\code{Fstats}".}
+ \item{x}{an object of class \code{"Fstats"}.}
  \item{pval}{logical. If set to \code{TRUE} the corresponding p values instead
      of the original F statistics will be plotted.}
  \item{asymptotic}{logical. If set to \code{TRUE} the asymptotic (chi-square)
@@ -23,11 +23,11 @@ plot(x, pval = FALSE, asymptotic = FALSE, alpha = 0.05, boundary = TRUE,
 Andrews D.W.K. (1993), Tests for parameter instability and structural
 change with unknown change point, \emph{Econometrica}, \bold{61}, 821-856.
 
-Hansen B. (1992), Tests for Parameter Instability in Regressions With I(1)
-Processes, \emph{Journal of Business & Economic Statistics}, \bold{10}, 321-335.
+Hansen B. (1992), Tests for parameter instability in regressions with I(1)
+processes, \emph{Journal of Business & Economic Statistics}, \bold{10}, 321-335.
 
-Hansen B. (1997), Approximate Asymptotic P Values for Structural-Change
-Tests, \emph{Journal of Business & Economic Statistics}, \bold{15}, 60-67. }
+Hansen B. (1997), Approximate asymptotic p values for structural-change
+tests, \emph{Journal of Business & Economic Statistics}, \bold{15}, 60-67. }
 
 \author{Achim Zeileis \email{zeileis@ci.tuwien.ac.at}}
 

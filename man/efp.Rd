@@ -6,9 +6,8 @@
 to a specified method from the generalized fluctuation test
 framework}
 \usage{
-efp(formula, type = c("Rec-CUSUM", "OLS-CUSUM",
-  "Rec-MOSUM", "OLS-MOSUM", "fluctuation", "ME"), h = 0.15,
-  dynamic = FALSE, rescale = TRUE, tol = 1e-7, data)}
+efp(formula, type = <<see below>>, h = 0.15, dynamic = FALSE,
+  rescale = TRUE, tol = 1e-7, data)}
 \arguments{
   \item{formula}{a symbolic describtion for the model to be tested.}
   \item{type}{specifies which type of fluctuation process will be
@@ -30,7 +29,7 @@ efp(formula, type = c("Rec-CUSUM", "OLS-CUSUM",
 
 \details{If \code{type} is one of \code{"Rec-CUSUM"}, \code{"OLS-CUSUM"},
 \code{"Rec-MOSUM"} or \code{"OLS-MOSUM"} the function \code{efp} will return a
-one-dimensional empricial process of sums of residuals. Either it will be based
+one-dimensional empiricial process of sums of residuals. Either it will be based
 on recursive residuals or on OLS residuals and the process will contain
 CUmulative SUMs or MOving SUMs of residuals in a certain data window.
 For the MOSUM and ME processes all estimations are done for the
@@ -41,16 +40,16 @@ If there is a single structural change point \eqn{t^*}, the standard CUSUM path 
 to depart from its mean 0 at \eqn{t^*}. The OLS-based CUSUM path will have its peak
 around \eqn{t^*}. The MOSUM path should have a strong change at \eqn{t^*}.
 
-If \code{type} is either \code{"fluctuation"} or \code{"ME"} a k-dimensional
-process will be returned, if k is the number of regressors in the model, as it
-is based on recursive OLS estimates of the regression coefficients or moving
-OLS estimates respectively.
+If \code{type} is either \code{"fluctuation"} or \code{"ME"} a
+\emph{k}-dimensional process will be returned, if \emph{k} is the number of
+regressors in the model, as it is based on recursive OLS estimates of the
+regression coefficients or moving OLS estimates respectively.
 
 Both paths should have a peak around \eqn{t^*} if there is a single structural shift.
 }
 
-\value{\code{efp} returns an object of class "\code{efp}" which inherits
-from the class "\code{ts}" or "\code{mts}" respectively, to which a string
+\value{\code{efp} returns an object of class \code{"efp"} which inherits
+from the class \code{"ts"} or \code{"mts"} respectively, to which a string
 with the \code{type} of the process, the number of regressors (\code{nreg}),
 the bandwidth (\code{h}) and the function call {\code{call}) are added as
 attributes. The function \code{\link{plot}} has a method to plot the empirical
@@ -58,26 +57,26 @@ fluctuation process; with \code{sctest} the corresponding test on structural
 change can be performed.}
 
 \references{Brown R.L., Durbin J., Evans J.M. (1975), Techniques for
-Testing Constancy of Regression Relationships over Time, \emph{Journal of the Royal
-Statistal Society}, B, \bold{37}, 149-163.
+testing constancy of regression relationships over time, \emph{Journal of the
+Royal Statistal Society}, B, \bold{37}, 149-163.
 
-Chu C.-S., Hornik K., Kuan C.-M. (1995), MOSUM Tests for Paramater
-Constancy, \emph{Biometrika}, \bold{82}, 603-617.
+Chu C.-S., Hornik K., Kuan C.-M. (1995), MOSUM tests for parameter
+constancy, \emph{Biometrika}, \bold{82}, 603-617.
 
-Chu C.-S., Hornik K., Kuan C.-M. (1995), The Moving-Estimates Test for
-Parameter Stability, \emph{Econometric Theory}, \bold{11}, 669-720.
+Chu C.-S., Hornik K., Kuan C.-M. (1995), The moving-estimates test for
+parameter stability, \emph{Econometric Theory}, \bold{11}, 669-720.
 
-Kraemer W., Ploberger W., Alt R. (1988), Testing for Structural Change in
-Dynamic Models, \emph{Econometrica}, \bold{56}, 1355-1369.
+Kraemer W., Ploberger W., Alt R. (1988), Testing for structural change in
+dynamic models, \emph{Econometrica}, \bold{56}, 1355-1369.
 
-Kuan C.-M., Hornik K. (1995), The Generalized Fluctuation Test: A
-Unifying View, \emph{Econometric Reviews}, \bold{14}, 135 - 161.
+Kuan C.-M., Hornik K. (1995), The generalized fluctuation test: A
+unifying view, \emph{Econometric Reviews}, \bold{14}, 135 - 161.
 
 Kuan C.-M., Chen (1994), Implementing the fluctuation and moving estimates
 tests in dynamic econometric models, \emph{Economics Letters}, \bold{44},
 235-239.
 
-Ploberger W., Kraemer W. (1992), The CUSUM Test with OLS Residuals,
+Ploberger W., Kraemer W. (1992), The CUSUM test with OLS residuals,
 \emph{Econometrica}, \bold{60}, 271-285. }
 
 \author{Achim Zeileis \email{zeileis@ci.tuwien.ac.at}}
@@ -96,7 +95,7 @@ plot(nhtemp)
 ## compute OLS-CUSUM fluctuation process
 temp.cus <- efp(nhtemp ~ 1, type = "OLS-CUSUM")
 ## plot the process with alternative boundaries
-plot(temp.cus, alpha = 0.01, alt = TRUE)
+plot(temp.cus, alpha = 0.01, alt.boundary = TRUE)
 ## and calculate the test statistic
 sctest(temp.cus)
 

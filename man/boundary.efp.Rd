@@ -5,18 +5,18 @@
 \description{a generic function computing boundaries for structural change tests}
 \usage{
 boundary(x, ...)
-boundary(x, alpha = 0.05, alt = FALSE)}
+boundary(x, alpha = 0.05, alt.boundary = FALSE)}
 
 \arguments{
-  \item{x}{an object of class "\code{efp}".}
+  \item{x}{an object of class \code{"efp"}.}
   \item{alpha}{numeric from interval (0,1) indicating the confidence level for
      which the boundary of the corresponding test will be computed.}
-  \item{alt}{logical. If set to \code{TRUE} alternative boundaries (instead of
-     the standard linear boundaries) will be computed (for CUSUM processes
-     only).}
+  \item{alt.boundary}{logical. If set to \code{TRUE} alternative boundaries
+     (instead of the standard linear boundaries) will be computed (for CUSUM
+     processes only).}
 }
 
-\value{an object of class "\code{ts}" with the same time properties as
+\value{an object of class \code{"ts"} with the same time properties as
 the time series in \code{x}}
 
 \author{Achim Zeileis \email{zeileis@ci.tuwien.ac.at}}
