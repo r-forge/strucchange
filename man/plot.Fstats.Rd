@@ -1,6 +1,6 @@
 \name{plot.Fstats}
 \alias{plot.Fstats}
-\title{plot F statistics}
+\title{Plot F Statistics}
 \description{Plotting method for objects of class \code{"Fstats"}}
 \usage{
 plot(x, pval = FALSE, asymptotic = FALSE, alpha = 0.05, boundary = TRUE,

@@ -1,9 +1,9 @@
 \name{plot.efp}
 \alias{plot.efp}
-\title{plot empirical fluctuation process}
+\title{Plot Empirical Fluctuation Process}
 \description{Plotting method for objects of class \code{"efp"}}
 \usage{
-plot(x, alpha = 0.05, alt.boundary = FALSE, boundary = TRUE,
+\method{plot}{efp}(x, alpha = 0.05, alt.boundary = FALSE, boundary = TRUE,
   functional = "max", main = NULL,  ylim = NULL,
   ylab = "empirical fluctuation process", ...)}
 
