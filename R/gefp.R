@@ -162,38 +162,45 @@ plot.gefp <- function(x, alpha = 0.05, parm = NULL,
 }
 
 efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time = max),
-		     boundary = function(x) rep(1, x),
+		     boundary = function(x) rep(1, length(x)),
 		     computePval = NULL,
 		     computeCritval = NULL,
 		     lim.process = "Brownian bridge",
 		     nobs = 10000, nrep = 50000, nproc = 1:20, h = 0.5)
 {		     
+  ## compute from functional list the full functional
+  ## lambda = myfun
+  
   if(is.list(functional)) {
-    if(names(functional) == c("comp", "time")) {
+    if(identical(names(functional), c("comp", "time"))) {
       if(identical(functional[[2]], max)) {
         myfun <- function(x) {
-	  rval <- apply(x, 1, functional[[1]])
-	  functional[[2]](rval/boundary(1:length(rval)/rval))
+	  rval <- apply(as.matrix(x), 1, functional[[1]])
+	  functional[[2]](rval/boundary(0:(length(rval)-1)/(length(rval)-1)))
 	}
       } else
-        myfun <- function(x) functional[[2]](apply(x, 1, functional[[1]]))
+        myfun <- function(x) functional[[2]](apply(as.matrix(x), 1, functional[[1]]))
     }
-    else if(names(functional) == c("time", "comp"))
-      myfun <- function(x) functional[[2]](apply(x, 2, functional[[1]]))
+    else if(identical(names(functional), c("time", "comp")))
+      myfun <- function(x) functional[[2]](apply(as.matrix(x), 2, functional[[1]]))
     else  
       stop("`functional' should be a list with elements `comp' and `time'")
   } else {
     myfun <- functional
   }
+
+  ## setup computeStatistic function
+  computeStatistic <- function(x)
+    myfun(as.matrix(x)[-1,])
+
+  ## if missing simulate values for
+  ## computePval and computeCritval
   
-  compStatistic <- function(x)
-    myfun(x)
-    
   if(is.null(computePval)) {
     if(is.null(nproc)) {
       z <- simulateDist(nobs = nobs, nrep = nrep, nproc = 1,
              h = h, lim.process = lim.process, functional = myfun)
-      computePval <- function(x, nproc = 1) 1 - (sum(x <= z)/nrep)^nproc
+      computePval <- function(x, nproc = 1) 1 - (sum(z <= x)/nrep)^nproc
       if(is.null(computeCritval))
         computeCritval <- function(alpha, nproc = 1) quantile(z, (1-alpha)^(1/nproc))
     } else {
@@ -202,24 +209,133 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
       for(i in nproc)
         z[, as.character(i)] <- simulateDist(nobs = nobs, nrep = nrep, nproc = i,
                h = h, lim.process = lim.process, functional = myfun)
-      computePval <- function(x, nproc = 1) sum(x > z[, as.character(nproc)])/nrep
-      if(is.null(computeCritval))
-        computeCritval <- function(alpha, nproc = 1) quantile(z[, as.character(nproc)], 1-alpha)
+      computePval <- function(x, nproc = 1) {
+        if(as.character(nproc) %in% colnames(z))
+          sum(z[, as.character(nproc)] > x)/nrep
+	else stop("insufficient simulated values: cannot compute p value")
+      }
+      if(is.null(computeCritval)) {
+        computeCritval <- function(alpha, nproc = 1)
+          if(as.character(nproc) %in% colnames(z))
+            quantile(z[, as.character(nproc)], 1-alpha)
+          else stop("insufficient simulated values: cannot compute critical value")
+      }
     }
   }
+
   if(is.null(computeCritval)) {
     computeCritval <- function(alpha, nproc = 1)
       uniroot(function(y) {computePval(y, nproc = nproc) - alpha}, c(0, 1000))$root
   }
 
 
-  plotProcess <- function(x, alpha = 0.05,
-    xlab = "Time", ylab = "empirical fluctuation process", main = x$type.name, ...)
-  {
-    plot(x$time, x$process, type = "l", xlab = xlab, ylab = ylab, main = main, ...)
-    abline(h = computeCritval(alpha), col = 2)
-    abline(h = computeStatistic(x$process), lty = 2)
-  }  
+  ## define sensible default plotting method
+
+  if(is.list(functional)) {
+
+    if(identical(names(functional), c("comp", "time"))) {
+
+    ## lambda = lambda_time(lambda_comp(x))
+    ## aggregate first over components then over time
+
+      if(identical(functional[[2]], max)) {
+
+    ## special case: lambda = max(lambda_comp(x))
+    ## can also use boundary argument: b(t) = critval * boundary(t)
+    
+        plotProcess <- function(x, alpha = 0.05, aggregate = TRUE,
+	  xlab = "Time", ylab = NULL, main = x$type.name, ylim = NULL, ...)
+	{
+          n <- x$nobs
+	  bound <- computeCritval(alpha = alpha, nproc = NCOL(x$process)) * boundary(0:n/n)
+	  bound <- quasits(bound, time(x))
+
+	  if(aggregate) {
+	    proc <- quasits(apply(as.matrix(x$process), 1, functional[[1]]), time(x))
+	    
+	    if(is.null(ylab)) ylab <- "empirical fluctuation process"
+	    if(is.null(ylim)) ylim <- range(c(range(proc), range(bound)))
+	    
+	    plot(proc, xlab = xlab, ylab = ylab, main = main, ylim = ylim, ...)
+	    abline(0, 0)
+	    lines(bound, col = 2)	    
+	  } else {
+	    panel <- function(x, ...)
+	    {
+              lines(x, ...)
+	      abline(0, 0)
+	      if(paste(deparse(functional[[1]]), collapse = "") == "function (x) max(abs(x))") {
+	        lines(bound, col = 2)
+		lines(-bound, col = 2)
+	      }	      
+	    }
+	    plot(x$process, xlab = xlab, ylab = ylab, main = main, panel = panel, ...)
+	  }
+	}
+
+      } else {
+
+    ## nothing specific known about lambda_time
+    ## plot: first aggregate, add critval and statistic
+
+        plotProcess <- function(x, alpha = 0.05, aggregate = TRUE,
+	  xlab = "Time", ylab = NULL, main = x$type.name, ylim = NULL, ...)
+	{
+          n <- x$nobs
+	  bound <- computeCritval(alpha = alpha, nproc = NCOL(x$process)) * boundary(0:n/n)
+	  bound <- quasits(bound, time(x))
+          stat <- computeStatistic(x$process)
+	  stat <- quasits(rep(stat, length(time(x))), time(x))
+
+	  if(aggregate) {
+	    proc <- quasits(apply(as.matrix(x$process), 1, functional[[1]]), time(x))
+	    
+	    if(is.null(ylab)) ylab <- "empirical fluctuation process"
+	    if(is.null(ylim)) ylim <- range(c(range(proc), range(bound), range(stat)))
+	    
+	    plot(proc, xlab = xlab, ylab = ylab, main = main, ylim = ylim, ...)
+	    abline(0, 0)
+	    lines(bound, col = 2)
+	    lines(stat, lty = 2)	    
+	  } else {
+	    panel <- function(x, ...)
+	    {
+              lines(x, ...)
+	      abline(0, 0)
+	    }
+	    plot(x$process, xlab = xlab, ylab = ylab, main = main, panel = panel, ...)
+	  }
+	}
+      }
+    }
+    
+    else if(identical(names(functional), c("time", "comp")))
+
+    ## lambda = lambda_comp(lambda_time(x))
+
+      myfun <- function(x) functional[[2]](apply(as.matrix(x), 2, functional[[1]]))
+
+    else  
+    
+    ## functional is no useful list
+    
+      stop("`functional' should be a list with elements `comp' and `time'")
+  } else {
+
+    ## lambda = lambda(x)
+    ## functional is already the full functional lambda
+    ## for plotting: just plot raw process
+    plotProcess <- function(x, alpha = 0.05, aggregate = FALSE,
+      xlab = "Time", ylab = NULL, main = x$type.name, ...)
+    {
+      if(aggregate) warning("aggregation not available")
+      panel <- function(x, ...) {
+        lines(x, ...)
+	abline(0, 0)
+      }
+      plot(x$process, xlab = xlab, ylab = ylab, main = main, panel = panel, ...)
+    }  
+  }
 
   
   rval <- list(plotProcess = plotProcess,
@@ -335,7 +451,7 @@ as.quasits.irts <- function(x, ...)
 plot.quasits <- function(x,
   plot.type = c("multiple", "single"), panel = lines,
   xlab = "Time", ylab = NULL, main = NULL, ylim = NULL,
-  oma = c(6, 0, 5, 0), col = 1, nc, ...)
+  oma = c(6, 0, 5, 0), col = 1, lty = 1, nc, ...)
 {
   plot.type <- match.arg(plot.type)
   nser <- NCOL(x)
@@ -348,6 +464,7 @@ plot.quasits <- function(x,
     if(is.null(ylab)) ylab <- paste("Series", 1:nser)
     ylab <- rep(ylab, length.out = nser)
     col <- rep(col, length.out = nser)
+    lty <- rep(lty, length.out = nser)
 
     panel <- match.fun(panel)
     if(nser > 10) stop("Can't plot more than 10 series")
@@ -365,7 +482,7 @@ plot.quasits <- function(x,
         box()
         axis(2, xpd = NA)
       }
-      panel(x.time, x[, i], col = col[i], ...)
+      panel(x.time, x[, i], col = col[i], lty = lty[i], ...)
     }
     par(oldpar)
   } else {
@@ -380,7 +497,7 @@ plot.quasits <- function(x,
     box()
     y <- as.matrix(x)
     for(i in 1:nser) {
-      panel(x.time, y[, i], col = col[i], ...)
+      panel(x.time, y[, i], col = col[i], lty = lty[i], ...)
     }
   }
   title(main)
