@@ -206,6 +206,9 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
 	    abline(0, 0)
 	    lines(bound, col = 2)	    
 	  } else {
+	    if(is.null(ylim) & NCOL(x$process) < 2) ylim <- range(c(range(x$process), range(bound), range(-bound)))
+	    if(is.null(ylab) & NCOL(x$process) < 2) ylab <- "empirical fluctuation process"
+
 	    panel <- function(x, ...)
 	    {
               lines(x, ...)
@@ -215,7 +218,7 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
 		lines(-bound, col = 2)
 	      }	      
 	    }
-	    plot(x$process, xlab = xlab, ylab = ylab, main = main, panel = panel, ...)
+	    plot(x$process, xlab = xlab, ylab = ylab, main = main, panel = panel, ylim = ylim, ...)
 	  }
 	}
 
@@ -549,7 +552,7 @@ plot.gefp <- function(x, alpha = 0.05, functional = maxBB, ...)
       "Brownian motion increments" = "BMI",
       "Brownian bridge" = "BB",
       "Brownian bridge increments" = "BBI")
-    functional <- get(paste(functional, lim.process, sep = "")) ##, pos = "package:strucchange")
+    functional <- get(paste(functional, lim.process, sep = ""), pos = "package:strucchange")
   }
   if(functional$lim.process != x$lim.process)
     stop("Limiting process of \"functional\" does not match that of \"x\"")
