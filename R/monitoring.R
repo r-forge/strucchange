@@ -11,7 +11,7 @@ mefp.formula <-
     val <- efp(formula, type=type, h=h, data=data, rescale=rescale)
     val <- mefp(val, alpha=alpha, functional=functional, period=period,
                 tolerance=tolerance, CritvalTable=CritvalTable,
-                rescale=rescale)
+                rescale=rescale, border=border, ...)
     if(length(data) == 0)
         val$data <- NULL
     else
