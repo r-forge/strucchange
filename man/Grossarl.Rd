@@ -71,7 +71,9 @@ lines(mos.final, lty = 2)
 ## dating
 bp <- breakpoints(fraction ~ 1, data = Grossarl, h = 0.1)
 summary(bp)
-plot(summary(bp))
+## RSS, BIC, AIC
+plot(bp)
+plot(0:8, AIC(bp), type = "b")
 
 ## probably use 5 (or maybe 6) breakpoints and compare with
 ## coding of the factors as used by us
@@ -108,7 +110,9 @@ lines(mos.final, lty = 2)
 ## dating
 bp <- breakpoints(marriages ~ 1, data = Grossarl, h = 0.1)
 summary(bp)
-plot(summary(bp))
+## RSS, BIC, AIC
+plot(bp)
+plot(0:8, AIC(bp), type = "b")
 
 ## probably use 3 (or maybe 4) breakpoints and compare with
 ## coding of the factors as used by us
