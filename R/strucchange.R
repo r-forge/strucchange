@@ -554,10 +554,15 @@ Fstats <- function(formula, from = 0.15, to = NULL, data=list())
       lm.fit(as.matrix(X[((point[i]+1):n),]),y[((point[i]+1):n)])$residuals)
     stats[i] <- ((sum(e^2)-sum(u^2))/k)/((sum(u^2))/(n-2*k))
   }
-  if(is.ts(y))
-    stats <- ts(stats, start = time(y)[from], frequency = frequency(y))
+  if(is.ts(data))
+      stats <- ts(stats, start = time(data)[from], frequency = frequency(data))
   else
-    stats <- ts(stats, start = from/n, frequency = n)
+  {
+      if(is.ts(y))
+          stats <- ts(stats, start = time(y)[from], frequency = frequency(y))
+      else
+          stats <- ts(stats, start = from/n, frequency = n)
+  }
 
   retval <- list(Fstats = stats,
                  nreg = k,
