@@ -121,11 +121,10 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
   ## if missing simulate values for
   ## computePval and computeCritval
   
-  if(is.null(computePval)) {
+  if(is.null(computePval) & is.null(computeCritval)) {
     if(is.null(nproc)) {
       z <- simulateDist(nobs = nobs, nrep = nrep, nproc = 1,
              h = h, lim.process = lim.process, functional = myfun)
-      computePval2 <- function(x, nproc = 1) 1 - (sum(z <= x)/nrep)^nproc
       
       zquant <- c(0, quantile(z, probs = probs))
       pfun <- approxfun(zquant, 1 - c(0, probs))
@@ -135,8 +134,6 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
       
       cfun <- approxfun(c(0, probs), zquant)
       computeCritval <- function(alpha, nproc = 1) cfun((1-alpha)^(1/nproc))
-      ## if(is.null(computeCritval))
-        computeCritval2 <- function(alpha, nproc = 1) quantile(z, (1-alpha)^(1/nproc))
     } else {
       z <- matrix(rep(0, nrep * length(nproc)), ncol = length(nproc))
       colnames(z) <- as.character(nproc)
@@ -158,22 +155,17 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
           cfun(1 - alpha)
         } else stop("insufficient simulated values: cannot compute critical value")
       }
-      computePval2 <- function(x, nproc = 1) {
-        if(as.character(nproc) %in% colnames(z))
-          sum(z[, as.character(nproc)] > x)/nrep
-	else stop("insufficient simulated values: cannot compute p value")
-      }
-      computeCritval2 <- function(alpha, nproc = 1) {
-        if(as.character(nproc) %in% colnames(z))
-          quantile(z[, as.character(nproc)], 1-alpha)
-        else stop("insufficient simulated values: cannot compute critical value")
-      }
     }
   }
 
   if(is.null(computeCritval)) {
     computeCritval <- function(alpha, nproc = 1)
       uniroot(function(y) {computePval(y, nproc = nproc) - alpha}, c(0, 1000))$root
+  }
+
+  if(is.null(computePval)) {
+    computePval <- function(x, nproc = 1)
+      uniroot(function(y) {computeCritval(y, nproc = nproc) - x}, c(0, 1))$root
   }
 
 
@@ -316,9 +308,7 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
   rval <- list(plotProcess = plotProcess,
                computeStatistic = computeStatistic,
 	       computePval = computePval,
-	       computePval2 = computePval2,
-	       computeCritval = computeCritval,
-	       computeCritval2 = computeCritval2)
+	       computeCritval = computeCritval)
   class(rval) <- "efpFunctional"
   return(rval)
 }
