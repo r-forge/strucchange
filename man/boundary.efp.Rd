@@ -1,7 +1,7 @@
 \name{boundary.efp}
 \alias{boundary}
 \alias{boundary.efp}
-\title{boundary function for structural change tests}
+\title{Boundary Function for Structural Change Tests}
 \description{a generic function computing boundaries for structural change tests}
 \usage{
 boundary(x, ...)

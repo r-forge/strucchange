@@ -1,7 +1,7 @@
 \name{Fstats}
 \alias{Fstats}
 \alias{print.Fstats}
-\title{F statistics}
+\title{F Statistics}
 \description{Computes a series of F statistics for a specified data window.}
 \usage{
 Fstats(formula, from = 0.15, to = NULL, data)}

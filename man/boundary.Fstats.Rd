@@ -1,6 +1,6 @@
 \name{boundary.Fstats}
 \alias{boundary.Fstats}
-\title{boundary for F statistics}
+\title{Boundary for F Statistics}
 \description{Computes boundary for an object of class \code{"Fstats"}}
 \usage{
 boundary(x, alpha = 0.05, pval = FALSE, asymptotic = FALSE)}

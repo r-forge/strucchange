@@ -1,7 +1,7 @@
 \name{efp}
 \alias{efp}
 \alias{print.efp}
-\title{empirical fluctuation process}
+\title{Empirical Fluctuation Process}
 \description{Computes an empirical fluctuation process according
 to a specified method from the generalized fluctuation test
 framework}
