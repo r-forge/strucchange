@@ -27,7 +27,7 @@ recresid.default <- function(x, y, tol = 1e-7)
 {
     n <- nrow(x)
     q <- ncol(x)
-    w <- rep(0,(n-q))r
+    w <- rep(0,(n-q))
     Xr1 <- x[1:q,,drop = FALSE]
     xr <- as.vector(x[q+1,])
     X1 <- solve(t(Xr1)%*%Xr1, tol=tol)
