@@ -470,7 +470,8 @@ confint.breakpointsfull <- function(object, parm = NULL, level = 0.95, breaks = 
   }
   
   bp <- bp[-c(1, nbp+2)]
-  bp <- cbind(floor(bp - upper) - 1, bp, floor(bp - lower) + 1)
+  bp <- cbind(bp - ceiling(upper), bp, bp - floor(lower))
+  #V.BP# bp <- cbind(floor(bp - upper) - 1, bp, floor(bp - lower) + 1)
   #V.2# bp <- cbind(bp - (as.integer(upper) + 1), bp, bp - (as.integer(lower) - 1))
   #V.1# bp <- cbind(bp+floor(lower), bp, bp+ceiling(upper))
   a2 <- round(a2 * 100, digits = 1)
