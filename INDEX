@@ -1,14 +1,16 @@
-Fstats                   F statistics
-beta.sup                 coefficient tables for F tests
-boundary.Fstats          boundary for F statistics
-boundary                 boundary function for structural change tests
-efp                      empirical fluctuation process
-me                       critical values for ME test
-plot.Fstats              plot F statistics
-plot.efp                 plot empirical fluctuation process
-print.Fstats             printing F statistics
-print.efp                printing empirical fluctuation processes
-pvalue.efp               p value functions for structural change tests
-sctest.Fstats            supF-, aveF- and expF-test
-sctest                   structural change tests
-sctest.efp               generalized fluctuation tests
+Fstats                   F Statistics
+USIncExp                 Income and Expenditures in the US
+boundary.Fstats          Boundary for F Statistics
+boundary.efp             Boundary Function for Structural Change Tests
+boundary.mefp            Boundary Function for Monitoring of Structural
+                         Changes
+efp                      Empirical Fluctuation Process
+mefp                     Monitoring of Empirical Fluctuation Processes
+plot.Fstats              Plot F Statistics
+plot.efp                 Plot Empirical Fluctuation Process
+plot.mefp                Plot Methods for mefp Objects
+root.matrix              Root of a Matrix
+sctest.Fstats            supF-, aveF- and expF-Test
+sctest.formula           Structural Change Tests
+sctest.efp               Generalized Fluctuation Tests
+strucchange.internal     Internal strucchange objects
