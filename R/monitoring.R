@@ -4,7 +4,7 @@ mefp.formula <-
     function(formula, type = c("OLS-CUSUM", "OLS-MOSUM", "ME", "fluctuation"),
              data=list(), h=1, alpha=0.05, functional = c("max", "range"),
              period=10, tolerance=.Machine$double.eps^0.5,
-             CritvalTable=NULL, rescale=FALSE, ...)
+             CritvalTable=NULL, rescale=FALSE, border=NULL, ...)
 {
     type <- match.arg(type)
     functional <- match.arg(functional)
@@ -23,7 +23,7 @@ mefp.formula <-
 mefp.efp <-
     function(obj, alpha=0.05, functional = c("max", "range"),
              period=10, tolerance=.Machine$double.eps^0.5,
-             CritvalTable=NULL, rescale=NULL, ...)
+             CritvalTable=NULL, rescale=NULL, border=NULL, ...)
 {
     functional <- match.arg(functional)
     if(! (obj$type %in% c("OLS-CUSUM", "OLS-MOSUM", "ME", "fluctuation")))
@@ -79,9 +79,11 @@ mefp.efp <-
         }
         computeEstims <- NULL
         functional <- "max"
-        border <- function(k){
-            x <- k/histsize
-            sqrt(x*(x-1)*(critval^2 + log(x/(x-1))))
+        if(is.null(border)){
+            border <- function(k){
+                x <- k/histsize
+                sqrt(x*(x-1)*(critval^2 + log(x/(x-1))))
+            }
         }
     },
 
@@ -118,8 +120,10 @@ mefp.efp <-
         }
         functional <- "max"
         computeEstims <- NULL
-        border <- function(k){
-            critval*sqrt(2*logPlus(k/histsize))
+        if(is.null(border)){
+            border <- function(k){
+                critval*sqrt(2*logPlus(k/histsize))
+            }
         }
     },
 
@@ -152,8 +156,10 @@ mefp.efp <-
                 retval$Qr12 <- root.matrix(crossprod(x[ok,,drop=FALSE]))/sqrt(K)
             retval
         }
-        border <- function(k){
-            critval*sqrt(2*logPlus(k/histsize))
+        if(is.null(border)){
+            border <- function(k){
+                critval*sqrt(2*logPlus(k/histsize))
+            }
         }
     },
 
@@ -194,9 +200,11 @@ mefp.efp <-
                 retval$Qr12 <- root.matrix(crossprod(x[1:k,,drop=FALSE]))/sqrt(k)
             retval
         }
-        border <- function(k){
-            x <- k/histsize
-            sqrt(x*(x-1)*(critval^2 + log(x/(x-1))))
+        if(is.null(border)){
+            border <- function(k){
+                x <- k/histsize
+                sqrt(x*(x-1)*(critval^2 + log(x/(x-1))))
+            }
         }
     })
 
