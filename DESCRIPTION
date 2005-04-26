@@ -1,6 +1,6 @@
 Package: strucchange
 Version: 1.2-10
-Date: 2005-04-21
+Date: 2005-04-27
 Title: Testing for Structural Change
 Author: Achim Zeileis, Friedrich Leisch, Bruce Hansen,
         Kurt Hornik, Christian Kleiber, Andrea Peters
@@ -18,5 +18,5 @@ Description: Testing, dating and monitoring of structural change in
              changes can be estimated together with confidence intervals.
              Emphasis is always given to methods for visualizing the data.
 Depends: sandwich, zoo, R (>= 2.0.0)
-Suggests: lmtest, dynlm
+Suggests: lmtest, car, dynlm
 License: GPL
