@@ -608,6 +608,8 @@ fitted.breakpointsfull <- function(object, breaks = NULL, ...)
     y2 <- y[(bp[i]+1):bp[i+1]]
     rval <- c(rval, lm.fit(X2, y2)$fitted.values)
   }
+  rval <- ts(as.vector(rval))
+  tsp(rval) <- object$datatsp
   
   return(rval)
 }
@@ -633,7 +635,9 @@ residuals.breakpointsfull <- function(object, breaks = NULL, ...)
     y2 <- y[(bp[i]+1):bp[i+1]]
     rval <- c(rval, lm.fit(X2, y2)$residuals)
   }
-  
+  rval <- ts(as.vector(rval))
+  tsp(rval) <- object$datatsp
+    
   return(rval)
 }
 
