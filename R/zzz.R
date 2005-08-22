@@ -1,12 +1,3 @@
-if(!("package:zoo" %in% search() || require(zoo))) warning("could not load package zoo")
-if(!("package:sandwich" %in% search() || require(sandwich))) warning("could not load package sandwich")
-
-.First.lib <- function(lib, pkg) {
-  if(as.numeric(R.Version()$minor) < 7) {
-    autoload("confint", "MASS")
-  }
-}
-
 maxBB <- efpFunctional(lim.process = "Brownian bridge",
   functional = list(comp = function(x) max(abs(x)), time = max),
   computePval = function(x, nproc = 1)

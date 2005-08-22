@@ -108,7 +108,7 @@ breakpoints.formula <- function(formula, h = 0.15, breaks = NULL,
       if(missing(data)) data <- env
       orig.y <- eval(attr(terms(formula), "variables")[[2]], data, env)
       if(is.ts(orig.y)) datatsp <- tsp(orig.y)
-        else datatsp <- c(0, 1, n)
+        else datatsp <- c(1/n, 1, n)
   }
 
   RVAL <- list(breakpoints = opt,
