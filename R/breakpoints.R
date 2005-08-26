@@ -392,6 +392,8 @@ confint.breakpointsfull <- function(object, parm = NULL, level = 0.95, breaks = 
   myprod <- function(delta, mat) as.vector(crossprod(delta, mat) %*% delta)
 
   bp <- breakpoints(object, breaks = breaks)$breakpoints
+  if(any(is.na(bp))) stop("cannot compute confidence interval when `breaks = 0'")
+  
   nbp <- length(bp)
   upper <- rep(0, nbp)
   lower <- rep(0, nbp)
