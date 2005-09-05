@@ -100,7 +100,7 @@ supLM <- function(from = 0.15, to = NULL) {
       tt <- tt[n1:n2,]
       proc <- proc/(tt * (1-tt))
       
-      if(is.null(ylab)) ylab <- "empirical fluctuation process"
+      if(is.null(ylab)) ylab <- "Empirical fluctuation process"
       if(is.null(ylim)) ylim <- range(c(range(proc), range(bound)))
     
       plot(proc, xlab = xlab, ylab = ylab, main = main, ylim = ylim, ...)
@@ -108,7 +108,7 @@ supLM <- function(from = 0.15, to = NULL) {
       lines(bound, col = 2)	    
     } else {
       if(is.null(ylim) & NCOL(x$process) < 2) ylim <- range(c(range(x$process), range(bound), range(-bound)))
-      if(is.null(ylab) & NCOL(x$process) < 2) ylab <- "empirical fluctuation process"
+      if(is.null(ylab) & NCOL(x$process) < 2) ylab <- "Empirical fluctuation process"
 
       panel <- function(x, ...)
       {

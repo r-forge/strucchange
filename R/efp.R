@@ -336,7 +336,7 @@ efp <- function(formula, data = list(),
 
 plot.efp <- function(x, alpha = 0.05, alt.boundary = FALSE, boundary = TRUE,
                      functional = "max", main = NULL,  ylim = NULL,
-                     ylab = "empirical fluctuation process", ...)
+                     ylab = "Empirical fluctuation process", ...)
 {
     if(is.null(functional)) fun <- "max"
       else fun <- match.arg(functional, c("max", "range", "maxL2", "meanL2"))
