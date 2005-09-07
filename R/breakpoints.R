@@ -29,6 +29,8 @@ breakpoints.formula <- function(formula, h = 0.15, breaks = NULL,
   if(h < 1) h <- floor(n*h)
   if(h <= k)
     stop("minimum segment size must be greater than the number of regressors")
+  if(h > floor(n/2))
+    stop("minimum segment size must be smaller than half the number of observations")
   if(is.null(breaks)) breaks <- ceiling(n/h) - 2
 
   ## compute ith row of the RSS diagonal matrix, i.e,
@@ -256,7 +258,10 @@ summary.breakpointsfull <- function(object, breaks = NULL,
     bd[1,pos] <- breakdates(bpm, format.times = format.times)
     RSS[m+1] <- bpm$RSS
     BIC[m+1] <- AIC(bpm, k = log(n))
-  }}
+  }} else {
+    bp <- as.matrix(bp)
+    bd <- as.matrix(bd)
+  }
   rownames(bp) <- as.character(1:breaks)
   colnames(bp) <- rep("", breaks)
   rownames(bd) <- as.character(1:breaks)
