@@ -18,5 +18,5 @@ Description: Testing, dating and monitoring of structural change in
              changes can be estimated together with confidence intervals.
              Emphasis is always given to methods for visualizing the data.
 Depends: R (>= 2.1.0), zoo, sandwich
-Suggests: lmtest, car, dynlm
+Suggests: lmtest, car, dynlm, e1071, tseries
 License: GPL

@@ -20,6 +20,8 @@ Structural Change in Dynamic Econometric Models,
 \emph{Journal of Applied Econometrics}, \bold{20}, 99--121.
 }
 
+\seealso{\code{\link[tseries]{get.hist.quote}}}
+
 \examples{
 ## load and transform data
 ## (DAL: Delta Air Lines, LU: Lucent Technologies)
