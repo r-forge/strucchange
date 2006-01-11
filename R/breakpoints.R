@@ -205,6 +205,7 @@ breakfactor <- function(obj, breaks = NULL, labels = NULL, ...)
 {
   if("breakpointsfull" %in% class(obj)) obj <- breakpoints(obj, breaks = breaks)
   breaks <- obj$breakpoints
+  if(all(is.na(breaks))) return(factor(rep("segment1", obj$nobs)))
   nbreaks <- length(breaks)
   fac <- rep(1:(nbreaks + 1), c(breaks[1], diff(c(breaks, obj$nobs))))
   if(is.null(labels)) labels <- paste("segment", 1:(nbreaks+1), sep = "")
@@ -727,5 +728,12 @@ vcov.breakpointsfull <- function(object, breaks = NULL, names = NULL, het.reg = 
   }
     
   names(rval) <- names
+  return(rval)
+}
+
+df.residual.breakpointsfull <- function(object, ...)
+{
+  rval <- table(breakfactor(object, ...)) - object$nreg
+  names(rval) <- rownames(coef(object, ...))
   return(rval)
 }
