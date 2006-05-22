@@ -74,7 +74,8 @@ gefp <- function(...,
     J12 <- root.matrix(crossprod(process))
   else {
     if(sandwich) {
-      Q <- chol2inv(chol(summary(fm)$cov.unscaled))
+      stopifnot(all.equal(summary(fm)$cov.unscaled, bread(fm)/n))
+      Q <- chol2inv(chol(bread(fm)/n))
       J12 <- root.matrix((Q %*% vcov.(fm, order.by = order.by, data = data) %*% Q)/n)
     } else {
       J12 <- root.matrix(vcov.(fm, order.by = order.by, data = data))

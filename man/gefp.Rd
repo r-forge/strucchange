@@ -29,8 +29,8 @@ gefp(\dots, fit = glm, scores = estfun, vcov = NULL,
      for the coefficients of the fitted model:
      \code{vcov(fm, order.by = order.by, data = data)}.}
   \item{decorrelate}{logical. Should the process be decorrelated?}
-  \item{sandwich}{logical. Is the function \code{vcov} the sandwich
-     estimator or only the middle part?}
+  \item{sandwich}{logical. Is the function \code{vcov} the full sandwich
+     estimator or only the meat?}
   \item{order.by}{Either a vector \code{z} or a formula with a single explanatory
     variable like \code{~ z}. The observations in the model
     are ordered by the size of \code{z}. If set to \code{NULL} (the
