@@ -57,7 +57,7 @@ nam1 <- names(tab1)[as.vector(tab1) > 9] ## at least 10 papers
 tab2 <- sapply(levels(pub$journal), function(x) min(subset(pub, journal == x)$year))
 nam2 <- names(tab2)[as.vector(tab2) < 1991] ## started at least in 1990
 nam <- nam1[nam1 \%in\% nam2]
-pub <- subset(pub, as.character(journal) %in% nam)
+pub <- subset(pub, as.character(journal) \%in\% nam)
 pub$journal <- factor(pub$journal)
 pub_data <- pub
 
