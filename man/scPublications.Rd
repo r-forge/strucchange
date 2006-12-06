@@ -6,11 +6,11 @@
 
 \description{
 Bibliographic information about papers related to structural change and
-changepoints published in 26 different econometrics and statistics 
+changepoints published in 27 different econometrics and statistics 
 journals.
 }
 \format{
-A data frame containing information on 770 structural change papers in 9 variables.
+A data frame containing information on 833 structural change papers in 9 variables.
  \describe{
     \item{author}{character. Author(s) of the paper.}
     \item{title}{character. Title of the paper.}
@@ -29,14 +29,13 @@ The data set \code{scPublications} includes
 bibliographic information about publications related to structural change and obtained
 from the \sQuote{ISI Web of Science}. The query was based on the \sQuote{Science Citation Index Expanded}
 and \sQuote{Social Sciences Citation Index} (for the full range of years available: 1900-2006 and
-1956-2006, respectively). The \sQuote{Source Title} was restricted to the 26 journals
+1956-2006, respectively). The \sQuote{Source Title} was restricted to the 27 journals
 in the data frame and the \sQuote{Topic} to be one of the following:
 structural change, structural break, structural stability, structural instability,
 parameter instability, parameter stability, parameter constancy, change point,
 changepoint, change-point, breakpoint, break-point, break point, CUSUM, MOSUM.
 Additionally, the famous CUSUM paper of Brown, Durbin and Evans (1975) was added
-manually as the first observation to \code{scPublications} (because it did not match
-the query above).
+manually to \code{scPublications} (because it did not match the query above).
 }
 
 \source{ISI Web of Science at
