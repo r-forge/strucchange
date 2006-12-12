@@ -10,7 +10,7 @@ changepoints published in 27 different econometrics and statistics
 journals.
 }
 \format{
-A data frame containing information on 833 structural change papers in 9 variables.
+A data frame containing information on 835 structural change papers in 9 variables.
  \describe{
     \item{author}{character. Author(s) of the paper.}
     \item{title}{character. Title of the paper.}
@@ -38,8 +38,8 @@ Additionally, the famous CUSUM paper of Brown, Durbin and Evans (1975) was added
 manually to \code{scPublications} (because it did not match the query above).
 }
 
-\source{ISI Web of Science at
-  http://www.isiknowledge.com/
+\source{ISI Web of Science at \url{http://www.isiknowledge.com/}.
+Queried by James Bullard.
 }
 
 \examples{
@@ -47,7 +47,7 @@ manually to \code{scPublications} (because it did not match the query above).
 ## number of sc publications in econometrics/statistics
 data("scPublications")
 
-## select years from 1987 on and
+## select years from 1987 and
 ## `most important' journals
 pub <- scPublications
 pub <- subset(pub, year > 1986)
