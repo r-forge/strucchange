@@ -1,5 +1,8 @@
 Changes in Version 1.3-5
 
+  o added some further references to the vignette,
+    and provide the associated .bib file in ~/inst/doc/.
+
   o removed \itemize in .Rd files for new R-devel
 
   
