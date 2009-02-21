@@ -19,7 +19,7 @@
     or by a \code{formula} or by a fitted object \code{x} of class \code{"lm"}.}
   \item{start, end}{integer. Index of the first and last observation, respectively,
     for which recursive residuals should be computed. By default, the maximal
-    range is selecte.}
+    range is selected.}
   \item{data}{an optional data frame containing the variables in the model. By
      default the variables are taken from the environment which \code{recresid} is
      called from. Specifying \code{data} might also be necessary when applying
