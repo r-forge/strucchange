@@ -29,7 +29,7 @@
 }
 \details{
   Under the usual assumptions for the linear regression model the
-  recdursive residuals are (asymptotically) normal and
+  recursive residuals are (asymptotically) normal and
   i.i.d. (see Brown, Durbin, Evans (1975) for details).
 }
 \value{
@@ -39,7 +39,7 @@
 \references{
   Brown R.L., Durbin J., Evans J.M. (1975), Techniques for
   testing constancy of regression relationships over time, \emph{Journal of the
-  Royal Statistal Society}, B, \bold{37}, 149-163.
+  Royal Statistical Society}, B, \bold{37}, 149-163.
 }
 
 

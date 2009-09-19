@@ -60,12 +60,12 @@
   \item{lty}{line type.}
   \item{names}{a character vector giving the names of the segments. If of length
     1 it is taken to be a generic prefix, e.g. \code{"segment"}.}
-  \item{het.reg}{logical. Should heterogenous regressors be assumed? If set
+  \item{het.reg}{logical. Should heterogeneous regressors be assumed? If set
     to \code{FALSE} the distribution of the regressors is assumed to be
-    homogenous over the segments.}
-  \item{het.err}{logical. Should heterogenous errors be assumed? If set
+    homogeneous over the segments.}
+  \item{het.err}{logical. Should heterogeneous errors be assumed? If set
     to \code{FALSE} the distribution of the errors is assumed to be
-    homogenous over the segments.}
+    homogeneous over the segments.}
   \item{vcov.}{a function to extract the covariance matrix
      for the coefficients of a fitted model of class \code{"lm"}.}
   \item{sandwich}{logical. Is the function \code{vcov.} the sandwich
@@ -96,7 +96,7 @@
   The foundation for estimating breaks in time series regression models
   was given by Bai (1994) and was extended to multiple breaks by Bai (1997ab)
   and Bai & Perron (1998). \code{breakpoints} implements the algorithm
-  described in Bai & Perron (2003) for simultanous estimation of
+  described in Bai & Perron (2003) for simultaneous estimation of
   multiple breakpoints. The distribution function used for the confidence
   intervals for the breakpoints is given in Bai (1997b). The ideas behind
   this implementation are described in Zeileis et al. (2003).
@@ -117,7 +117,7 @@
   with the associated RSS and BIC. These will be plotted if \code{plot}
   is applied and thus visualize the minimum BIC estimator of the number
   of breakpoints. From an object of class \code{"breakpointsfull"} an
-  arbitrary number of \code{breaks} (admissable by the minimum segment
+  arbitrary number of \code{breaks} (admissible by the minimum segment
   size \code{h}) can be extracted by another application of
   \code{breakpoints}, returning an object of class \code{"breakpoints"}.
   This contains only the breakpoints for the specified number of breaks
@@ -147,7 +147,7 @@
   using the methods for the \code{\link{logLik}} and \code{\link{AIC}}. As
   for linear models the log likelihood is computed on a normal model and
   the degrees of freedom are the number of regression coefficients multiplied
-  by the number of segements plus the number of estimated breakpoints plus
+  by the number of segments plus the number of estimated breakpoints plus
   1 for the error variance. More details can be found on the help page of
   the method \code{\link{logLik.breakpoints}}.
 

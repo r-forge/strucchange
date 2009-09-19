@@ -47,7 +47,7 @@ gefp(\dots, fit = glm, scores = estfun, vcov = NULL,
 }
 
 \value{
-  \code{gefp} returns a list of class \code{"gefp"} with components inlcuding:
+  \code{gefp} returns a list of class \code{"gefp"} with components including:
   \item{process}{the fitted empirical fluctuation process of class
     \code{"zoo"},}
   \item{nreg}{the number of regressors,}

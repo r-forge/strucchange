@@ -7,7 +7,7 @@
 \title{Monitoring of Empirical Fluctuation Processes}
 \description{
   Online monitoring of structural breaks in a linear regression model. A
-  sequential fluctuation test based on parameter estimates or OLS residualas
+  sequential fluctuation test based on parameter estimates or OLS residuals
   signals structural breaks.
 }
 \usage{
