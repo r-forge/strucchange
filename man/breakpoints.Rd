@@ -25,7 +25,7 @@
 
 \usage{
 \method{breakpoints}{formula}(formula, h = 0.15, breaks = NULL,
-    data = list(), \dots)
+    data = list(), hpc = c("none", "foreach"), \dots)
 \method{breakpoints}{breakpointsfull}(obj, breaks = NULL, \dots)
 \method{summary}{breakpointsfull}(object, breaks = NULL, sort = TRUE,
     format.times = NULL, \dots)
@@ -49,6 +49,8 @@
   \item{data}{an optional data frame containing the variables in the model. By
      default the variables are taken from the environment which \code{breakpoints} is
      called from.}
+  \item{hpc}{a character specifying the high performance computing support.
+    Default is \code{"none"}, can be set to \code{"foreach"}.}
   \item{\dots}{currently not used.}
   \item{obj, object}{an object of class \code{"breakpointsfull"}.}
   \item{sort}{logical. If set to \code{TRUE} \code{summary} tries to match
@@ -158,6 +160,11 @@
   a larger number of breakpoints.
 
   For illustration see the commented examples below and Zeileis et al. (2003).
+  
+  Optional support for high performance computing is available, currently using
+  \code{\link[foreach]{foreach}} for the dynamic programming algorithm.
+  If \code{hpc = "foreach"} is to be used, a parallel backend should be registered
+  before. See \code{\link[foreach]{foreach}} for more information.
 }
 \section{value}{
   An object of class \code{"breakpoints"} is a list with the following
