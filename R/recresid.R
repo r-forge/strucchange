@@ -22,7 +22,7 @@ recresid.lm <- function(x, data = list(), ...)
 }
 
 recresid.default <- function(x, y, start = ncol(x) + 1, end = nrow(x),
-  tol = sqrt(.Machine$double.eps), ...)
+  tol = sqrt(.Machine$double.eps)/ncol(x), ...)
 {
   ## checks and data dimensions
   stopifnot(start > ncol(x) & start <= nrow(x))
@@ -67,7 +67,7 @@ recresid.default <- function(x, y, start = ncol(x) + 1, end = nrow(x),
 	  fm <- lm.fit(x[1:(r-1), , drop = FALSE], y1)
 	  nona <- nona & all(!is.na(betar)) & all(!is.na(fm$coefficients))
 	  ## keep checking?
-	  if(nona && max(abs((betar - fm$coefficients) / fm$coefficients)) < tol) check <- FALSE 
+	  if(nona && isTRUE(all.equal(as.vector(fm$coefficients), as.vector(betar), tol = tol))) check <- FALSE 
 	  X1 <- chol2inv(qr.R(fm$qr))
           betar <- coef0(fm)
         }
