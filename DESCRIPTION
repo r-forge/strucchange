@@ -1,7 +1,7 @@
 Package: strucchange
-Version: 1.4-5
-Date: 2011-07-25
-Title: Testing, Monitoring and Dating Structural Changes
+Version: 1.4-6
+Date: 2011-08-11
+Title: Testing, Monitoring, and Dating Structural Changes
 Author: Achim Zeileis, Friedrich Leisch, Bruce Hansen,
         Kurt Hornik, Christian Kleiber
 Maintainer: Achim Zeileis <Achim.Zeileis@R-project.org>
@@ -16,7 +16,6 @@ Description: Testing, monitoring and dating structural changes in (linear)
              Finally, the breakpoints in regression models with structural
              changes can be estimated together with confidence intervals.
              Emphasis is always given to methods for visualizing the data.
-LazyLoad: yes
 LazyData: yes
 Depends: R (>= 2.10.0), graphics, stats, zoo, sandwich
 Suggests: lmtest, car, dynlm, e1071, tseries, foreach
