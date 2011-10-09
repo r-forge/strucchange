@@ -2,8 +2,12 @@ Package: strucchange
 Version: 1.4-6
 Date: 2011-08-11
 Title: Testing, Monitoring, and Dating Structural Changes
-Author: Achim Zeileis, Friedrich Leisch, Bruce Hansen,
-        Kurt Hornik, Christian Kleiber
+Authors@R: c(person(given = "Achim", family = "Zeileis", role = c("aut", "cre"), email = "Achim.Zeileis@R-project.org"),
+             person(given = "Friedrich", family = "Leisch", role = "aut", email = "Friedrich.Leisch@R-project.org"),
+             person(given = "Kurt", family = "Hornik", role = "aut", email = "Kurt.Hornik@R-project.org"),
+	     person(given = "Christian", family = "Kleiber", role = "aut", email = "Christian.Kleiber@unibas.ch"),
+	     person(given = "Bruce", family = "Hansen", role = "ctb"))
+Author: Achim Zeileis [aut, cre], Friedrich Leisch [aut], Kurt Hornik [aut], Christian Kleiber [aut], Bruce Hansen [ctb]
 Maintainer: Achim Zeileis <Achim.Zeileis@R-project.org>
 Description: Testing, monitoring and dating structural changes in (linear)
              regression models. strucchange features tests/methods from
