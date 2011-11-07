@@ -22,8 +22,8 @@ gefp <- function(...,
   if(!is.null(order.by))
   {
     if(inherits(order.by, "formula")) {
-      z <- model.matrix(order.by, data = data)
-      z <- as.vector(z[, ncol(z)])
+      z <- model.frame(order.by, data = data)
+      z <- as.numeric(as.vector(z[, ncol(z)]))
       order.name <- deparse(order.by[[2]])
     } else {
       z <- order.by
