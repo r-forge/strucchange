@@ -1,6 +1,6 @@
 Package: strucchange
-Version: 1.4-6
-Date: 2011-08-11
+Version: 1.4-7
+Date: 2012-05-31
 Title: Testing, Monitoring, and Dating Structural Changes
 Authors@R: c(person(given = "Achim", family = "Zeileis", role = c("aut", "cre"), email = "Achim.Zeileis@R-project.org"),
              person(given = "Friedrich", family = "Leisch", role = "aut", email = "Friedrich.Leisch@R-project.org"),
