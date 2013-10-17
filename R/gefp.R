@@ -154,6 +154,47 @@ sctest.gefp <- function(x, functional = maxBB, ...)
   return(rval)
 }
 
+sctest.default <- function(x, order.by = NULL, functional = maxBB,
+  vcov = NULL, scores = estfun, decorrelate = TRUE, sandwich = TRUE, parm = NULL,
+  plot = TRUE, alpha = 0.05, aggregate = TRUE, xlab = NULL, ylab = NULL,
+  main = "", ylim = NULL, boundary = TRUE, ...)
+{
+  ## convenience option to employ information matrix
+  ## (sensible for maximum likelihood fits only, otherwise needs scaling)
+  vcov. <- vcov
+  if(identical(vcov., "info")) {
+    vcov. <- function(x, ...) solve(vcov(x) * nobs(x))
+    sandwich <- FALSE
+  }
+
+  ## score-CUSUM fluctuation process
+  scus <- gefp(x, fit = NULL, order.by = order.by, vcov = vcov., scores = scores,
+    decorrelate = decorrelate, sandwich = sandwich, parm = parm)
+
+  ## set up functional if specified as character
+  if(is.character(functional)) {
+    functional <- switch(functional,
+      "DM" = maxBB,
+      "dmax" = maxBB,
+      "CvM" = meanL2BB,
+      "maxLM" = supLM(0.1),
+      "supLM" = supLM(0.1),
+      "range" = rangeBB,
+      "LMuo" = catL2BB(scus),
+      "WDMo" = ordwmax(scus, ...),
+      "maxLMo" = ordL2BB(scus, ...),
+      stop("Unknown efp functional.")
+    )
+  }
+
+  ## if desired: plot test result
+  if(plot) plot(scus, functional = functional, alpha = alpha, aggregate = aggregate,
+    xlab = xlab, ylab = ylab, main = main, ylim = ylim, boundary = boundary)
+  
+  ## return test result
+  sctest(scus, functional = functional)
+}
+
 time.gefp <- function(x, ...)
 {
   time(x$process, ...)
