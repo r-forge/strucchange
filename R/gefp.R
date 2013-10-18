@@ -156,8 +156,7 @@ sctest.gefp <- function(x, functional = maxBB, ...)
 
 sctest.default <- function(x, order.by = NULL, functional = maxBB,
   vcov = NULL, scores = estfun, decorrelate = TRUE, sandwich = TRUE, parm = NULL,
-  plot = TRUE, alpha = 0.05, aggregate = TRUE, xlab = NULL, ylab = NULL,
-  main = "", ylim = NULL, boundary = TRUE, ...)
+  plot = TRUE, from = 0.1, to = NULL, nobs = NULL, width = 0.15, ...)
 {
   ## convenience option to employ information matrix
   ## (sensible for maximum likelihood fits only, otherwise needs scaling)
@@ -174,22 +173,26 @@ sctest.default <- function(x, order.by = NULL, functional = maxBB,
   ## set up functional if specified as character
   if(is.character(functional)) {
     functional <- switch(functional,
+      "dmax" = "DM",
+      "maxLM" = "supLM",
+      "MOSUM" = "maxMOSUM",
+      functional
+    )
+    functional <- switch(functional,
       "DM" = maxBB,
-      "dmax" = maxBB,
       "CvM" = meanL2BB,
-      "maxLM" = supLM(0.1),
-      "supLM" = supLM(0.1),
+      "supLM" = supLM(from = from, to = to),
       "range" = rangeBB,
       "LMuo" = catL2BB(scus),
-      "WDMo" = ordwmax(scus, ...),
-      "maxLMo" = ordL2BB(scus, ...),
+      "WDMo" = ordwmax(scus),
+      "maxLMo" = ordL2BB(scus, nobs = nobs),
+      "maxMOSUM" = maxMOSUM(scus, width = width),
       stop("Unknown efp functional.")
     )
   }
 
   ## if desired: plot test result
-  if(plot) plot(scus, functional = functional, alpha = alpha, aggregate = aggregate,
-    xlab = xlab, ylab = ylab, main = main, ylim = ylim, boundary = boundary)
+  if(plot) plot(scus, functional = functional, ...)
   
   ## return test result
   sctest(scus, functional = functional)

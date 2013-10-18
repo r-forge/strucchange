@@ -140,6 +140,76 @@ supLM <- function(from = 0.15, to = NULL) {
     plotProcess = plotProcess)
 }
 
+## (maximum) MOSUM functional
+
+maxMOSUM <- function(width = 0.15) {
+
+  mmax <- function(x) {
+    n <- length(x)
+    nh <- if(width < 1) floor(n * width) else round(width)
+    x <- c(0, x)
+    x <- x[-(1:nh)] - x[1:(n-nh+1)]
+    max(abs(x))
+  }
+
+  computePval <- function(x, nproc = 1)
+    pvalue.efp(x, lim.process = "Brownian bridge increments", functional = "max",
+      alt.boundary = FALSE, h = width, k = nproc)
+
+  computeCritval <- function(alpha, nproc = 1)
+    uniroot(function(y) {computePval(y, nproc = nproc) - alpha}, c(0, 100))$root
+
+  boundary <- function(x) rep(1, length(x))
+
+  plotProcess <- function(x, alpha = 0.05, aggregate = TRUE,
+    xlab = NULL, ylab = NULL, main = x$type.name, ylim = NULL, ...)
+  {
+    n <- x$nobs
+    nh <- if(width < 1) floor(n * width) else round(width)
+    nh2 <- floor(0.5 + nh/2)
+    proc <- zoo(coredata(x$process[-(1:nh),]) - coredata(x$process[1:(n-nh+1),]),
+      time(x$process)[nh2:(n - nh2 + 1)])
+
+    boundary <- function(x) rep(1, length(x))
+    bound <- computeCritval(alpha = alpha, nproc = NCOL(x$process)) * boundary(nh2:(n - nh2 + 1)/n)
+    bound <- zoo(bound, time(proc))
+
+    if(is.null(xlab)) {
+      if(!is.null(x$order.name)) xlab <- x$order.name
+        else xlab <- "Time"
+    }
+
+    if(aggregate) {
+      proc <- zoo(apply(as.matrix(proc), 1, function(x) max(abs(x))), time(proc))
+
+      if(is.null(ylab)) ylab <- "Empirical fluctuation process"
+      if(is.null(ylim)) ylim <- range(c(range(proc), range(bound)))
+    
+      plot(proc, xlab = xlab, ylab = ylab, main = main, ylim = ylim, ...)
+      abline(0, 0)
+      lines(bound, col = 2)	    
+    } else {
+      if(is.null(ylim) & NCOL(x$process) < 2) ylim <- range(c(range(x$process), range(bound), range(-bound)))
+      if(is.null(ylab) & NCOL(x$process) < 2) ylab <- "Empirical fluctuation process"
+
+      panel <- function(x, ...)
+      {
+        lines(x, ...)
+        abline(0, 0)
+        lines(bound, col = 2)
+        lines(-bound, col = 2)
+      }
+      plot(proc, xlab = xlab, ylab = ylab, main = main, panel = panel, ylim = ylim, ...)
+    }
+  }
+  
+  efpFunctional(lim.process = "Brownian bridge",
+    functional = list(time = mmax, comp = max),
+    boundary = boundary,
+    computePval = computePval,
+    computeCritval = computeCritval,
+    plotProcess = plotProcess)
+}
 
 ## efpFunctional() generator for categorical data
 ## (chi-squared statistic also used in MOB algorithm)
