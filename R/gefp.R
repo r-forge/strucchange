@@ -172,21 +172,22 @@ sctest.default <- function(x, order.by = NULL, functional = maxBB,
 
   ## set up functional if specified as character
   if(is.character(functional)) {
+    functional <- tolower(functional)
     functional <- switch(functional,
-      "dmax" = "DM",
-      "maxLM" = "supLM",
-      "MOSUM" = "maxMOSUM",
+      "dmax" = "dm",
+      "maxlm" = "suplm",
+      "mosum" = "maxmosum",
       functional
     )
     functional <- switch(functional,
-      "DM" = maxBB,
-      "CvM" = meanL2BB,
-      "supLM" = supLM(from = from, to = to),
+      "dm" = maxBB,
+      "cvm" = meanL2BB,
+      "suplm" = supLM(from = from, to = to),
       "range" = rangeBB,
-      "LMuo" = catL2BB(scus),
-      "WDMo" = ordwmax(scus),
-      "maxLMo" = ordL2BB(scus, nobs = nobs),
-      "maxMOSUM" = maxMOSUM(scus, width = width),
+      "lmuo" = catL2BB(scus),
+      "wdmo" = ordwmax(scus),
+      "maxlmo" = ordL2BB(scus, nobs = nobs),
+      "maxmosum" = maxMOSUM(width = width),
       stop("Unknown efp functional.")
     )
   }
