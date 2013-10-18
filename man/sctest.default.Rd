@@ -145,10 +145,11 @@ Forthcoming. doi:10.1016/j.csda.2009.12.005.
 \seealso{\code{\link{gefp}}, \code{\link{efpFunctional}}}
 
 \examples{
+## Zeileis and Hornik (2007), Section 5.3, Figure 6
 data("Grossarl")
 m <- glm(cbind(illegitimate, legitimate) ~ 1, family = binomial, data = Grossarl,
   subset = time(fraction) <= 1800)
-sctest(m, order.by = 1700:1800)
+sctest(m, order.by = 1700:1800, functional = "CvM")
 }
 
 \keyword{htest}
