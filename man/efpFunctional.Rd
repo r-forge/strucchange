@@ -11,8 +11,6 @@
 \alias{rangeBB}
 \alias{rangeBMI}
 \alias{rangeBBI}
-\alias{supLM}
-\encoding{latin1}
 \title{Functionals for Fluctuation Processes}
 \description{Computes an object for aggregating, plotting and testing
 empirical fluctuation processes.}
