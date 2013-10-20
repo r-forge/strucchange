@@ -1,8 +1,23 @@
 Changes in Version 1.5-0
 
-  o sctest.default
-
-  o efpFunctional objects
+  o Added new efpFunctional generators for conducting various types of
+    fluctuation tests based on empirical fluctuation processes of class
+    "gefp". In particular a (maximum) MOSUM functional was added as well
+    as several functionals suitable for aggregation along categorical
+    variables. The documentation for previously available functionals
+    such as supLM() was also enhanced.
+    
+  o The new functionals mentioned above for assessing parameter instability
+    along (ordered) categorical variables are catL2BB (unordered),
+    ordL2BB and ordwmax (ordered). These are discussed in more detail in
+    Merkle, Fan, and Zeileis (2013, Psychometrika).
+    
+  o Added a new default method for sctest(). This essentially just calls
+    gefp(object, fit = NULL) and then calls plot() and sctest() with using
+    the specified functional. However, several convenience options have
+    been added, e.g., using the maximum likelihood information (rather than
+    the outer product of gradients) for the covariance matrix or specifying
+    the functional via a character string.
 
   o Updated Depends/Imports in DESCRIPTION/NAMESPACE with new R CMD check
     requirements.
