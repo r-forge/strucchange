@@ -2434,7 +2434,7 @@ F-statistic: 106.9 on 9 and 6 DF,  p-value: 6.28e-06
 
 	M-fluctuation test
 
-data:  scus
+data:  m
 f(efp) = 3.5363, p-value = 0.005
 
 > 
@@ -2552,7 +2552,7 @@ ME = 1.5627, p-value = 0.01
 > ###
 > options(digits = 7L)
 > base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  53.34 0.128 53.609 0 0 
+Time elapsed:  53.544 0.14 53.83 0 0 
 > grDevices::dev.off()
 null device 
           1 
