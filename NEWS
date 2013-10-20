@@ -13,11 +13,16 @@ Changes in Version 1.5-0
     Merkle, Fan, and Zeileis (2013, Psychometrika).
     
   o Added a new default method for sctest(). This essentially just calls
-    gefp(object, fit = NULL) and then calls plot() and sctest() with using
-    the specified functional. However, several convenience options have
+    gefp(object, fit = NULL) and then (optionally) calls plot() and sctest()
+    using the specified functional. However, several convenience options have
     been added, e.g., using the maximum likelihood information (rather than
     the outer product of gradients) for the covariance matrix or specifying
     the functional via a character string.
+
+  o Improved plot() method for gefp/efpFunctional to allow for more
+    flexibility in boundary display. Rather than only boundary = TRUE) or
+    FALSE one can now specify a list of graphical parameters, e.g.,
+    boundary = list(col = "slategray", lty = 2).
 
   o Updated Depends/Imports in DESCRIPTION/NAMESPACE with new R CMD check
     requirements.

@@ -10,8 +10,8 @@ Performs model-based tests for structural change (or parameter instability).
 \usage{
 \method{sctest}{default}(x, order.by = NULL, functional = maxBB,
   vcov = NULL, scores = estfun, decorrelate = TRUE, sandwich = TRUE,
-  parm = NULL, plot = TRUE, from = 0.1, to = NULL, nobs = NULL,
-  width = 0.15, \dots)
+  parm = NULL, plot = FALSE, from = 0.1, to = NULL, nobs = NULL,
+  nrep = 50000, width = 0.15, \dots)
 }
 
 \arguments{
@@ -43,8 +43,8 @@ Performs model-based tests for structural change (or parameter instability).
   \item{from, to}{numeric. In case the \code{functional} is \code{"supLM"}
     (or equivalently \code{"maxLM"}), \code{from} and \code{to} can be
     passed to the \code{\link{supLM}} functional.}
-  \item{nobs}{numeric. In case the \code{functional} is \code{"maxLMo"},
-    \code{nobs} is passed to the \code{\link{catL2BB}} functional.}
+  \item{nobs, nrep}{numeric. In case the \code{functional} is \code{"maxLMo"},
+    \code{nobs} and \code{nrep} are passed to the \code{\link{catL2BB}} functional.}
   \item{width}{numeric. In case the \code{functional} is \code{"MOSUM"},
     the bandwidth \code{width} is passed to the \code{\link{maxMOSUM}}
     functional.}

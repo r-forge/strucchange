@@ -32,6 +32,7 @@ gefp <- function(...,
     index <- order(z)
     psi <- psi[index, , drop = FALSE]
     z <- z[index]
+    if(is.factor(z)) z <- as.numeric(z) ## FIXME: deal better with factor orderings?
   } else {
     index <- 1:n
     if(is.ts(psi)) z <- time(psi)
@@ -145,9 +146,10 @@ sctest.gefp <- function(x, functional = maxBB, ...)
   if(functional$lim.process != x$lim.process)
     stop(paste("limiting process of", dQuote("functional"), "does not match that of", dQuote("x")))
   stat <- functional$computeStatistic(x$process)
+  pval <- functional$computePval(stat, NCOL(x$process))
   names(stat) <- "f(efp)"
   rval <- list(statistic = stat,
-               p.value = functional$computePval(stat, NCOL(x$process)),
+               p.value = pval,
 	       method = x$type.name,
 	       data.name = deparse(substitute(x)))
   class(rval) <- "htest"
@@ -156,13 +158,24 @@ sctest.gefp <- function(x, functional = maxBB, ...)
 
 sctest.default <- function(x, order.by = NULL, functional = maxBB,
   vcov = NULL, scores = estfun, decorrelate = TRUE, sandwich = TRUE, parm = NULL,
-  plot = TRUE, from = 0.1, to = NULL, nobs = NULL, width = 0.15, ...)
+  plot = FALSE, from = 0.1, to = NULL, nobs = NULL, nrep = 50000, width = 0.15, ...)
 {
+  ## object name
+  nam <- deparse(substitute(x))
+  
   ## convenience option to employ information matrix
   ## (sensible for maximum likelihood fits only, otherwise needs scaling)
   vcov. <- vcov
   if(identical(vcov., "info")) {
-    vcov. <- function(x, ...) solve(vcov(x) * nobs(x))
+    vcov0 <- if("stats4" %in% loadedNamespaces()) stats4::vcov else stats::vcov
+    nobs0   <- function(x, ...) {
+      nobs1 <- if("stats4" %in% loadedNamespaces()) stats4::nobs else stats::nobs
+      nobs2 <- function(x, ...) NROW(residuals(x, ...))
+      rval <- try(nobs1(x, ...), silent = TRUE)
+      if(inherits(rval, "try-error") | is.null(rval)) rval <- nobs2(x, ...)
+      return(rval)
+    }
+    vcov. <- function(x, ...) solve(vcov0(x) * nobs0(x))
     sandwich <- FALSE
   }
 
@@ -186,17 +199,29 @@ sctest.default <- function(x, order.by = NULL, functional = maxBB,
       "range" = rangeBB,
       "lmuo" = catL2BB(scus),
       "wdmo" = ordwmax(scus),
-      "maxlmo" = ordL2BB(scus, nobs = nobs),
+      "maxlmo" = ordL2BB(scus, nobs = nobs, nrep = nrep),
       "maxmosum" = maxMOSUM(width = width),
       stop("Unknown efp functional.")
     )
   }
 
   ## if desired: plot test result
-  if(plot) plot(scus, functional = functional, ...)
+  if(plot) {
+    if(!is.null(order.by) && is.factor(order.by)) {
+      suppressWarnings(plot(scus, functional = functional, axes = FALSE, ...))
+      lev <- head(levels(order.by), -1)
+      axis(1, at = seq_along(lev), labels = lev)
+      axis(2)
+      box()
+    } else {
+      plot(scus, functional = functional, ...)
+    }
+  }
   
-  ## return test result
-  sctest(scus, functional = functional)
+  ## return labeled test result
+  rval <- sctest(scus, functional = functional)
+  rval$data.name <- nam
+  return(rval)
 }
 
 time.gefp <- function(x, ...)
@@ -343,6 +368,16 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
 	      if(!is.null(x$order.name)) xlab <- x$order.name
 	        else xlab <- "Time"
             }
+	    if(!identical(boundary, FALSE)) {
+	      if(isTRUE(boundary)) {
+	        bargs <- list(col = 2)
+              } else if(!is.list(boundary)) {
+	        bargs <- list(col = boundary)
+	      } else {
+	        bargs <- boundary
+	      }
+	      boundary <- TRUE
+	    }
 
             if(aggregate) {
 	      proc <- suppressWarnings(zoo(apply(as.matrix(x$process), 1, functional[[1]]), time(x)))
@@ -352,7 +387,7 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
 	    
 	      plot(proc, xlab = xlab, ylab = ylab, main = main, ylim = ylim, ...)
 	      abline(0, 0)
-	      if(boundary) lines(bound, col = 2)	    
+	      if(boundary) do.call("lines", c(list(bound), bargs))
 	    } else {
 	      if(is.null(ylim) & NCOL(x$process) < 2) ylim <- range(c(range(x$process), range(bound), range(-bound)))
 	      if(is.null(ylab) & NCOL(x$process) < 2) ylab <- "Empirical fluctuation process"
@@ -363,8 +398,8 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
   	        abline(0, 0)
 	        if(paste(deparse(functional[[1]]), collapse = "") == "function (x) max(abs(x))") {
 	          if(boundary) {
-		    lines(bound, col = 2)
-		    lines(-bound, col = 2)
+		    do.call("lines", c(list(bound), bargs))
+		    do.call("lines", c(list(-bound), bargs))
 		  }
 	        }	      
 	      }
@@ -390,6 +425,16 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
 	      if(!is.null(x$order.name)) xlab <- x$order.name
 	        else xlab <- "Time"
             }
+	    if(!identical(boundary, FALSE)) {
+	      if(isTRUE(boundary)) {
+	        bargs <- list(col = 2)
+              } else if(!is.list(boundary)) {
+	        bargs <- list(col = boundary)
+	      } else {
+	        bargs <- boundary
+	      }
+	      boundary <- TRUE
+	    }
 
 	    if(aggregate) {
 	      proc <- suppressWarnings(zoo(apply(as.matrix(x$process), 1, functional[[1]]), time(x)))
@@ -399,7 +444,7 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
 	    
 	      plot(proc, xlab = xlab, ylab = ylab, main = main, ylim = ylim, ...)
 	      abline(0, 0)
-	      if(boundary) lines(bound, col = 2)
+	      if(boundary) do.call("lines", c(list(bound), bargs))
 	      if(statistic) lines(stat, lty = 2)
 	    } else {
 	      panel <- function(x, ...)
@@ -426,6 +471,16 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
 	  ## for pretty printing
 	  bound <- c(bound[1], bound, bound[k])
           stat <- rep(computeStatistic(x$process), k+2)
+	  if(!identical(boundary, FALSE)) {
+	    if(isTRUE(boundary)) {
+	      bargs <- list(col = 2)
+            } else if(!is.list(boundary)) {
+	      bargs <- list(col = boundary)
+	    } else {
+	      bargs <- boundary
+	    }
+	    boundary <- TRUE
+	  }
 
           if(aggregate) {
 	    proc <- apply(as.matrix(x$process), 2, functional[[1]])
@@ -443,7 +498,7 @@ efpFunctional <- function(functional = list(comp = function(x) max(abs(x)), time
 	    axis(2)
 	    axis(1, at = 1:k, labels = xlabels)
 	    abline(0, 0)
-	    if(boundary) lines(c(0.9, 1:k, k+0.1), bound, col = 2)
+	    if(boundary) do.call("lines", c(list(c(0.9, 1:k, k+0.1), bound), bargs))
 	    if(!identical(functional[[2]], max)) lines(c(0.9, 1:k, k+0.1), stat, lty = 2)	    
 	  } else {
             if(is.null(xlab)) {

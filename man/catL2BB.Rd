@@ -13,7 +13,7 @@ categorical variables.
 
 \usage{
 catL2BB(freq)
-ordL2BB(freq, nobs = NULL, nproc = NULL, \dots)
+ordL2BB(freq, nobs = NULL, nproc = NULL, nrep = 50000, \dots)
 ordwmax(freq, algorithm = GenzBretz(), \dots)
 }
 
@@ -30,6 +30,8 @@ ordwmax(freq, algorithm = GenzBretz(), \dots)
     from the asymptotic distribution (passed to \code{\link{efpFunctional}}).
     If \code{feq} is a \code{\link{gefp}} object, then its number of
     processes is used by default.}
+  \item{nrep}{numeric. Number of replications used for simulating
+    from the asymptotic distribution (passed to \code{\link{efpFunctional}}).}
   \item{\dots}{further arguments passed to \code{\link{efpFunctional}}.}
   \item{algorithm}{algorithm specification passed to \code{\link[mvtnorm]{pmvnorm}}
     for computing the asymptotic distribution.}

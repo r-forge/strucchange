@@ -101,6 +101,16 @@ supLM <- function(from = 0.15, to = NULL) {
       if(!is.null(x$order.name)) xlab <- x$order.name
         else xlab <- "Time"
     }
+    if(!identical(boundary, FALSE)) {
+      if(isTRUE(boundary)) {
+        bargs <- list(col = 2)
+      } else if(!is.list(boundary)) {
+        bargs <- list(col = boundary)
+      } else {
+        bargs <- boundary
+      }
+      boundary <- TRUE
+    }
 
     if(aggregate) {
       proc <- zoo(rowSums(as.matrix(x$process)^2), time(x))
@@ -118,7 +128,7 @@ supLM <- function(from = 0.15, to = NULL) {
     
       plot(proc, xlab = xlab, ylab = ylab, main = main, ylim = ylim, ...)
       abline(0, 0)
-      if(boundary) lines(bound, col = 2)	    
+      if(boundary) do.call("lines", c(list(bound), bargs))
     } else {
       if(is.null(ylim) & NCOL(x$process) < 2) ylim <- range(c(range(x$process), range(bound), range(-bound)))
       if(is.null(ylab) & NCOL(x$process) < 2) ylab <- "Empirical fluctuation process"
@@ -162,7 +172,8 @@ maxMOSUM <- function(width = 0.15) {
   boundary <- function(x) rep(1, length(x))
 
   plotProcess <- function(x, alpha = 0.05, aggregate = TRUE,
-    xlab = NULL, ylab = NULL, main = x$type.name, ylim = NULL, ...)
+    xlab = NULL, ylab = NULL, main = x$type.name, ylim = NULL,
+    boundary = TRUE, ...)
   {
     n <- x$nobs
     nh <- if(width < 1) floor(n * width) else round(width)
@@ -170,8 +181,18 @@ maxMOSUM <- function(width = 0.15) {
     proc <- zoo(coredata(x$process[-(1:nh),]) - coredata(x$process[1:(n-nh+1),]),
       time(x$process)[nh2:(n - nh2 + 1)])
 
-    boundary <- function(x) rep(1, length(x))
-    bound <- computeCritval(alpha = alpha, nproc = NCOL(x$process)) * boundary(nh2:(n - nh2 + 1)/n)
+    if(!identical(boundary, FALSE)) {
+      if(isTRUE(boundary)) {
+        bargs <- list(col = 2)
+      } else if(!is.list(boundary)) {
+        bargs <- list(col = boundary)
+      } else {
+        bargs <- boundary
+      }
+      boundary <- TRUE
+    }
+    fboundary <- function(x) rep(1, length(x))
+    bound <- computeCritval(alpha = alpha, nproc = NCOL(x$process)) * fboundary(nh2:(n - nh2 + 1)/n)
     bound <- zoo(bound, time(proc))
 
     if(is.null(xlab)) {
@@ -187,7 +208,7 @@ maxMOSUM <- function(width = 0.15) {
     
       plot(proc, xlab = xlab, ylab = ylab, main = main, ylim = ylim, ...)
       abline(0, 0)
-      lines(bound, col = 2)	    
+      if(boundary) do.call("lines", c(list(bound), bargs))
     } else {
       if(is.null(ylim) & NCOL(x$process) < 2) ylim <- range(c(range(x$process), range(bound), range(-bound)))
       if(is.null(ylab) & NCOL(x$process) < 2) ylab <- "Empirical fluctuation process"
@@ -196,8 +217,10 @@ maxMOSUM <- function(width = 0.15) {
       {
         lines(x, ...)
         abline(0, 0)
-        lines(bound, col = 2)
-        lines(-bound, col = 2)
+	if(boundary) {
+	  do.call("lines", c(list(bound), bargs))
+	  do.call("lines", c(list(-bound), bargs))
+	}
       }
       plot(proc, xlab = xlab, ylab = ylab, main = main, panel = panel, ylim = ylim, ...)
     }
@@ -239,7 +262,7 @@ catL2BB <- function(freq)
 ## ordL2BB: ordinal supLM-type statistic,
 ## ordwmax: weighted double-maximum type statistic
 
-ordL2BB <- function(freq, nobs = NULL, nproc = NULL, ...)
+ordL2BB <- function(freq, nobs = NULL, nproc = NULL, nrep = 50000, ...)
 {
   if(inherits(freq, "gefp")) {
     if(is.null(nproc)) nproc <- NCOL(freq$process)
@@ -269,20 +292,24 @@ ordL2BB <- function(freq, nobs = NULL, nproc = NULL, ...)
 
   plotProcess <- function(x, alpha = 0.05, aggregate = TRUE,
     xlab = NULL, ylab = NULL, main = x$type.name, ylim = NULL,
-    type = "b", boundary = TRUE, ...)
+    type = "b", boundary = TRUE, critval = 0, ...)
   {
     n <- x$nobs
     ix <- round(tcat * n)
     tt <- ix/n
 
-    if(is.numeric(boundary)) {
-      cval <- boundary
+    bound <- critval * boundary(tt)
+    if(!identical(boundary, FALSE)) {
+      if(isTRUE(boundary)) {
+        bargs <- list(col = 2)
+      } else if(!is.list(boundary)) {
+        bargs <- list(col = boundary)
+      } else {
+        bargs <- boundary
+      }
       boundary <- TRUE
-    } else {
-      cval <- 0
-      boundary <- FALSE
     }
-    bound <- cval * boundary(tt)
+
     if(is.null(xlab)) {
       if(!is.null(x$order.name)) xlab <- x$order.name
         else xlab <- "Time"
@@ -299,7 +326,7 @@ ordL2BB <- function(freq, nobs = NULL, nproc = NULL, ...)
     
       plot(proc, xlab = xlab, ylab = ylab, main = main, ylim = ylim, type = "b", ...)
       abline(0, 0)
-      if(boundary) lines(bound, col = 2)	    
+      if(boundary) do.call("lines", c(list(bound), bargs))
     } else {
       if(is.null(ylim) & NCOL(x$process) < 2) ylim <- range(c(range(x$process)))
       if(is.null(ylab) & NCOL(x$process) < 2) ylab <- "Empirical fluctuation process"
@@ -316,7 +343,7 @@ ordL2BB <- function(freq, nobs = NULL, nproc = NULL, ...)
   rval <- efpFunctional(lim.process = "Brownian bridge",
     functional = list(comp = function(x) sum(x^2), time = catwmax),
     boundary = boundary, plotProcess = plotProcess,
-    nobs = nobs, nproc = nproc, ...)
+    nobs = nobs, nproc = nproc, nrep = nrep, ...)
   rval$plotProcess <- function(x, alpha = 0.05, aggregate = TRUE,
     xlab = NULL, ylab = NULL, main = x$type.name, ylim = NULL,
     type = "b", boundary = TRUE, ...)
@@ -324,7 +351,7 @@ ordL2BB <- function(freq, nobs = NULL, nproc = NULL, ...)
     cval <- rval$computeCritval(alpha = alpha, nproc = NCOL(x$process))
     plotProcess(x, alpha = alpha, aggregate = aggregate,
       xlab = xlab, ylab = ylab, main = main, ylim = ylim,
-      type = type, boundary = cval, ...)  
+      type = type, boundary = boundary, critval = cval, ...)  
   }
   return(rval)
 }
@@ -372,8 +399,19 @@ ordwmax <- function(freq, algorithm = GenzBretz(), ...)
     ix <- round(tcat * n)
     tt <- ix/n
 
+    if(!identical(boundary, FALSE)) {
+      if(isTRUE(boundary)) {
+        bargs <- list(col = 2)
+      } else if(!is.list(boundary)) {
+        bargs <- list(col = boundary)
+      } else {
+        bargs <- boundary
+      }
+      boundary <- TRUE
+    }
     cval <- if(boundary) computeCritval(alpha = alpha, nproc = NCOL(x$process)) else 0
     bound <- cval * boundary(tt)
+
     if(is.null(xlab)) {
       if(!is.null(x$order.name)) xlab <- x$order.name
         else xlab <- "Time"
@@ -393,8 +431,8 @@ ordwmax <- function(freq, algorithm = GenzBretz(), ...)
     {
       lines(x, ...)
       abline(0, 0)
-      if(boundary) lines(bound, col = 2)	  
-      if(!aggregate & boundary) lines(-bound, col = 2)	  
+      if(boundary) do.call("lines", c(list(bound), bargs))
+      if(!aggregate & boundary) do.call("lines", c(list(-bound), bargs))
     }
 
     plot(proc, xlab = xlab, ylab = ylab, main = main, ylim = ylim, type = "b",

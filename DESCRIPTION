@@ -1,6 +1,6 @@
 Package: strucchange
 Version: 1.5-0
-Date: 2013-10-17
+Date: 2013-10-20
 Title: Testing, Monitoring, and Dating Structural Changes
 Authors@R: c(person(given = "Achim", family = "Zeileis", role = c("aut", "cre"), email = "Achim.Zeileis@R-project.org"),
              person(given = "Friedrich", family = "Leisch", role = "aut", email = "Friedrich.Leisch@R-project.org"),
@@ -20,6 +20,6 @@ Description: Testing, monitoring and dating structural changes in (linear)
              Emphasis is always given to methods for visualizing the data.
 LazyData: yes
 Depends: R (>= 2.10.0), zoo, sandwich
-Suggests: car, dynlm, e1071, foreach, lmtest, mvtnorm, tseries
+Suggests: stats4, car, dynlm, e1071, foreach, lmtest, mvtnorm, tseries
 Imports: graphics, stats
 License: GPL-2
