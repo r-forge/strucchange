@@ -277,6 +277,8 @@ ordL2BB <- function(freq, nobs = NULL, nproc = NULL, nrep = 50000, ...)
   ncat <- length(freq)
   tcat <- cumsum(freq[-ncat])
   if(is.null(nobs)) nobs <- ceiling(50 / min(freq))
+  lab <- names(freq)
+  if(is.null(lab)) lab <- as.character(1:ncat)
 
   catwmax <- function(x) {
     n <- length(x)
@@ -324,9 +326,14 @@ ordL2BB <- function(freq, nobs = NULL, nproc = NULL, nrep = 50000, ...)
       if(is.null(ylab)) ylab <- "Empirical fluctuation process"
       if(is.null(ylim)) ylim <- range(c(range(proc))) ##, range(bound)))
     
-      plot(proc, xlab = xlab, ylab = ylab, main = main, ylim = ylim, type = "b", ...)
+      suppressWarnings(plot(proc, xlab = xlab, ylab = ylab, main = main, ylim = ylim,
+        type = "b", axes = FALSE, ...))
       abline(0, 0)
       if(boundary) do.call("lines", c(list(bound), bargs))
+
+      axis(1, at = unique(time(proc))[1:(ncat - 1)], labels = lab[1:(ncat - 1)])
+      axis(2)
+      box()
     } else {
       if(is.null(ylim) & NCOL(x$process) < 2) ylim <- range(c(range(x$process)))
       if(is.null(ylab) & NCOL(x$process) < 2) ylab <- "Empirical fluctuation process"
@@ -336,7 +343,8 @@ ordL2BB <- function(freq, nobs = NULL, nproc = NULL, nrep = 50000, ...)
         lines(x, ...)
         abline(0, 0)
       }
-      plot(x$process, xlab = xlab, ylab = ylab, main = main, panel = panel, ylim = ylim, ...)
+      plot(x$process, xlab = xlab, ylab = ylab, main = main, panel = panel,
+        ylim = ylim, ...)
     }
   }
 
@@ -368,6 +376,8 @@ ordwmax <- function(freq, algorithm = GenzBretz(), ...)
   freq <- freq / sum(freq)
   ncat <- length(freq)
   tcat <- cumsum(freq[-ncat])
+  lab <- names(freq)
+  if(is.null(lab)) lab <- as.character(1:ncat)
 
   catwmax <- function(x) {
     n <- length(x)
@@ -435,8 +445,14 @@ ordwmax <- function(freq, algorithm = GenzBretz(), ...)
       if(!aggregate & boundary) do.call("lines", c(list(-bound), bargs))
     }
 
-    plot(proc, xlab = xlab, ylab = ylab, main = main, ylim = ylim, type = "b",
-      panel = mypanel, ...)
+    suppressWarnings(plot(proc, xlab = xlab, ylab = ylab, main = main, ylim = ylim, type = "b",
+      panel = mypanel, axes = !aggregate, ...))
+
+    if(aggregate) {
+      axis(1, at = unique(time(proc))[1:(ncat - 1)], labels = lab[1:(ncat - 1)])
+      axis(2)
+      box()
+    }
   }
 
   efpFunctional(lim.process = "Brownian bridge",

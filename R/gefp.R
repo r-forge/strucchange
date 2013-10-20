@@ -158,10 +158,19 @@ sctest.gefp <- function(x, functional = maxBB, ...)
 
 sctest.default <- function(x, order.by = NULL, functional = maxBB,
   vcov = NULL, scores = estfun, decorrelate = TRUE, sandwich = TRUE, parm = NULL,
-  plot = FALSE, from = 0.1, to = NULL, nobs = NULL, nrep = 50000, width = 0.15, ...)
+  plot = FALSE, from = 0.1, to = NULL, nobs = NULL, nrep = 50000, width = 0.15,
+  xlab = NULL, ...)
 {
-  ## object name
+  ## object names
   nam <- deparse(substitute(x))
+  if(is.null(xlab)) {
+    if(is.null(order.by)) {
+      xlab <- "Time"
+    } else {
+      xlab <- deparse(substitute(order.by))
+      xlab <- tail(unlist(strsplit(xlab, "$", fixed = TRUE)), 1)
+    }
+  }
   
   ## convenience option to employ information matrix
   ## (sensible for maximum likelihood fits only, otherwise needs scaling)
@@ -192,31 +201,24 @@ sctest.default <- function(x, order.by = NULL, functional = maxBB,
       "mosum" = "maxmosum",
       functional
     )
+    if(is.null(order.by) & functional %in% c("lmuo", "wdmo", "maxlmo")) {
+      stop("'order.by' must provide a grouping of the observations")
+    }
     functional <- switch(functional,
       "dm" = maxBB,
       "cvm" = meanL2BB,
       "suplm" = supLM(from = from, to = to),
       "range" = rangeBB,
-      "lmuo" = catL2BB(scus),
-      "wdmo" = ordwmax(scus),
-      "maxlmo" = ordL2BB(scus, nobs = nobs, nrep = nrep),
+      "lmuo" = catL2BB(order.by),
+      "wdmo" = ordwmax(order.by),
+      "maxlmo" = ordL2BB(order.by, nproc = NCOL(scus$process), nobs = nobs, nrep = nrep),
       "maxmosum" = maxMOSUM(width = width),
       stop("Unknown efp functional.")
     )
   }
 
   ## if desired: plot test result
-  if(plot) {
-    if(!is.null(order.by) && is.factor(order.by)) {
-      suppressWarnings(plot(scus, functional = functional, axes = FALSE, ...))
-      lev <- head(levels(order.by), -1)
-      axis(1, at = seq_along(lev), labels = lev)
-      axis(2)
-      box()
-    } else {
-      plot(scus, functional = functional, ...)
-    }
-  }
+  if(plot) plot(scus, functional = functional, xlab = xlab, ...)
   
   ## return labeled test result
   rval <- sctest(scus, functional = functional)

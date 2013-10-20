@@ -11,7 +11,7 @@ Performs model-based tests for structural change (or parameter instability).
 \method{sctest}{default}(x, order.by = NULL, functional = maxBB,
   vcov = NULL, scores = estfun, decorrelate = TRUE, sandwich = TRUE,
   parm = NULL, plot = FALSE, from = 0.1, to = NULL, nobs = NULL,
-  nrep = 50000, width = 0.15, \dots)
+  nrep = 50000, width = 0.15, xlab = NULL, \dots)
 }
 
 \arguments{
@@ -48,7 +48,7 @@ Performs model-based tests for structural change (or parameter instability).
   \item{width}{numeric. In case the \code{functional} is \code{"MOSUM"},
     the bandwidth \code{width} is passed to the \code{\link{maxMOSUM}}
     functional.}
-  \item{\dots}{graphical parameters passed to the plot method (in case
+  \item{xlab, \dots}{graphical parameters passed to the plot method (in case
     \code{plot = TRUE}).}
 }
 
