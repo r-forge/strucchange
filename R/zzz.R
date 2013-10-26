@@ -120,7 +120,7 @@ supLM <- function(from = 0.15, to = NULL) {
       
       proc <- proc[n1:n2,]
       bound <- bound[n1:n2,]
-      tt <- tt[n1:n2,]
+      tt <- as.numeric(tt[n1:n2,])
       proc <- proc/(tt * (1-tt))
       
       if(is.null(ylab)) ylab <- "Empirical fluctuation process"
@@ -324,7 +324,7 @@ ordL2BB <- function(freq, nobs = NULL, nproc = NULL, nrep = 50000, ...)
       proc <- proc/(tt * (1-tt))
       
       if(is.null(ylab)) ylab <- "Empirical fluctuation process"
-      if(is.null(ylim)) ylim <- range(c(range(proc))) ##, range(bound)))
+      if(is.null(ylim)) ylim <- range(c(range(proc), range(bound)))
     
       suppressWarnings(plot(proc, xlab = xlab, ylab = ylab, main = main, ylim = ylim,
         type = "b", axes = FALSE, ...))

@@ -1,10 +1,11 @@
 \name{sctest.default}
 \alias{sctest.default}
 
-\title{Model-Based Structural Change Tests}
+\title{Structural Change Tests in Parametric Models}
 
 \description{
-Performs model-based tests for structural change (or parameter instability).
+Performs model-based tests for structural change (or parameter instability)
+in parametric models.
 }
 
 \usage{
@@ -54,8 +55,8 @@ Performs model-based tests for structural change (or parameter instability).
 
 \details{
 \code{sctest.default} is a convenience interface to \code{\link{gefp}} for
-model-based structural change tests (or parameter instability tests). It proceeds
-in the following steps:
+structural change tests (or parameter instability tests) in general
+parametric models. It proceeds in the following steps:
 
 \enumerate{
 \item The generalized empirical fluctuation process (or score-based CUSUM process)

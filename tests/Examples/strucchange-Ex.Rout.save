@@ -2317,14 +2317,88 @@ ave.F = 10.8103, p-value = 2.059e-06
 > 
 > 
 > cleanEx()
-> nameEx("sctest")
-> ### * sctest
+> nameEx("sctest.default")
+> ### * sctest.default
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: sctest.default
+> ### Title: Structural Change Tests in Parametric Models
+> ### Aliases: sctest.default
+> ### Keywords: htest
+> 
+> ### ** Examples
+> 
+> ## Zeileis and Hornik (2007), Section 5.3, Figure 6
+> data("Grossarl")
+> m <- glm(cbind(illegitimate, legitimate) ~ 1, family = binomial, data = Grossarl,
++   subset = time(fraction) <= 1800)
+> sctest(m, order.by = 1700:1800, functional = "CvM")
+
+	M-fluctuation test
+
+data:  m
+f(efp) = 3.5363, p-value = 0.005
+
+> 
+> 
+> 
+> cleanEx()
+> nameEx("sctest.efp")
+> ### * sctest.efp
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: sctest.efp
+> ### Title: Generalized Fluctuation Tests
+> ### Aliases: sctest.efp
+> ### Keywords: htest
+> 
+> ### ** Examples
+> 
+> ## Load dataset "nhtemp" with average yearly temperatures in New Haven
+> data("nhtemp")
+> ## plot the data
+> plot(nhtemp)
+> 
+> ## test the model null hypothesis that the average temperature remains
+> ## constant over the years compute OLS-CUSUM fluctuation process
+> temp.cus <- efp(nhtemp ~ 1, type = "OLS-CUSUM")
+> ## plot the process with alternative boundaries
+> plot(temp.cus, alpha = 0.01, alt.boundary = TRUE)
+> ## and calculate the test statistic
+> sctest(temp.cus)
+
+	OLS-based CUSUM test
+
+data:  temp.cus
+S0 = 2.0728, p-value = 0.0003709
+
+> 
+> ## compute moving estimates fluctuation process
+> temp.me <- efp(nhtemp ~ 1, type = "ME", h = 0.2)
+> ## plot the process with functional = "max"
+> plot(temp.me)
+> ## and perform the corresponding test
+> sctest(temp.me)
+
+	ME test (moving estimates test)
+
+data:  temp.me
+ME = 1.5627, p-value = 0.01
+
+> 
+> 
+> 
+> cleanEx()
+> nameEx("sctest.formula")
+> ### * sctest.formula
 > 
 > flush(stderr()); flush(stdout())
 > 
 > ### Name: sctest.formula
-> ### Title: Structural Change Tests
-> ### Aliases: sctest sctest.formula
+> ### Title: Structural Change Tests in Linear Regression Models
+> ### Aliases: sctest.formula
 > ### Keywords: htest
 > 
 > ### ** Examples
@@ -2414,80 +2488,6 @@ F-statistic: 106.9 on 9 and 6 DF,  p-value: 6.28e-06
 > 
 > 
 > cleanEx()
-> nameEx("sctest.default")
-> ### * sctest.default
-> 
-> flush(stderr()); flush(stdout())
-> 
-> ### Name: sctest.default
-> ### Title: Model-Based Structural Change Tests
-> ### Aliases: sctest.default
-> ### Keywords: htest
-> 
-> ### ** Examples
-> 
-> ## Zeileis and Hornik (2007), Section 5.3, Figure 6
-> data("Grossarl")
-> m <- glm(cbind(illegitimate, legitimate) ~ 1, family = binomial, data = Grossarl,
-+   subset = time(fraction) <= 1800)
-> sctest(m, order.by = 1700:1800, functional = "CvM")
-
-	M-fluctuation test
-
-data:  m
-f(efp) = 3.5363, p-value = 0.005
-
-> 
-> 
-> 
-> cleanEx()
-> nameEx("sctest.efp")
-> ### * sctest.efp
-> 
-> flush(stderr()); flush(stdout())
-> 
-> ### Name: sctest.efp
-> ### Title: Generalized Fluctuation Tests
-> ### Aliases: sctest.efp
-> ### Keywords: htest
-> 
-> ### ** Examples
-> 
-> ## Load dataset "nhtemp" with average yearly temperatures in New Haven
-> data("nhtemp")
-> ## plot the data
-> plot(nhtemp)
-> 
-> ## test the model null hypothesis that the average temperature remains
-> ## constant over the years compute OLS-CUSUM fluctuation process
-> temp.cus <- efp(nhtemp ~ 1, type = "OLS-CUSUM")
-> ## plot the process with alternative boundaries
-> plot(temp.cus, alpha = 0.01, alt.boundary = TRUE)
-> ## and calculate the test statistic
-> sctest(temp.cus)
-
-	OLS-based CUSUM test
-
-data:  temp.cus
-S0 = 2.0728, p-value = 0.0003709
-
-> 
-> ## compute moving estimates fluctuation process
-> temp.me <- efp(nhtemp ~ 1, type = "ME", h = 0.2)
-> ## plot the process with functional = "max"
-> plot(temp.me)
-> ## and perform the corresponding test
-> sctest(temp.me)
-
-	ME test (moving estimates test)
-
-data:  temp.me
-ME = 1.5627, p-value = 0.01
-
-> 
-> 
-> 
-> cleanEx()
 > nameEx("solveCrossprod")
 > ### * solveCrossprod
 > 
@@ -2552,7 +2552,7 @@ ME = 1.5627, p-value = 0.01
 > ###
 > options(digits = 7L)
 > base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  53.544 0.14 53.83 0 0 
+Time elapsed:  58.496 0.168 59.563 0 0 
 > grDevices::dev.off()
 null device 
           1 
