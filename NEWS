@@ -1,7 +1,7 @@
 Changes in Version 1.5-0
 
   o Added new efpFunctional generators for conducting various types of
-    fluctuation tests based on empirical fluctuation processes of class
+    structural change tests based on empirical fluctuation processes of class
     "gefp". In particular a (maximum) MOSUM functional was added as well
     as several functionals suitable for aggregation along categorical
     variables. The documentation for previously available functionals
@@ -18,6 +18,11 @@ Changes in Version 1.5-0
     been added, e.g., using the maximum likelihood information (rather than
     the outer product of gradients) for the covariance matrix or specifying
     the functional via a character string.
+
+  o Documentation of the sctest() generic and its methods have been enhanced.
+    Methods for "formula", "efp", and "Fstats" are suitable for assessing
+    structural changes in linear regression models while the "default" and
+    "gefp" methods (see above) are suitable for general parametric models.
 
   o Improved plot() method for gefp/efpFunctional to allow for more
     flexibility in boundary display. Rather than only boundary = TRUE) or
