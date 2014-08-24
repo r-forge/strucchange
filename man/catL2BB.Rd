@@ -14,7 +14,7 @@ categorical variables.
 \usage{
 catL2BB(freq)
 ordL2BB(freq, nobs = NULL, nproc = NULL, nrep = 50000, \dots)
-ordwmax(freq, algorithm = GenzBretz(), \dots)
+ordwmax(freq, algorithm = mvtnorm::GenzBretz(), \dots)
 }
 
 \arguments{
