@@ -364,7 +364,7 @@ ordL2BB <- function(freq, nobs = NULL, nproc = NULL, nrep = 50000, ...)
   return(rval)
 }
 
-ordwmax <- function(freq, algorithm = GenzBretz(), ...)
+ordwmax <- function(freq, algorithm = mvtnorm::GenzBretz(), ...)
 {
   stopifnot(require("mvtnorm"))
   
@@ -394,10 +394,10 @@ ordwmax <- function(freq, algorithm = GenzBretz(), ...)
   sigma <- make_sigma(tcat)
   
   computePval <- function(x, nproc = 1)
-    (1 - pmvnorm(lower = -x, upper = x, mean = rep(0, ncat - 1), sigma = sigma)^nproc)
+    (1 - mvtnorm::pmvnorm(lower = -x, upper = x, mean = rep(0, ncat - 1), sigma = sigma)^nproc)
 
   computeCritval <- function(alpha, nproc = 1)
-    qmvnorm((1 - alpha)^(1/nproc), tail = "both.tails", sigma = sigma)$quantile
+    mvtnorm::qmvnorm((1 - alpha)^(1/nproc), tail = "both.tails", sigma = sigma)$quantile
 
   boundary <- function(x) rep(1, length(x))
 
