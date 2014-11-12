@@ -38,7 +38,7 @@ ordwmax(freq, algorithm = mvtnorm::GenzBretz(), \dots)
 }
 
 \details{
-  Merkle, Fan, and Zeileis (2013) discuss three functionals that are 
+  Merkle, Fan, and Zeileis (2014) discuss three functionals that are 
   suitable for aggregating empirical fluctuation processes along categorical
   variables, especially ordinal variables. The functions \code{catL2BB},
   \code{ordL2BB}, and \code{ordwmax} all require a specification of the
@@ -74,8 +74,9 @@ ordwmax(freq, algorithm = mvtnorm::GenzBretz(), \dots)
 Hothorn T., Zeileis A. (2008), Generalized Maximally Selected Statistics.
 \emph{Biometrics}, \bold{64}, 1263--1269.
 
-Merkle E.C., Fan J., Zeileis A. (2013), Testing for Measurement Invariance with
-Respect to an Ordinal Variable. \emph{Psychometrika}, Forthcoming.
+Merkle E.C., Fan J., Zeileis A. (2014), Testing for Measurement Invariance with
+Respect to an Ordinal Variable. \emph{Psychometrika}, \bold{79}(4), 569--584.
+doi:10.1007/S11336-013-9376-7.
 
 Zeileis A. (2006), Implementing a Class of Structural Change Tests: An
 Econometric Computing Approach. \emph{Computational Statistics & Data Analysis}, 
