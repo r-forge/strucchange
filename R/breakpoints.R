@@ -43,7 +43,7 @@ breakpoints.formula <- function(formula, h = 0.15, breaks = NULL,
   }
 
   hpc <- match.arg(hpc)
-  if(hpc == "foreach" && !require("foreach")) {
+  if(hpc == "foreach" && !requireNamespace("foreach")) {
     warning("High perfomance computing (hpc) support with 'foreach' package is not available, foreach is not installed.")
     hpc <- "none"
   }
@@ -62,7 +62,7 @@ breakpoints.formula <- function(formula, h = 0.15, breaks = NULL,
   }
 
   ## employ HPC support if available/selected
-  RSS.triang <- if(hpc == "none") sapply(1:(n-h+1), RSSi) else foreach(i = 1:(n-h+1)) %dopar% RSSi(i)
+  RSS.triang <- if(hpc == "none") sapply(1:(n-h+1), RSSi) else foreach::foreach(i = 1:(n-h+1)) %dopar% RSSi(i)
 
   ## function to extract the RSS(i,j) from RSS.triang
   RSS <- function(i,j) RSS.triang[[i]][j - i + 1]
