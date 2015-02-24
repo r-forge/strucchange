@@ -1,6 +1,6 @@
 
-R version 3.0.1 (2013-05-16) -- "Good Sport"
-Copyright (C) 2013 The R Foundation for Statistical Computing
+R version 3.1.2 (2014-10-31) -- "Pumpkin Helmet"
+Copyright (C) 2014 The R Foundation for Statistical Computing
 Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
@@ -23,7 +23,7 @@ Loading required package: zoo
 
 Attaching package: 'zoo'
 
-The following object is masked from 'package:base':
+The following objects are masked from 'package:base':
 
     as.Date, as.Date.numeric
 
@@ -313,7 +313,7 @@ RSS  3.682680e-02  1.915789e-02  1.521998e-02  1.300657e-02  1.052593e-02
 BIC -6.974416e+02 -7.296334e+02 -7.025485e+02 -6.652504e+02 -6.355766e+02
                  
 m   5            
-RSS  9.198182e-03
+RSS  9.198181e-03
 BIC -5.951538e+02
 > plot(bp)
 > 
@@ -1615,36 +1615,31 @@ data:  scus
 f(efp) = 12.3749, p-value = 0.05411
 
 > 
-> ## ordinal maxLM test (with few replications only
-> ## to save time)
-> maxLMo <- ordL2BB(scus, nrep = 2000)
+> ## ordinal maxLM test (with few replications only to save time)
+> maxLMo <- ordL2BB(scus, nrep = 10000)
 > plot(scus, functional = maxLMo)
 > sctest(scus, functional = maxLMo)
 
 	M-fluctuation test
 
 data:  scus
-f(efp) = 9.0937, p-value = 0.03047
+f(efp) = 9.0937, p-value = 0.03173
 
 > 
 > ## ordinal weighted double maximum test
 > WDM <- ordwmax(scus)
-Loading required package: mvtnorm
 > plot(scus, functional = WDM)
 > sctest(scus, functional = WDM)
 
 	M-fluctuation test
 
 data:  scus
-f(efp) = 3.001, p-value = 0.01458
+f(efp) = 3.001, p-value = 0.015
 
 > 
 > 
 > 
 > cleanEx()
-
-detaching 'package:mvtnorm'
-
 > nameEx("confint.breakpointsfull")
 > ### * confint.breakpointsfull
 > 
@@ -2552,7 +2547,7 @@ F-statistic: 106.9 on 9 and 6 DF,  p-value: 6.28e-06
 > ###
 > options(digits = 7L)
 > base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  58.496 0.168 59.563 0 0 
+Time elapsed:  43.484 0.116 43.65 0 0 
 > grDevices::dev.off()
 null device 
           1 
