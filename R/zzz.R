@@ -302,14 +302,14 @@ ordL2BB <- function(freq, nproc = NULL, nrep = 1e5, probs = c(0:84/100, 850:1000
     ## columns 1,(nbin+1),(2nbin+1),...
     ## columns 2,(nbin+2),(2nbin+2),...
     colnums <- 1L:maxproc
-    rval <- array(NA, c(nrep, length(nproc), nbin))
+    rval <- vector(mode = "list", length = nbin)
     for(j in 1L:nbin){
       cols <- (colnums - 1L) * nbin + j
       res <- t(apply(as.matrix(draws[, cols])^2, 1L, cumsum))
       if(maxproc == 1L) res <- matrix(res, nrep, 1L)
-      rval[, , j] <- res[, nproc]
+      rval[[j]] <- res[, nproc, drop = FALSE]
     }
-    rval <- apply(rval, c(1L, 2L), max)
+    rval <- do.call("pmax", rval)
     rval <- rbind(0, apply(rval, 2, quantile, probs = probs))
     colnames(rval) <- nproc
     return(rval)

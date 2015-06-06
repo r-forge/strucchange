@@ -298,7 +298,7 @@ summary.breakpointsfull <- function(object, breaks = NULL,
   return(RVAL)
 }
 
-print.summary.breakpointsfull <- function(x, ...)
+print.summary.breakpointsfull <- function(x, digits = max(2, getOption("digits") - 3), ...)
 {
   bp <- x$breakpoints
   breaks <- ncol(bp)
@@ -308,7 +308,7 @@ print.summary.breakpointsfull <- function(x, ...)
   bd[is.na(bd)] <- ""
   rownames(bp) <- paste("m = ", rownames(bp), "  ", sep = "")
   rownames(bd) <- paste("m = ", rownames(bd), "  ", sep = "")
-  RSS <- rbind(0:(ncol(RSS) - 1), format(RSS))
+  RSS <- rbind(0:(ncol(RSS) - 1), format(RSS, digits = digits))
   rownames(RSS) <- c("m","RSS", "BIC")
   colnames(RSS) <- rep("", breaks + 1)
 
