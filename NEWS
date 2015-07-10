@@ -1,3 +1,10 @@
+Changes in Version 1.5-2
+
+  o Added vcov. = NULL argument to efp() so that optionally other covariance
+    matrix estimators can be plugged into RE and ME tests (e.g., sandwich(),
+    kernHAC(), NeweyWest(), etc.).
+
+
 Changes in Version 1.5-1
 
   o ordL2BB() now uses a direct simulation method based on mvtnorm::rmvnorm()
