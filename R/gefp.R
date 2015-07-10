@@ -168,7 +168,8 @@ sctest.default <- function(x, order.by = NULL, functional = maxBB,
       xlab <- "Time"
     } else {
       xlab <- deparse(substitute(order.by))
-      xlab <- tail(unlist(strsplit(xlab, "$", fixed = TRUE)), 1)
+      xlab <- unlist(strsplit(xlab, "$", fixed = TRUE))
+      xlab <- xlab[length(xlab)]
     }
   }
   
