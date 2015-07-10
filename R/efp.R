@@ -1,7 +1,7 @@
 efp <- function(formula, data = list(),
                 type = c("Rec-CUSUM", "OLS-CUSUM", "Rec-MOSUM", "OLS-MOSUM",
                 "RE", "ME", "Score-CUSUM", "Score-MOSUM", "fluctuation"),
-                h = 0.15, dynamic = FALSE, rescale = TRUE, vcov = NULL)
+                h = 0.15, dynamic = FALSE, rescale = TRUE, lrvar = FALSE, vcov = NULL)
 {
     if(!inherits(formula, "formula")) {
       mt <- terms(formula)
@@ -24,6 +24,20 @@ efp <- function(formula, data = list(),
       rval$x <- x
       class(rval) <- "lm"
       return(rval)
+    }
+
+    lrvartype <- if(is.character(lrvar)) lrvar else "Andrews"
+    sdev <- if(identical(lrvar, FALSE)) {
+        function(x, df = NULL) {
+            if(is.null(df)) df <- length(x) - 1
+	    sd(x) * sqrt((length(x) - 1)/df)
+        } 
+    } else {
+        function(x, df = NULL) {
+	    s <- sqrt(sandwich::lrvar(x, type = lrvartype) * length(x))
+	    if(!is.null(df)) s <- s * sqrt(length(x)/df)
+	    return(s)
+	}
     }
 
     n <- nrow(X)
@@ -61,7 +75,7 @@ efp <- function(formula, data = list(),
 
            "Rec-CUSUM" = {
                w <- recresid(X, y)
-               sigma <- sqrt(var(w))
+               sigma <- sdev(w) ## sqrt(var(w))
                process <- cumsum(c(0,w))/(sigma*sqrt(n-k))
                if(is.ts(data)) {
                    if(NROW(data) == n) process <- ts(process, end = end(data), frequency = frequency(data))
@@ -82,8 +96,8 @@ efp <- function(formula, data = list(),
            "OLS-CUSUM" = {
                fm <- lm.fit(X,y)
                e <- fm$residuals
-               sigma <- sqrt(sum(e^2)/fm$df.residual)
-               process <- cumsum(c(0,e))/(sigma*sqrt(n))
+               sigma <- sdev(e, df = fm$df.residual) ## sqrt(sum(e^2)/fm$df.residual)
+               process <- cumsum(c(0,e))/(sigma * sqrt(n))
                if(is.ts(data)) {
                    if(NROW(data) == n) process <- ts(process, end = end(data), frequency = frequency(data))
                } else {
@@ -109,8 +123,8 @@ efp <- function(formula, data = list(),
                {
                    process[i+1] <- sum(w[(i+1):(i+nh)])
                }
-               sigma <- sqrt(var(w)*(nw-1)/(nw-k))
-               process <- process/(sigma*sqrt(nw))
+               sigma <- sdev(w, df = nw - k) ## sqrt(var(w)*(nw-1)/(nw-k))
+               process <- process/(sigma * sqrt(nw))
                if(is.ts(data)) {
                    if(NROW(data) == n) process <- ts(process, end = time(data)[(n-floor(0.5 + nh/2))], frequency = frequency(data))
                } else {
@@ -135,11 +149,11 @@ efp <- function(formula, data = list(),
            "OLS-MOSUM" = {
                fm <- lm.fit(X,y)
                e <- fm$residuals
-               sigma <- sqrt(sum(e^2)/fm$df.residual)
+               sigma <- sdev(e, df = fm$df.residual) ## sqrt(sum(e^2)/fm$df.residual)
                nh <- floor(n*h)
                process <- cumsum(c(0,e))
                process <- process[-(1:nh)] - process[1:(n-nh+1)]
-	       process <- process/(sigma*sqrt(n))
+	       process <- process/(sigma * sqrt(n))
                if(is.ts(data)) {
                    if(NROW(data) == n) process <- ts(process, end = time(data)[(n-floor(0.5 + nh/2))], frequency = frequency(data))
                } else {
@@ -164,7 +178,7 @@ efp <- function(formula, data = list(),
            "RE" = {
                m.fit <- lmfit(X,y)
                beta.hat <- m.fit$coefficients
-               sigma <- sqrt(sum(m.fit$residual^2)/m.fit$df.residual)
+               sigma <- sdev(m.fit$residual, df = m.fit$df.residual) ## sqrt(sum(m.fit$residual^2)/m.fit$df.residual)
                process <- matrix(rep(0,k*(n-k+1)), nrow=k)
                Q12 <- if(is.null(vcov)) {
 	           root.matrix(crossprod(X))/(sigma * sqrt(n))
@@ -207,7 +221,7 @@ efp <- function(formula, data = list(),
            "ME" = {
                m.fit <- lmfit(X,y)
                beta.hat <- m.fit$coefficients
-               sigma <- sqrt(sum(m.fit$residual^2)/m.fit$df.residual)
+               sigma <- sdev(m.fit$residual, df = m.fit$df.residual) ## sqrt(sum(m.fit$residual^2)/m.fit$df.residual)
                nh <- floor(n*h)
                process <- matrix(rep(0,k*(n-nh+1)), nrow=k)
                Q12 <- if(is.null(vcov)) {

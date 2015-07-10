@@ -1,5 +1,9 @@
 Changes in Version 1.5-2
 
+  o Added lrvar = FALSE argument to efp() so that optionally a long-run variance
+    estimator (Andrews or Newey-West) instead of the standard OLS estimator can
+    be used for the error variance.
+
   o Added vcov. = NULL argument to efp() so that optionally other covariance
     matrix estimators can be plugged into RE and ME tests (e.g., sandwich(),
     kernHAC(), NeweyWest(), etc.).
