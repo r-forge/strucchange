@@ -51,7 +51,7 @@
      called from.}
   \item{hpc}{a character specifying the high performance computing support.
     Default is \code{"none"}, can be set to \code{"foreach"}.}
-  \item{\dots}{currently not used.}
+  \item{\dots}{arguments passed to \code{\link{recresid}}.}
   \item{obj, object}{an object of class \code{"breakpointsfull"}.}
   \item{sort}{logical. If set to \code{TRUE} \code{summary} tries to match
     the breakpoints from partitions with different numbers of breaks.}
