@@ -8,6 +8,12 @@ Changes in Version 1.5-2
     matrix estimators can be plugged into RE and ME tests (e.g., sandwich(),
     kernHAC(), NeweyWest(), etc.).
 
+  o The default recresid() gained an argument qr.tol = 1e-7 which allows to
+    pass another tolerance to lm.fit() for detecting linear dependencies in
+    (small) subsamples.
+    
+  o The formula method of breakpoints() now passes ... to recresid().
+
 
 Changes in Version 1.5-1
 
