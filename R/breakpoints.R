@@ -35,6 +35,10 @@ breakpoints.formula <- function(formula, h = 0.15, breaks = NULL,
   if(is.null(breaks)) {
     breaks <- ceiling(n/h) - 2
   } else {
+    if(breaks < 1) {
+      breaks <- 1
+      warning("number of breaks must be at least 1")
+    }
     if(breaks > ceiling(n/h) - 2) {
       breaks0 <- breaks
       breaks <- ceiling(n/h) - 2

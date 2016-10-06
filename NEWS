@@ -13,6 +13,9 @@ Changes in Version 1.5-2
     (small) subsamples.
     
   o The formula method of breakpoints() now passes ... to recresid().
+  
+  o The breaks argument of the breakpoints() formula argument is now checked
+    to be at least 1.
 
 
 Changes in Version 1.5-1
