@@ -6,7 +6,7 @@
 #' @param tol tolerance in the computation of recursive model coefficients
 #' @return vector containing the recursive residuals 
 #' @seealso \code{\link{recresid}} and \code{\link{recresid.default}}
-.sc_cpp_recresid <- function(X, y, start, end, tol, rcond_min) {
-  .Call('strucchange_sc_cpp_recresid', X, y, start, end, tol, rcond_min, PACKAGE = 'strucchangeArmadillo')
+.sc_cpp_recresid <- function(X, y, start, end, tol, rcond_min = sqrt(.Machine$double.eps)) {
+  .Call('strucchange_sc_cpp_recresid', PACKAGE = 'strucchangeArmadillo', X, y, start, end, tol, rcond_min)
 }
 
