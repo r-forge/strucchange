@@ -1,0 +1,8 @@
+import("stats", "graphics", "zoo", "sandwich")
+useDynLib(strucchangeArmadillo)
+importFrom(Rcpp, evalCpp)
+exportPattern("^[[:alpha:]]+")
+export(
+  "recresid_cpp"
+)
+

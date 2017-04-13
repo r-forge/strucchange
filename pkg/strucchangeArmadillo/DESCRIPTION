@@ -1,0 +1,18 @@
+Package: strucchangeArmadillo
+Version: 1.5-1
+Title: C++ Speedup Functions for srucchange Using the Armadillo Library
+Authors@R: c(person(given = "Marius", family = "Appel", role = c("aut", "cre"), email = "Marius.Appel@uni-muenster.de"))
+Description: C++ speedup functions for srucchange using the Armadillo library.
+LazyData: yes
+LinkingTo: Rcpp, RcppArmadillo
+Depends:
+    R (>= 2.10.0),
+    zoo
+Suggests:
+    stats4
+Imports:
+    Rcpp (>= 0.12.7)
+License: GPL-2 | GPL-3 + file LICENSE
+Author: Marius Appel [aut, cre],
+Maintainer: Marius Appel <Marius.Appel@uni-muenster.de>
+
