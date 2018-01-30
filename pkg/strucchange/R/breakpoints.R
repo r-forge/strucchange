@@ -47,9 +47,13 @@ breakpoints.formula <- function(formula, h = 0.15, breaks = NULL,
   }
 
   hpc <- match.arg(hpc)
-  if(hpc == "foreach" && !requireNamespace("foreach")) {
-    warning("High perfomance computing (hpc) support with 'foreach' package is not available, foreach is not installed.")
-    hpc <- "none"
+  if(hpc == "foreach") {
+    if(requireNamespace("foreach")) {
+      `%dopar%` <- foreach::`%dopar%`
+    } else {
+      warning("High perfomance computing (hpc) support with 'foreach' package is not available, foreach is not installed.")    
+      hpc <- "none"
+    }
   }
 
   ## compute ith row of the RSS diagonal matrix, i.e,

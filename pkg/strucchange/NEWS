@@ -17,6 +17,9 @@ Changes in Version 1.5-2
   o The breaks argument of the breakpoints() formula argument is now checked
     to be at least 1.
 
+  o breakpoints(..., hpc = "foreach") now also works if the "foreach" package
+    is not attached.
+
 
 Changes in Version 1.5-1
 
