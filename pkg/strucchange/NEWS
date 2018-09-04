@@ -20,6 +20,9 @@ Changes in Version 1.5-2
   o breakpoints(..., hpc = "foreach") now also works if the "foreach" package
     is not attached.
 
+  o Improved support for formulas like 'y ~ .' in efp(), Fstats(), and
+    breakpoints(). (Suggested by Matthieu Stigler.)
+
 
 Changes in Version 1.5-1
 

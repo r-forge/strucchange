@@ -82,7 +82,7 @@ efp <- function(formula, data = list(),
                } else {
 	         env <- environment(formula)
                  if(missing(data)) data <- env
-                 orig.y <- eval(attr(terms(formula), "variables")[[2]], data, env)
+                 orig.y <- eval(attr(mt, "variables")[[2]], data, env)
                  if(is.ts(orig.y) && (NROW(orig.y) == n))
                    process <- ts(process, end = end(orig.y),
                                  frequency = frequency(orig.y))
@@ -103,7 +103,7 @@ efp <- function(formula, data = list(),
                } else {
 	         env <- environment(formula)
                  if(missing(data)) data <- env
-                 orig.y <- eval(attr(terms(formula), "variables")[[2]], data, env)
+                 orig.y <- eval(attr(mt, "variables")[[2]], data, env)
                  if(is.ts(orig.y) && (NROW(orig.y) == n))
                    process <- ts(process, end = end(orig.y),
                                  frequency = frequency(orig.y))
@@ -130,7 +130,7 @@ efp <- function(formula, data = list(),
                } else {
 	         env <- environment(formula)
                  if(missing(data)) data <- env
-                 orig.y <- eval(attr(terms(formula), "variables")[[2]], data, env)
+                 orig.y <- eval(attr(mt, "variables")[[2]], data, env)
                  if(is.ts(orig.y) && (NROW(orig.y) == n)) {
                    process <- ts(process, end = time(orig.y)[(n-floor(0.5 + nh/2))],
                                  frequency = frequency(orig.y))
@@ -159,7 +159,7 @@ efp <- function(formula, data = list(),
                } else {
 	         env <- environment(formula)
                  if(missing(data)) data <- env
-                 orig.y <- eval(attr(terms(formula), "variables")[[2]], data, env)
+                 orig.y <- eval(attr(mt, "variables")[[2]], data, env)
                  if(is.ts(orig.y) && (NROW(orig.y) == n)) {
                    process <- ts(process, end = time(orig.y)[(n-floor(0.5 + nh/2))],
                                  frequency = frequency(orig.y))
@@ -205,7 +205,7 @@ efp <- function(formula, data = list(),
                } else {
 	         env <- environment(formula)
                  if(missing(data)) data <- env
-                 orig.y <- eval(attr(terms(formula), "variables")[[2]], data, env)
+                 orig.y <- eval(attr(mt, "variables")[[2]], data, env)
                  if(is.ts(orig.y) && (NROW(orig.y) == n)) {
                    process <- ts(process, end = end(orig.y),
                                  frequency = frequency(orig.y))
@@ -252,7 +252,7 @@ efp <- function(formula, data = list(),
                } else {
 	         env <- environment(formula)
                  if(missing(data)) data <- env
-                 orig.y <- eval(attr(terms(formula), "variables")[[2]], data, env)
+                 orig.y <- eval(attr(mt, "variables")[[2]], data, env)
                  if(is.ts(orig.y) && (NROW(orig.y) == n)) {
                    process <- ts(process, end = time(orig.y)[(n-floor(0.5 + nh/2))],
                                  frequency = frequency(orig.y))
@@ -288,7 +288,7 @@ efp <- function(formula, data = list(),
                } else {
 	         env <- environment(formula)
                  if(missing(data)) data <- env
-                 orig.y <- eval(attr(terms(formula), "variables")[[2]], data, env)
+                 orig.y <- eval(attr(mt, "variables")[[2]], data, env)
                  if(is.ts(orig.y) && (NROW(orig.y) == n)) {
                    process <- ts(process, end = end(orig.y),
                                  frequency = frequency(orig.y))
@@ -322,7 +322,7 @@ efp <- function(formula, data = list(),
                } else {
 	         env <- environment(formula)
                  if(missing(data)) data <- env
-                 orig.y <- eval(attr(terms(formula), "variables")[[2]], data, env)
+                 orig.y <- eval(attr(mt, "variables")[[2]], data, env)
                  if(is.ts(orig.y) && (NROW(orig.y) == n)) {
                    process <- ts(process, end = time(orig.y)[(n-floor(0.5 + nh/2))],
                                  frequency = frequency(orig.y))
@@ -635,7 +635,7 @@ sctest.formula <- function(formula, type = c("Rec-CUSUM", "OLS-CUSUM",
     } else {
         env <- environment(formula)
         if(missing(data)) data <- env
-        orig.y <- eval(attr(terms(formula), "variables")[[2]], data, env)
+        orig.y <- eval(attr(modelterms, "variables")[[2]], data, env)
         if(is.ts(orig.y) & NROW(orig.y) == n){
             ytime <- time(orig.y)
             ytsp <- tsp(orig.y)

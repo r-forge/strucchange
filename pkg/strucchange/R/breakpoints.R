@@ -137,7 +137,7 @@ breakpoints.formula <- function(formula, h = 0.15, breaks = NULL,
   } else {
       env <- environment(formula)
       if(missing(data)) data <- env
-      orig.y <- eval(attr(terms(formula), "variables")[[2]], data, env)
+      orig.y <- eval(attr(modelterms, "variables")[[2]], data, env)
       if(is.ts(orig.y) & (NROW(orig.y) == n)) datatsp <- tsp(orig.y)
         else datatsp <- c(1/n, 1, n)
   }
