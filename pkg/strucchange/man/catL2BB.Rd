@@ -55,7 +55,7 @@ ordwmax(freq, algorithm = mvtnorm::GenzBretz(), \dots)
   continuously). The asymptotic distribution is non-standard and needs
   to be simulated for every combination of frequencies and number of
   processes. Hence, this is somewhat more time-consuming compared to
-  the asymptotic approximations employed in \code{catL2BB}. It is also
+  the closed-form solution employed in \code{catL2BB}. It is also
   possible to store the result of \code{ordL2BB} in case it needs to
   be applied several \code{\link{gefp}} fluctuation processes.
 
