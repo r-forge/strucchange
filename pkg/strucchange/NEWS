@@ -25,6 +25,10 @@ Changes in Version 1.5-2
   o Improved support for formulas like 'y ~ .' in efp(), Fstats(), and
     breakpoints(). (Suggested by Matthieu Stigler.)
 
+  o Bug fix in gefp(..., decorrelate = FALSE). Scaling is done with the square
+    root of the diagnoal of the variance - as opposed to the diagonal of the
+    square root of the variance. (Reported by Dries Debeer.)
+
 
 Changes in Version 1.5-1
 

@@ -72,22 +72,23 @@ gefp <- function(...,
   process <- psi/sqrt(n)
 
   if(is.null(vcov.))
-    J12 <- root.matrix(crossprod(process))
+    J <- crossprod(process)
   else {
     if(sandwich) {
       Q <- chol2inv(chol(bread(fm)/n))
-      J12 <- root.matrix((Q %*% vcov.(fm, order.by = order.by, data = data) %*% Q)/n)
+      J <- (Q %*% vcov.(fm, order.by = order.by, data = data) %*% Q)/n
     } else {
-      J12 <- root.matrix(vcov.(fm, order.by = order.by, data = data))
+      J <- vcov.(fm, order.by = order.by, data = data)
     }
   }
-
+  J12 <- root.matrix(J)
+  
   process <- rbind(0, process)
   process <- apply(process, 2, cumsum)
 
   if(decorrelate) process <- t(chol2inv(chol(J12)) %*% t(process))
     else {
-      process <- t(1/diag(J12) * t(process))
+      process <- t(1/sqrt(diag(J)) * t(process))
       if(length(parm) > 1) stop("limiting process is not a Brownian bridge")
     }
 
