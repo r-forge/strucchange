@@ -1,3 +1,5 @@
+utils::globalVariables(c("i", "%dopar%"))
+
 breakpoints <- function(obj, ...)
 {
   UseMethod("breakpoints")

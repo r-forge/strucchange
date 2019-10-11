@@ -1,4 +1,5 @@
 import("stats", "graphics", "zoo", "sandwich")
+importFrom("utils", "globalVariables")
 
 export(
 ## testing

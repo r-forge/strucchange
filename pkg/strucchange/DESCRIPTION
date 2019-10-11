@@ -23,5 +23,5 @@ Description: Testing, monitoring and dating structural changes in (linear)
 LazyData: yes
 Depends: R (>= 2.10.0), zoo, sandwich
 Suggests: stats4, car, dynlm, e1071, foreach, lmtest, mvtnorm, tseries
-Imports: graphics, stats
+Imports: graphics, stats, utils
 License: GPL-2 | GPL-3
