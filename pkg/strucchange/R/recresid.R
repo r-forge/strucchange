@@ -145,18 +145,19 @@ recresid_c <- function(x, y, start = ncol(x) + 1, end = nrow(x),
 
 ## Default wrapper for recresid.
 recresid.default <- function(x, y, start = ncol(x) + 1, end = nrow(x),
-  tol = sqrt(.Machine$double.eps)/ncol(x), qr.tol = 1e-7, engine = c("R", "C", "C++"), ...)
+  tol = sqrt(.Machine$double.eps)/ncol(x), qr.tol = 1e-7, engine = c("R", "C"), ...)
 {
   ## checks and data dimensions
   stopifnot(start > ncol(x) & start <= nrow(x))
   stopifnot(end >= start & end <= nrow(x))
 
-  engine <- match.arg(engine)
+  engine <- match.arg(engine, c("R", "C"))
+  ## FIXME: C++ available in strucchangeArmadillo on R-Forge
 
   recresid_fun <- switch(engine,
     "R" = recresid_r,
-    "C" = recresid_c,
-    "C++" = strucchangeArmadillo::recresid_cpp
+    "C" = recresid_c
+    ## "C++" = strucchangeArmadillo::recresid_cpp
   )
 
   return(recresid_fun(x = x, y = y, start = start, end = end, tol = tol, qr.tol = qr.tol, ...))

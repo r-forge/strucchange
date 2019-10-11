@@ -11,7 +11,7 @@
 \usage{
 \method{recresid}{default}(x, y, start = ncol(x) + 1, end = nrow(x),
   tol = sqrt(.Machine$double.eps)/ncol(x), qr.tol = 1e-7,
-  engine = c("R", "C", "C++"), \dots)
+  engine = c("R", "C"), \dots)
 \method{recresid}{formula}(formula, data = list(), \dots)
 \method{recresid}{lm}(x, data = list(), \dots)
 }
@@ -26,12 +26,8 @@
     coefficient estimates, see details.}
   \item{qr.tol}{numeric. The \code{tol}erance passed to \code{\link[stats]{lm.fit}}
     for detecting linear dependencies.}
-  \item{engine}{The default method can use three different engines for computing the recursive
-    residuals, a plain \R version, a C version which is part of the \pkg{strucchange} package,
-    and the C++ version of package \pkg{strucchangeArmadillo}. The main advantage of using the
-    C and C++ version is speedup. Note that for models with about 10 parameters, the C and C++
-    version have pretty much the same speedup. For larger models it is recommended to use the C++
-    engine, which seems to scale better.}
+  \item{engine}{character. In addition to the R implementation of the default method,
+    there is also a faster C implementation (see below for further details).}
   \item{data}{an optional data frame containing the variables in the model. By
      default the variables are taken from the environment which \code{recresid} is
      called from. Specifying \code{data} might also be necessary when applying
@@ -53,6 +49,14 @@
   When the relative difference (assessed bey \code{\link{all.equal}})
   between the two solutions falls below \code{tol}, only the updating
   formula is used in subsequent steps.
+
+  In large data sets, the R implementation can become rather slow. Hence, a
+  C implementation is also available. This is not the default, yet, because
+  it should receive more testing in numerically challenging cases. In addition
+  to the R and C implementation, there is also an Armadillo-based C++ implementation
+  available on R-Forge in package strucchangeArmadillo. For models with about
+  10 parameters, the C and C++ version perform similarly. For larger models, the
+  C++ implementation seems to scale better.
 }
 \value{
   A vector containing the recursive residuals.
