@@ -8,7 +8,8 @@ Authors@R: c(person(given = "Achim", family = "Zeileis", role = c("aut", "cre"),
              person(given = "Kurt", family = "Hornik", role = "aut", email = "Kurt.Hornik@R-project.org"),
 	     person(given = "Christian", family = "Kleiber", role = "aut", email = "Christian.Kleiber@unibas.ch"),
 	     person(given = "Bruce", family = "Hansen", role = "ctb"),
-	     person(given = c("Edgar", "C."), family = "Merkle", role = "ctb"))
+	     person(given = c("Edgar", "C."), family = "Merkle", role = "ctb"),
+	     person(given = "Nikolaus", family = "Umlauf", role = "ctb"))
 Description: Testing, monitoring and dating structural changes in (linear)
              regression models. strucchange features tests/methods from
 	     the generalized fluctuation test framework as well as from
