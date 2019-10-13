@@ -1,3 +1,8 @@
+Changes in Version 1.5-3
+
+  o Fixups for R CMD check on different platforms.
+
+
 Changes in Version 1.5-2
 
   o Added lrvar = FALSE argument to efp() so that optionally a long-run variance
