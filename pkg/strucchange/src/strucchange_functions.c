@@ -62,7 +62,9 @@ SEXP recresid(SEXP START, SEXP END, SEXP X1, SEXP XR,
   PROTECT(XT2 = duplicate(X1));
   PROTECT(XT3 = duplicate(X1));
   PROTECT(R = duplicate(START));
-  PROTECT(FB = eval_fallback(FALLBACK, R, FM, BETAR, CHECK2, RHO));
+
+  PROTECT_INDEX ipx;
+  PROTECT_WITH_INDEX(FB = eval_fallback(FALLBACK, R, FM, BETAR, CHECK2, RHO), &ipx);
 
   double *X1ptr = REAL(X1);
   double *XRptr = REAL(XR);
@@ -106,7 +108,7 @@ SEXP recresid(SEXP START, SEXP END, SEXP X1, SEXP XR,
     }
     if(LOGICAL(CHECK2)[0]) {
       INTEGER(R)[0] = r + 1;
-      FB = eval_fallback(FALLBACK, R, FM, BETAR, CHECK2, RHO);
+      REPROTECT(FB = eval_fallback(FALLBACK, R, FM, BETAR, CHECK2, RHO), ipx);
       FM = getListElement(FB, "fm");
       LOGICAL(CHECK2)[0] = LOGICAL(getListElement(FB, "check"))[0];
 
