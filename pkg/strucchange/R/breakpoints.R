@@ -280,7 +280,7 @@ summary.breakpointsfull <- function(object, breaks = NULL,
     if(sort) {
       pos <- apply(outer(bpm$breakpoints, bp[nrow(bp),],
                    FUN = function(x,y) abs(x - y)), 1, which.min)
-      if(length(pos) > unique(length(pos))) {
+      if(length(pos) > length(unique(pos))) {
         warning("sorting not possible", call. = FALSE)
 	sort <- FALSE
       }
