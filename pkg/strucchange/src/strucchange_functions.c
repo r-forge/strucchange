@@ -64,7 +64,7 @@ SEXP recresid(SEXP START, SEXP END, SEXP X1, SEXP XR,
   PROTECT(R = duplicate(START));
 
   PROTECT_INDEX ipx;
-  PROTECT(FB = eval_fallback(FALLBACK, R, FM, BETAR, CHECK2, RHO));
+  FB = eval_fallback(FALLBACK, R, FM, BETAR, CHECK2, RHO);
   PROTECT_WITH_INDEX(FB, &ipx);
 
   double *X1ptr = REAL(X1);
@@ -140,7 +140,7 @@ SEXP recresid(SEXP START, SEXP END, SEXP X1, SEXP XR,
     RVALptr[r - start + 1] = (Yptr[r] - sum2) / fr2;
   }
 
-  UNPROTECT(8);
+  UNPROTECT(7);
 
   return RVAL2;
 }
