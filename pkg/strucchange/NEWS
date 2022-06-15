@@ -1,6 +1,7 @@
 Changes in Version 1.5-3
 
-  o Fixups for R CMD check on different platforms.
+  o Fixups for R CMD check on different platforms (thanks to support from
+    Kurt Hornik and Tomas Kalibera).
   
   o Fixed auto-detection of problems with sorting in summary() methods of
     breakpointsfull objects (reported by Spencer Graves). In some extreme
